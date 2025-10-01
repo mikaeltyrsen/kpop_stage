@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Music Video Selector</title>
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Music Video Selector</h1>
+        <p>Choose a video to play on the stage screen.</p>
+      </header>
+      <section id="video-list" class="video-grid" aria-live="polite"></section>
+    </main>
+    <template id="video-card-template">
+      <article class="video-card">
+        <img class="video-poster" alt="" />
+        <div class="video-meta">
+          <h2 class="video-title"></h2>
+          <button type="button" class="play-button">Play</button>
+        </div>
+      </article>
+    </template>
+    <div id="toast" role="status" aria-live="assertive"></div>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.DS_Store
+media/videos/*
+media/*.mp4
+!media/videos/.gitkeep
+static/posters/*
+!static/posters/README.md
