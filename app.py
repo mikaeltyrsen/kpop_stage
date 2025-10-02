@@ -192,18 +192,13 @@ def api_play() -> Any:
 
 
 def main() -> None:
-<<<<<<< HEAD
-    controller.start_default_loop()
-    app.run(host="0.0.0.0", port=5000)
-=======
     try:
         controller.start_default_loop()
     except FileNotFoundError:
         LOGGER.error(
             "Video player command not found. Install mpv or set VIDEO_PLAYER_CMD to a valid player."
         )
-    app.run(host="0.0.0.0", port=666)
->>>>>>> main
+    app.run(host="0.0.0.0", port=5000)
 
 
 if __name__ == "__main__":
