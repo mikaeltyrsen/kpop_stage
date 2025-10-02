@@ -95,6 +95,17 @@ body {
   background: var(--accent-dark);
 }
 
+.toggle-button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: transparent;
+  color: #111827;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
+}
+
+.toggle-button[aria-pressed="true"]:not(:disabled):hover {
+  background: var(--accent-dark);
+}
+
 .secondary {
   background: transparent;
 }

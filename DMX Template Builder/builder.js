@@ -7,6 +7,7 @@ const statusEl = document.getElementById("status-message");
 const actionsBody = document.getElementById("actions-body");
 const templateInfoEl = document.getElementById("template-info");
 const videoEl = document.getElementById("preview-video");
+const previewToggle = document.getElementById("preview-mode-toggle");
 const rowTemplate = document.getElementById("action-row-template");
 
 let videos = [];
@@ -14,6 +15,9 @@ let currentVideo = null;
 let actions = [];
 let templatePath = "";
 let apiBasePath = null;
+let previewMode = false;
+let previewSyncHandle = null;
+let suppressPreviewPause = false;
 
 const API_BASE_CANDIDATES = [
   "/api",
@@ -29,15 +33,222 @@ init();
 function init() {
   loadVideos();
   videoSelect.addEventListener("change", handleVideoSelection);
-  addRowButton.addEventListener("click", () => {
-    addAction({ ...DEFAULT_ACTION });
-  });
+  addRowButton.addEventListener("click", handleAddRow);
   sortRowsButton.addEventListener("click", () => {
     actions = sortActions(actions);
     renderActions();
+    queuePreviewSync();
   });
   saveButton.addEventListener("click", handleSaveTemplate);
   exportButton.addEventListener("click", () => exportTemplate());
+  if (previewToggle) {
+    previewToggle.addEventListener("click", handlePreviewToggle);
+  }
+  if (videoEl) {
+    videoEl.addEventListener("play", handleVideoPlay);
+    videoEl.addEventListener("pause", handleVideoPause);
+    videoEl.addEventListener("seeked", handleVideoSeeked);
+  }
+}
+
+function handleAddRow() {
+  const time = getCurrentVideoTimecode();
+  addAction({ time });
+}
+
+function getCurrentVideoTimecode() {
+  if (!videoEl) return DEFAULT_ACTION.time;
+  const currentTime = Number.isFinite(videoEl.currentTime)
+    ? Math.max(0, videoEl.currentTime)
+    : 0;
+  return secondsToTimecode(currentTime);
+}
+
+async function handlePreviewToggle() {
+  if (!currentVideo) {
+    showStatus("Select a song before using preview mode.", "error");
+    return;
+  }
+  if (previewToggle) {
+    previewToggle.disabled = true;
+  }
+  try {
+    if (previewMode) {
+      await disablePreviewMode();
+    } else {
+      await enablePreviewMode();
+    }
+  } finally {
+    if (previewToggle) {
+      previewToggle.disabled = false;
+    }
+  }
+}
+
+async function enablePreviewMode() {
+  try {
+    await syncPreview({ force: true, showError: true });
+    previewMode = true;
+    updatePreviewToggle(true);
+    playVideoSilently();
+    showStatus("Preview mode enabled. Video and lights are live.", "success");
+  } catch (error) {
+    console.error(error);
+    previewMode = false;
+    updatePreviewToggle(false);
+    if (error && error.message) {
+      showStatus(error.message, "error");
+    } else {
+      showStatus("Unable to start preview mode.", "error");
+    }
+    throw error;
+  }
+}
+
+async function disablePreviewMode(options = {}) {
+  cancelPreviewSync();
+  const wasActive = previewMode;
+  previewMode = false;
+  updatePreviewToggle(false);
+  try {
+    await stopPreviewLights({ silent: options.silent });
+  } catch (error) {
+    console.error(error);
+    if (!options.silent) {
+      showStatus(error.message || "Unable to stop preview mode.", "error");
+    }
+  }
+  pauseVideoSilently();
+  if (wasActive && !options.silent) {
+    showStatus("Preview mode disabled.", "info");
+  }
+}
+
+function updatePreviewToggle(active) {
+  if (!previewToggle) return;
+  const isActive = Boolean(active);
+  previewToggle.setAttribute("aria-pressed", isActive ? "true" : "false");
+  previewToggle.classList.toggle("is-active", isActive);
+  previewToggle.textContent = isActive ? "Preview Mode: On" : "Preview Mode: Off";
+}
+
+function queuePreviewSync() {
+  if (!previewMode) return;
+  if (previewSyncHandle) {
+    clearTimeout(previewSyncHandle);
+  }
+  previewSyncHandle = window.setTimeout(() => {
+    previewSyncHandle = null;
+    syncPreview({ showError: false }).catch((error) => {
+      console.error(error);
+    });
+  }, 150);
+}
+
+function cancelPreviewSync() {
+  if (previewSyncHandle) {
+    clearTimeout(previewSyncHandle);
+    previewSyncHandle = null;
+  }
+}
+
+async function syncPreview(options = {}) {
+  if (!currentVideo) {
+    throw new Error("Select a song before using preview mode.");
+  }
+  if (!previewMode && !options.force) {
+    return;
+  }
+  let prepared;
+  try {
+    prepared = prepareActionsForSave();
+  } catch (error) {
+    if (options.showError) {
+      showStatus(error.message || "Unable to update preview.", "error");
+    }
+    throw error;
+  }
+  try {
+    await sendPreview(prepared);
+  } catch (error) {
+    if (options.showError) {
+      showStatus(error.message || "Unable to update preview.", "error");
+    }
+    throw error;
+  }
+}
+
+async function sendPreview(preparedActions) {
+  if (!currentVideo) {
+    throw new Error("Select a song before using preview mode.");
+  }
+  const hasVideo = videoEl && Number.isFinite(videoEl.currentTime);
+  const startTime = hasVideo ? Math.max(0, videoEl.currentTime) : 0;
+  const response = await fetchApi(`/dmx/preview`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      video_id: currentVideo.id,
+      actions: preparedActions,
+      start_time: startTime,
+    }),
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    const message = payload.error || `Unable to update preview (${response.status})`;
+    throw new Error(message);
+  }
+}
+
+async function stopPreviewLights(options = {}) {
+  try {
+    const response = await fetchApi(`/dmx/preview`, { method: "DELETE" });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.error || `Unable to stop preview (${response.status})`);
+    }
+  } catch (error) {
+    if (!options.silent) {
+      throw error;
+    }
+    console.error(error);
+    return;
+  }
+}
+
+function playVideoSilently() {
+  if (!videoEl) return;
+  const promise = videoEl.play();
+  if (promise && typeof promise.catch === "function") {
+    promise.catch(() => {});
+  }
+}
+
+function pauseVideoSilently() {
+  if (!videoEl || videoEl.paused) return;
+  suppressPreviewPause = true;
+  videoEl.pause();
+  window.setTimeout(() => {
+    suppressPreviewPause = false;
+  }, 0);
+}
+
+function handleVideoPlay() {
+  if (!previewMode) return;
+  queuePreviewSync();
+}
+
+function handleVideoPause() {
+  if (!previewMode) return;
+  if (suppressPreviewPause) return;
+  stopPreviewLights({ silent: true }).catch((error) => {
+    console.error(error);
+  });
+}
+
+function handleVideoSeeked() {
+  if (!previewMode) return;
+  queuePreviewSync();
 }
 
 async function loadVideos() {
@@ -63,6 +274,11 @@ function populateVideoSelect(list) {
 }
 
 function handleVideoSelection() {
+  if (previewMode) {
+    disablePreviewMode({ silent: true }).catch((error) => {
+      console.error(error);
+    });
+  }
   const videoId = videoSelect.value;
   if (!videoId) {
     currentVideo = null;
@@ -226,6 +442,7 @@ function handleTimeChange(event, index) {
   event.target.value = formatted;
   actions[index].time = formatted;
   seekToIndex(index);
+  queuePreviewSync();
 }
 
 function handleNumberChange(event, index, key, min, max) {
@@ -242,6 +459,7 @@ function handleNumberChange(event, index, key, min, max) {
   event.target.value = clamped;
   event.target.classList.remove("invalid");
   event.target.setCustomValidity("");
+  queuePreviewSync();
 }
 
 function handleFadeChange(event, index) {
@@ -258,6 +476,7 @@ function handleFadeChange(event, index) {
   event.target.value = actions[index].fade;
   event.target.classList.remove("invalid");
   event.target.setCustomValidity("");
+  queuePreviewSync();
 }
 
 function seekToIndex(index) {
@@ -267,18 +486,25 @@ function seekToIndex(index) {
   if (seconds === null) return;
   if (!videoEl.src) return;
   videoEl.currentTime = seconds;
-  videoEl.pause();
+  if (previewMode) {
+    playVideoSilently();
+    queuePreviewSync();
+  } else {
+    videoEl.pause();
+  }
 }
 
 function addAction(action) {
   actions.push({ ...DEFAULT_ACTION, ...action });
   renderActions();
+  queuePreviewSync();
 }
 
 function removeAction(index) {
   actions.splice(index, 1);
   renderActions();
   showStatus("Removed cue.", "info");
+  queuePreviewSync();
 }
 
 function sortActions(list) {
@@ -294,10 +520,18 @@ function setControlsEnabled(enabled) {
   sortRowsButton.disabled = !enabled;
   saveButton.disabled = !enabled;
   exportButton.disabled = !enabled;
+  if (previewToggle) {
+    if (!enabled && previewMode) {
+      disablePreviewMode({ silent: true }).catch((error) => {
+        console.error(error);
+      });
+    }
+    previewToggle.disabled = !enabled;
+  }
 }
 
 function resetVideoPreview() {
-  videoEl.pause();
+  pauseVideoSilently();
   videoEl.removeAttribute("src");
   videoEl.load();
 }
