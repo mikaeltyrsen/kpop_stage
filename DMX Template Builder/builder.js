@@ -391,7 +391,7 @@ function exportTemplate(preparedActions, options = {}) {
 function normalizeBasePath(value) {
   if (!value) return "";
   if (value === "/") return "";
-  return value.replace(/\/+$, "");
+  return value.replace(/\/+$/, "");
 }
 
 function buildApiUrl(base, path) {
