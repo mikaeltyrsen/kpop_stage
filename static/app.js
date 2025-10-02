@@ -1,6 +1,7 @@
 const template = document.getElementById("video-card-template");
 const listEl = document.getElementById("video-list");
 const toastEl = document.getElementById("toast");
+const stopButton = document.getElementById("stop-button");
 
 function showToast(message, type = "info") {
   toastEl.textContent = message;
@@ -80,6 +81,26 @@ async function playVideo(id, name) {
     console.error(err);
     showToast(err.message, "error");
   }
+}
+
+async function stopPlayback() {
+  try {
+    const response = await fetch("/api/stop", { method: "POST" });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.error || `Unable to stop playback (${response.status})`);
+    }
+
+    showToast("Returning to default loop");
+  } catch (err) {
+    console.error(err);
+    showToast(err.message, "error");
+  }
+}
+
+if (stopButton) {
+  stopButton.addEventListener("click", stopPlayback);
 }
 
 fetchVideos();

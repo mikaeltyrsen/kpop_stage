@@ -52,6 +52,10 @@ class PlaybackController:
         self._lock = threading.Lock()
         self._process: Optional[subprocess.Popen[bytes]] = None
         self._current: Optional[Path] = None
+        self._default_missing_message = (
+            f"Default loop video not found: {self.default_video}. "
+            "Update videos.json or copy the file into the media directory."
+        )
 
         if player_command:
             self._base_command = list(player_command)
@@ -74,14 +78,13 @@ class PlaybackController:
             )
             self._player_available = False
 
+    @property
+    def default_missing_message(self) -> str:
+        return self._default_missing_message
+
     def start_default_loop(self) -> None:
-        if not self.default_video.exists():
-            raise FileNotFoundError(
-                f"Default loop video not found: {self.default_video}. "
-                "Update videos.json or copy the file into the media directory."
-            )
         with self._lock:
-            self._play_video_locked(self.default_video, loop=True)
+            self._start_default_locked()
 
     def play(self, video_path: Path) -> None:
         LOGGER.info("Starting playback: %s", video_path)
@@ -92,6 +95,7 @@ class PlaybackController:
     def stop(self) -> None:
         with self._lock:
             self._stop_locked()
+            self._start_default_locked()
 
     def _stop_locked(self) -> None:
         if self._process and self._process.poll() is None:
@@ -140,7 +144,20 @@ class PlaybackController:
         with self._lock:
             if self._process is process:
                 LOGGER.info("Playback finished. Returning to default loop.")
-                self._play_video_locked(self.default_video, loop=True)
+                self._start_default_locked()
+
+    def _start_default_locked(self) -> None:
+        if not self.default_video.exists():
+            raise FileNotFoundError(self._default_missing_message)
+
+        if (
+            self._process
+            and self._process.poll() is None
+            and self._current == self.default_video
+        ):
+            return
+
+        self._play_video_locked(self.default_video, loop=True)
 
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -189,6 +206,23 @@ def api_play() -> Any:
         return jsonify({"error": "Unable to start playback"}), 500
 
     return jsonify({"status": "playing", "id": video_id})
+
+
+@app.route("/api/stop", methods=["POST"])
+def api_stop() -> Any:
+    try:
+        controller.stop()
+    except FileNotFoundError:
+        LOGGER.error(controller.default_missing_message)
+        return (
+            jsonify({"error": "Default loop video missing on server"}),
+            500,
+        )
+    except Exception:
+        LOGGER.exception("Unable to stop playback")
+        return jsonify({"error": "Unable to stop playback"}), 500
+
+    return jsonify({"status": "default_loop"})
 
 
 def main() -> None:
