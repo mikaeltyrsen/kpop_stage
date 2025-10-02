@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import shlex
+import shutil
 import signal
 import subprocess
 import threading
@@ -61,6 +62,18 @@ class PlaybackController:
             else:
                 self._base_command = ["mpv", "--fs", "--no-terminal"]
 
+        player_binary = self._base_command[0]
+        resolved_binary = shutil.which(player_binary)
+        if resolved_binary:
+            self._base_command[0] = resolved_binary
+            self._player_available = True
+        else:
+            LOGGER.warning(
+                "Video player command '%s' not found on PATH. Install it or set VIDEO_PLAYER_CMD.",
+                player_binary,
+            )
+            self._player_available = False
+
     def start_default_loop(self) -> None:
         if not self.default_video.exists():
             raise FileNotFoundError(
@@ -91,16 +104,27 @@ class PlaybackController:
         self._current = None
 
     def _play_video_locked(self, video_path: Path, loop: bool) -> None:
+        if not self._player_available:
+            raise FileNotFoundError(
+                "Video player command not found. Install mpv or configure VIDEO_PLAYER_CMD."
+            )
+
         cmd = list(self._base_command)
         if loop:
             cmd.append("--loop")
         cmd.append(str(video_path))
 
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+        try:
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except FileNotFoundError as exc:
+            self._player_available = False
+            raise FileNotFoundError(
+                "Video player command not found. Install mpv or configure VIDEO_PLAYER_CMD."
+            ) from exc
         self._process = process
         self._current = video_path
 
@@ -168,7 +192,12 @@ def api_play() -> Any:
 
 
 def main() -> None:
-    controller.start_default_loop()
+    try:
+        controller.start_default_loop()
+    except FileNotFoundError:
+        LOGGER.error(
+            "Video player command not found. Install mpv or set VIDEO_PLAYER_CMD to a valid player."
+        )
     app.run(host="0.0.0.0", port=666)
 
 
