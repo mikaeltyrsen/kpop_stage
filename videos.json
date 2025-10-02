@@ -5,7 +5,7 @@
       "id": "01",
       "name": "Soda Pop",
       "file": "videos/soda_pop.mp4",
-      "poster": "/static/posters/soda_pop.jpg"
+      "poster": "/static/posters/soda_pop.png"
     }
   ]
 }
