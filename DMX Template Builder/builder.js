@@ -13,6 +13,14 @@ let videos = [];
 let currentVideo = null;
 let actions = [];
 let templatePath = "";
+let apiBasePath = null;
+
+const API_BASE_CANDIDATES = [
+  "/api",
+  "./api",
+  "../api",
+  "/dmx-template-builder/api",
+];
 
 const DEFAULT_ACTION = Object.freeze({ time: "00:00:00", channel: 1, value: 0, fade: 0 });
 
@@ -34,11 +42,7 @@ function init() {
 
 async function loadVideos() {
   try {
-    const response = await fetch("/api/videos");
-    if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`);
-    }
-    const payload = await response.json();
+    const { payload } = await fetchFromApiCandidates("/videos");
     videos = payload.videos || [];
     populateVideoSelect(videos);
     showStatus(`Loaded ${videos.length} video${videos.length === 1 ? "" : "s"}.`, "success");
@@ -84,7 +88,7 @@ async function loadTemplate(videoId) {
   setControlsEnabled(false);
   showStatus("Loading template…");
   try {
-    const response = await fetch(`/api/dmx/templates/${encodeURIComponent(videoId)}`);
+    const response = await fetchApi(`/dmx/templates/${encodeURIComponent(videoId)}`);
     if (!response.ok) {
       const payload = await response.json().catch(() => ({}));
       throw new Error(payload.error || `Request failed (${response.status})`);
@@ -330,7 +334,7 @@ async function handleSaveTemplate() {
   if (!currentVideo) return;
   try {
     const prepared = prepareActionsForSave();
-    const response = await fetch(`/api/dmx/templates/${encodeURIComponent(currentVideo.id)}`, {
+    const response = await fetchApi(`/dmx/templates/${encodeURIComponent(currentVideo.id)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ actions: prepared }),
@@ -382,6 +386,48 @@ function exportTemplate(preparedActions, options = {}) {
   if (!options.silent) {
     showStatus("Template exported as a download.", "success");
   }
+}
+
+function normalizeBasePath(value) {
+  if (!value) return "";
+  if (value === "/") return "";
+  return value.replace(/\/+$, "");
+}
+
+function buildApiUrl(base, path) {
+  const normalizedBase = normalizeBasePath(base || "");
+  const normalizedPath = String(path || "").replace(/^\/+/, "");
+  const combined = normalizedPath ? `${normalizedBase}/${normalizedPath}` : normalizedBase;
+  return new URL(combined || "/", window.location.href).toString();
+}
+
+async function fetchApi(path, options) {
+  const base = apiBasePath || API_BASE_CANDIDATES[0];
+  const url = buildApiUrl(base, path);
+  return fetch(url, options);
+}
+
+async function fetchFromApiCandidates(path) {
+  const errors = [];
+  for (const candidate of API_BASE_CANDIDATES) {
+    try {
+      const url = buildApiUrl(candidate, path);
+      const response = await fetch(url);
+      if (!response.ok) {
+        errors.push(new Error(`Request failed for ${url} (${response.status})`));
+        continue;
+      }
+      const payload = await response.json();
+      apiBasePath = candidate;
+      return { payload, basePath: candidate };
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+
+  const aggregateError =
+    errors[errors.length - 1] || new Error("Unable to reach any API endpoints");
+  throw aggregateError;
 }
 
 function prepareActionsForSave() {
