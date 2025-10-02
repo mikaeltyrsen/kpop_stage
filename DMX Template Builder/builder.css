@@ -1,0 +1,241 @@
+:root {
+  color-scheme: light dark;
+  font-family: "Segoe UI", "Helvetica Neue", system-ui, sans-serif;
+  --accent: #ff4da6;
+  --accent-dark: #c9377d;
+  --border-color: rgba(0, 0, 0, 0.15);
+  --bg-muted: rgba(0, 0, 0, 0.05);
+}
+
+body {
+  margin: 0;
+  background: #111827;
+  color: #f9fafb;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.builder-header {
+  padding: 1.5rem clamp(1rem, 3vw, 2.5rem);
+  background: linear-gradient(135deg, #111827 0%, #1f2937 40%, #312e81 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.builder-header h1 {
+  margin: 0 0 0.3rem;
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+}
+
+.builder-header p {
+  margin: 0;
+  opacity: 0.8;
+  max-width: 40rem;
+}
+
+.builder-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 1rem clamp(1rem, 3vw, 2.5rem);
+  background: #0f172a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 12rem;
+  font-size: 0.95rem;
+}
+
+.control-label {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+#video-select {
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: #1f2937;
+  color: inherit;
+}
+
+.control-button,
+.primary,
+.secondary {
+  padding: 0.55rem 0.9rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: #1f2937;
+  color: inherit;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease;
+}
+
+.control-button:disabled,
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: #111827;
+}
+
+.primary:not(:disabled):hover {
+  background: var(--accent-dark);
+}
+
+.secondary {
+  background: transparent;
+}
+
+.secondary:not(:disabled):hover,
+.control-button:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+#status-message {
+  min-height: 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #a5b4fc;
+}
+
+#status-message.error {
+  color: #f87171;
+}
+
+#status-message.success {
+  color: #6ee7b7;
+}
+
+.template-info {
+  padding: 0.8rem clamp(1rem, 3vw, 2.5rem);
+  background: rgba(129, 140, 248, 0.12);
+  border-bottom: 1px solid rgba(129, 140, 248, 0.35);
+  font-size: 0.9rem;
+}
+
+.builder-layout {
+  display: grid;
+  grid-template-columns: minmax(18rem, 1fr) minmax(22rem, 2fr);
+  gap: 1.5rem;
+  padding: 1.5rem clamp(1rem, 3vw, 2.5rem) 2.5rem;
+  flex: 1;
+}
+
+.preview-panel,
+.table-panel {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.6);
+}
+
+.preview-panel h2,
+.table-panel h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+#preview-video {
+  width: 100%;
+  border-radius: 0.5rem;
+  background: #000;
+  max-height: 320px;
+}
+
+.video-hints {
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.table-wrapper {
+  overflow: auto;
+}
+
+.actions-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.actions-table thead {
+  background: rgba(129, 140, 248, 0.18);
+}
+
+.actions-table th,
+.actions-table td {
+  padding: 0.5rem 0.6rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.actions-table td input {
+  width: 100%;
+  padding: 0.35rem 0.4rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(30, 41, 59, 0.6);
+  color: inherit;
+  font-size: 0.95rem;
+}
+
+.actions-table td input:focus {
+  outline: 2px solid rgba(129, 140, 248, 0.6);
+  border-color: rgba(129, 140, 248, 0.9);
+}
+
+.actions-table td input.invalid {
+  border-color: #f87171;
+  outline-color: #f87171;
+}
+
+.row-tools {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.row-tools button {
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.75);
+  color: inherit;
+  cursor: pointer;
+}
+
+.row-tools button:hover {
+  background: rgba(129, 140, 248, 0.2);
+}
+
+.empty-state {
+  padding: 1.5rem;
+  text-align: center;
+  opacity: 0.7;
+}
+
+@media (max-width: 960px) {
+  .builder-layout {
+    grid-template-columns: 1fr;
+  }
+
+  #preview-video {
+    max-height: none;
+  }
+}
