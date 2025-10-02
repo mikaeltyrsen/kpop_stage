@@ -10,6 +10,13 @@ const videoEl = document.getElementById("preview-video");
 const previewToggle = document.getElementById("preview-mode-toggle");
 const rowTemplate = document.getElementById("action-row-template");
 
+const PREVIEW_STATE_LABELS = {
+  on: "Preview Mode: On",
+  off: "Preview Mode: Off",
+  enabling: "Enabling Preview Mode…",
+  disabling: "Disabling Preview Mode…",
+};
+
 let videos = [];
 let currentVideo = null;
 let actions = [];
@@ -70,7 +77,7 @@ async function handlePreviewToggle() {
     return;
   }
   if (previewToggle) {
-    previewToggle.disabled = true;
+    setPreviewToggleBusy(true, !previewMode);
   }
   try {
     if (previewMode) {
@@ -80,7 +87,7 @@ async function handlePreviewToggle() {
     }
   } finally {
     if (previewToggle) {
-      previewToggle.disabled = false;
+      setPreviewToggleBusy(false);
     }
   }
 }
@@ -129,7 +136,27 @@ function updatePreviewToggle(active) {
   const isActive = Boolean(active);
   previewToggle.setAttribute("aria-pressed", isActive ? "true" : "false");
   previewToggle.classList.toggle("is-active", isActive);
-  previewToggle.textContent = isActive ? "Preview Mode: On" : "Preview Mode: Off";
+  previewToggle.classList.remove("is-busy");
+  previewToggle.disabled = false;
+  const label = isActive ? PREVIEW_STATE_LABELS.on : PREVIEW_STATE_LABELS.off;
+  previewToggle.textContent = label;
+  previewToggle.setAttribute("title", label);
+}
+
+function setPreviewToggleBusy(isBusy, targetEnabledState) {
+  if (!previewToggle) return;
+  const shouldEnable = Boolean(targetEnabledState);
+  previewToggle.classList.toggle("is-busy", Boolean(isBusy));
+  previewToggle.disabled = Boolean(isBusy);
+  if (isBusy) {
+    const label = shouldEnable
+      ? PREVIEW_STATE_LABELS.enabling
+      : PREVIEW_STATE_LABELS.disabling;
+    previewToggle.textContent = label;
+    previewToggle.setAttribute("title", label);
+    return;
+  }
+  updatePreviewToggle(previewMode);
 }
 
 function queuePreviewSync() {

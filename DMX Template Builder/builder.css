@@ -106,6 +106,12 @@ body {
   background: var(--accent-dark);
 }
 
+.toggle-button.is-busy {
+  cursor: progress;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
 .secondary {
   background: transparent;
 }
