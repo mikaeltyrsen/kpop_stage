@@ -9,16 +9,30 @@ import subprocess
 import threading
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
-from flask import Flask, jsonify, render_template, request
+from flask import (
+    Flask,
+    abort,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+)
+
+from dmx import DMXShowManager, create_manager
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_FILE = BASE_DIR / "videos.json"
 MEDIA_DIR = BASE_DIR / "media"
+DMX_TEMPLATE_DIR = BASE_DIR / "dmx_templates"
+DMX_BUILDER_DIR = BASE_DIR / "DMX Template Builder"
 
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 (MEDIA_DIR / "videos").mkdir(parents=True, exist_ok=True)
+DMX_TEMPLATE_DIR.mkdir(parents=True, exist_ok=True)
+DMX_BUILDER_DIR.mkdir(parents=True, exist_ok=True)
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 LOGGER = logging.getLogger("kpop_stage")
@@ -49,7 +63,13 @@ def resolve_media_path(path_value: str) -> Path:
 
 
 class PlaybackController:
-    def __init__(self, default_video: Path, player_command: Optional[List[str]] = None) -> None:
+    def __init__(
+        self,
+        default_video: Path,
+        player_command: Optional[List[str]] = None,
+        on_video_start: Optional[Callable[[Path], None]] = None,
+        on_default_start: Optional[Callable[[Path], None]] = None,
+    ) -> None:
         self.default_video = default_video
         self._lock = threading.Lock()
         self._process: Optional[subprocess.Popen[bytes]] = None
@@ -57,6 +77,8 @@ class PlaybackController:
         self._ipc_path = str(BASE_DIR / "mpv-ipc.sock")
         self._idle_monitor_thread: Optional[threading.Thread] = None
         self._idle_monitor_stop: Optional[threading.Event] = None
+        self._on_video_start = on_video_start
+        self._on_default_start = on_default_start
         self._default_missing_message = (
             f"Default loop video not found: {self.default_video}. "
             "Update videos.json or copy the file into the media directory."
@@ -124,8 +146,18 @@ class PlaybackController:
         self._current = video_path
         if loop:
             self._cancel_idle_monitor_locked()
+            if self._on_default_start:
+                try:
+                    self._on_default_start(video_path)
+                except Exception:  # pragma: no cover - defensive logging
+                    LOGGER.exception("Default start callback failed")
         else:
             self._start_idle_monitor_locked()
+            if self._on_video_start:
+                try:
+                    self._on_video_start(video_path)
+                except Exception:  # pragma: no cover - defensive logging
+                    LOGGER.exception("Video start callback failed")
 
     def _start_default_locked(self) -> None:
         if not self.default_video.exists():
@@ -269,7 +301,17 @@ class PlaybackController:
 app = Flask(__name__, static_folder="static", template_folder="templates")
 video_config = load_video_config(DATA_FILE)
 DEFAULT_VIDEO_PATH = resolve_media_path(video_config["default_video"])
-controller = PlaybackController(DEFAULT_VIDEO_PATH)
+DMX_UNIVERSE = int(os.environ.get("DMX_UNIVERSE", "1"))
+
+dmx_manager: DMXShowManager = create_manager(DMX_TEMPLATE_DIR, universe=DMX_UNIVERSE)
+controller = PlaybackController(
+    DEFAULT_VIDEO_PATH,
+    on_default_start=lambda _: dmx_manager.stop_show(),
+)
+
+
+def get_video_entry(video_id: str) -> Optional[Dict[str, Any]]:
+    return next((v for v in video_config["videos"] if v.get("id") == video_id), None)
 
 
 @app.route("/")
@@ -277,12 +319,52 @@ def index() -> str:
     return render_template("index.html")
 
 
+@app.route("/media/<path:filename>")
+def media_file(filename: str):
+    target = (MEDIA_DIR / filename).resolve()
+    try:
+        target.relative_to(MEDIA_DIR)
+    except ValueError:
+        abort(404)
+    if not target.exists() or not target.is_file():
+        abort(404)
+    return send_from_directory(MEDIA_DIR, filename)
+
+
+@app.route("/dmx-template-builder")
+def dmx_template_builder_root() -> Any:
+    return redirect("/dmx-template-builder/")
+
+
+@app.route("/dmx-template-builder/")
+def dmx_template_builder() -> Any:
+    index_path = DMX_BUILDER_DIR / "index.html"
+    if not index_path.exists():
+        abort(404)
+    return send_from_directory(DMX_BUILDER_DIR, "index.html")
+
+
+@app.route("/dmx-template-builder/<path:filename>")
+def dmx_template_builder_assets(filename: str):
+    target = (DMX_BUILDER_DIR / filename).resolve()
+    try:
+        target.relative_to(DMX_BUILDER_DIR)
+    except ValueError:
+        abort(404)
+    if not target.exists():
+        abort(404)
+    return send_from_directory(DMX_BUILDER_DIR, filename)
+
+
 @app.route("/api/videos")
 def api_videos() -> Any:
-    display_keys = {"id", "name", "poster", "description"}
+    display_keys = {"id", "name", "poster", "description", "dmx_template", "file"}
     videos = []
     for entry in video_config["videos"]:
         video = {key: entry[key] for key in display_keys if key in entry}
+        file_value = entry.get("file")
+        if file_value:
+            video["video_url"] = f"/media/{file_value}"
         videos.append(video)
     return jsonify({"videos": videos})
 
@@ -294,7 +376,7 @@ def api_play() -> Any:
     if not video_id:
         return jsonify({"error": "Missing 'id' in request body"}), 400
 
-    video_entry = next((v for v in video_config["videos"] if v.get("id") == video_id), None)
+    video_entry = get_video_entry(video_id)
     if not video_entry:
         return jsonify({"error": "Unknown video id"}), 404
 
@@ -310,6 +392,11 @@ def api_play() -> Any:
     except Exception:
         LOGGER.exception('Unable to start playback')
         return jsonify({"error": "Unable to start playback"}), 500
+
+    try:
+        dmx_manager.start_show_for_video(video_entry)
+    except Exception:
+        LOGGER.exception("Unable to start DMX show for video %s", video_entry.get("name"))
 
     return jsonify({"status": "playing", "id": video_id})
 
@@ -328,7 +415,60 @@ def api_stop() -> Any:
         LOGGER.exception("Unable to stop playback")
         return jsonify({"error": "Unable to stop playback"}), 500
 
+    dmx_manager.stop_show()
+
     return jsonify({"status": "default_loop"})
+
+
+@app.route("/api/dmx/templates/<video_id>", methods=["GET", "POST"])
+def api_dmx_template(video_id: str) -> Any:
+    video_entry = get_video_entry(video_id)
+    if not video_entry:
+        return jsonify({"error": "Unknown video id"}), 404
+
+    template_path = dmx_manager.template_path_for_video(video_entry)
+
+    if request.method == "GET":
+        try:
+            actions = dmx_manager.load_show_for_video(video_entry)
+        except RuntimeError as exc:
+            return jsonify({"error": str(exc)}), 500
+
+        try:
+            relative_path = template_path.relative_to(BASE_DIR)
+            template_str = str(relative_path)
+        except ValueError:
+            template_str = str(template_path)
+
+        response = {
+            "video": {
+                "id": video_entry.get("id"),
+                "name": video_entry.get("name"),
+                "dmx_template": template_str,
+                "file": video_entry.get("file"),
+                "video_url": f"/media/{video_entry['file']}"
+                if video_entry.get("file")
+                else None,
+            },
+            "template_exists": template_path.exists(),
+            "actions": dmx_manager.serialize_actions(actions),
+        }
+        return jsonify(response)
+
+    data = request.get_json(force=True, silent=True) or {}
+    actions_payload = data.get("actions")
+    if not isinstance(actions_payload, list):
+        return jsonify({"error": "Request body must include an 'actions' list"}), 400
+
+    try:
+        dmx_manager.save_actions(template_path, actions_payload)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception:
+        LOGGER.exception("Unable to save DMX template %s", template_path)
+        return jsonify({"error": "Unable to save DMX template"}), 500
+
+    return jsonify({"status": "saved"})
 
 
 def main() -> None:

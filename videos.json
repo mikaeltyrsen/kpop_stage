@@ -5,13 +5,15 @@
       "id": "01",
       "name": "Soda Pop",
       "file": "videos/soda_pop.mp4",
-      "poster": "/static/posters/soda_pop.jpg"
+      "poster": "/static/posters/soda_pop.jpg",
+      "dmx_template": "soda_pop_dmx.json"
     },
     {
       "id": "02",
       "name": "Idol",
       "file": "videos/idol.mp4",
-      "poster": "/static/posters/idol.jpg"
+      "poster": "/static/posters/idol.jpg",
+      "dmx_template": "idol_dmx.json"
     }
   ]
 }

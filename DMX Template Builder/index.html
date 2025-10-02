@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DMX Template Builder</title>
+    <link rel="stylesheet" href="builder.css" />
+  </head>
+  <body>
+    <header class="builder-header">
+      <h1>DMX Template Builder</h1>
+      <p>Create and edit lighting cues that sync with your show videos.</p>
+    </header>
+
+    <section class="builder-controls">
+      <label class="control-group" for="video-select">
+        <span class="control-label">Song</span>
+        <select id="video-select">
+          <option value="">Select a song…</option>
+        </select>
+      </label>
+      <button id="add-row" type="button" class="control-button" disabled>Add Step</button>
+      <button id="sort-rows" type="button" class="control-button" disabled>Sort by Time</button>
+      <button id="save-template" type="button" class="primary" disabled>Save Template</button>
+      <button id="export-template" type="button" class="secondary" disabled>Export JSON</button>
+      <span id="status-message" role="status" aria-live="polite"></span>
+    </section>
+
+    <section class="template-info" id="template-info" hidden></section>
+
+    <main class="builder-layout">
+      <section class="preview-panel">
+        <h2>Video Preview</h2>
+        <video id="preview-video" controls preload="metadata"></video>
+        <div class="video-hints">
+          <p>
+            Select a row in the table to jump to that cue. The time input keeps the
+            video preview aligned with the cue you are editing.
+          </p>
+        </div>
+      </section>
+
+      <section class="table-panel">
+        <h2>Lighting Steps</h2>
+        <div class="table-wrapper">
+          <table class="actions-table">
+            <thead>
+              <tr>
+                <th scope="col">Time (HH:MM:SS)</th>
+                <th scope="col">Channel</th>
+                <th scope="col">Value</th>
+                <th scope="col">Fade (s)</th>
+                <th scope="col">Tools</th>
+              </tr>
+            </thead>
+            <tbody id="actions-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <template id="action-row-template">
+      <tr>
+        <td data-column="time"></td>
+        <td data-column="channel"></td>
+        <td data-column="value"></td>
+        <td data-column="fade"></td>
+        <td data-column="tools"></td>
+      </tr>
+    </template>
+
+    <script src="builder.js" type="module"></script>
+  </body>
+</html>
