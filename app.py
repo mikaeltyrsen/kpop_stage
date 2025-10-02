@@ -4,8 +4,10 @@ import os
 import shlex
 import shutil
 import signal
+import socket
 import subprocess
 import threading
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -52,6 +54,9 @@ class PlaybackController:
         self._lock = threading.Lock()
         self._process: Optional[subprocess.Popen[bytes]] = None
         self._current: Optional[Path] = None
+        self._ipc_path = str(BASE_DIR / "mpv-ipc.sock")
+        self._idle_monitor_thread: Optional[threading.Thread] = None
+        self._idle_monitor_stop: Optional[threading.Event] = None
         self._default_missing_message = (
             f"Default loop video not found: {self.default_video}. "
             "Update videos.json or copy the file into the media directory."
@@ -89,23 +94,11 @@ class PlaybackController:
     def play(self, video_path: Path) -> None:
         LOGGER.info("Starting playback: %s", video_path)
         with self._lock:
-            self._stop_locked()
             self._play_video_locked(video_path, loop=False)
 
     def stop(self) -> None:
         with self._lock:
-            self._stop_locked()
             self._start_default_locked()
-
-    def _stop_locked(self) -> None:
-        if self._process and self._process.poll() is None:
-            try:
-                self._process.send_signal(signal.SIGINT)
-                self._process.wait(timeout=3)
-            except (OSError, subprocess.TimeoutExpired):
-                self._process.kill()
-        self._process = None
-        self._current = None
 
     def _play_video_locked(self, video_path: Path, loop: bool) -> None:
         if not self._player_available:
@@ -113,38 +106,26 @@ class PlaybackController:
                 "Video player command not found. Install mpv or configure VIDEO_PLAYER_CMD."
             )
 
-        cmd = list(self._base_command)
-        if loop:
-            cmd.append("--loop")
-        cmd.append(str(video_path))
+        if loop and not video_path.exists():
+            raise FileNotFoundError(self._default_missing_message)
+        if not video_path.exists():
+            raise FileNotFoundError(f"Video not found: {video_path}")
 
+        self._ensure_player_running()
         try:
-            process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-        except FileNotFoundError as exc:
-            self._player_available = False
-            raise FileNotFoundError(
-                "Video player command not found. Install mpv or configure VIDEO_PLAYER_CMD."
-            ) from exc
-        self._process = process
+            self._send_ipc_command("loadfile", str(video_path), "replace")
+            loop_value = "inf" if loop else "no"
+            self._send_ipc_command("set_property", "loop-file", loop_value)
+        except OSError as exc:
+            LOGGER.exception("Unable to communicate with mpv over IPC")
+            self._reset_player_state()
+            raise RuntimeError("Unable to control mpv player") from exc
+
         self._current = video_path
-
-        if not loop:
-            threading.Thread(
-                target=self._wait_and_restore_default,
-                args=(process,),
-                daemon=True,
-            ).start()
-
-    def _wait_and_restore_default(self, process: subprocess.Popen[bytes]) -> None:
-        process.wait()
-        with self._lock:
-            if self._process is process:
-                LOGGER.info("Playback finished. Returning to default loop.")
-                self._start_default_locked()
+        if loop:
+            self._cancel_idle_monitor_locked()
+        else:
+            self._start_idle_monitor_locked()
 
     def _start_default_locked(self) -> None:
         if not self.default_video.exists():
@@ -158,6 +139,131 @@ class PlaybackController:
             return
 
         self._play_video_locked(self.default_video, loop=True)
+
+    def _ensure_player_running(self) -> None:
+        if self._process and self._process.poll() is None:
+            return
+
+        if not self._player_available:
+            raise FileNotFoundError(
+                "Video player command not found. Install mpv or configure VIDEO_PLAYER_CMD."
+            )
+
+        ipc_path = Path(self._ipc_path)
+        if ipc_path.exists():
+            try:
+                ipc_path.unlink()
+            except OSError:
+                pass
+
+        cmd = list(self._base_command)
+        cmd.extend(
+            [
+                "--idle=yes",
+                "--force-window=yes",
+                "--keep-open=yes",
+                f"--input-ipc-server={self._ipc_path}",
+            ]
+        )
+
+        try:
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except FileNotFoundError as exc:
+            self._player_available = False
+            raise FileNotFoundError(
+                "Video player command not found. Install mpv or configure VIDEO_PLAYER_CMD."
+            ) from exc
+
+        self._process = process
+        self._wait_for_ipc_ready()
+
+    def _wait_for_ipc_ready(self, timeout: float = 5.0) -> None:
+        if not self._process:
+            return
+
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if self._process.poll() is not None:
+                raise RuntimeError("mpv exited while starting up")
+            try:
+                response = self._send_ipc_command("get_property", "pause")
+            except OSError:
+                time.sleep(0.1)
+                continue
+
+            if response.get("error") == "success":
+                return
+
+        raise RuntimeError("Timed out waiting for mpv IPC to become ready")
+
+    def _send_ipc_command(self, *command: str) -> Dict[str, Any]:
+        payload = json.dumps({"command": list(command)}).encode("utf-8") + b"\n"
+
+        with socket.socket(socket.AF_UNIX) as sock:
+            sock.connect(self._ipc_path)
+            sock.sendall(payload)
+            data = b""
+            while not data.endswith(b"\n"):
+                chunk = sock.recv(4096)
+                if not chunk:
+                    break
+                data += chunk
+
+        if not data:
+            return {"error": "empty"}
+        try:
+            return json.loads(data.decode("utf-8"))
+        except json.JSONDecodeError:
+            return {"error": "invalid"}
+
+    def _cancel_idle_monitor_locked(self) -> None:
+        if self._idle_monitor_stop:
+            self._idle_monitor_stop.set()
+            self._idle_monitor_stop = None
+        self._idle_monitor_thread = None
+
+    def _start_idle_monitor_locked(self) -> None:
+        self._cancel_idle_monitor_locked()
+        stop_event = threading.Event()
+        self._idle_monitor_stop = stop_event
+        thread = threading.Thread(
+            target=self._monitor_idle_and_restore_default,
+            args=(stop_event,),
+            daemon=True,
+        )
+        self._idle_monitor_thread = thread
+        thread.start()
+
+    def _monitor_idle_and_restore_default(self, stop_event: threading.Event) -> None:
+        while not stop_event.is_set():
+            time.sleep(0.5)
+            try:
+                response = self._send_ipc_command("get_property", "idle-active")
+            except OSError:
+                return
+
+            if response.get("error") == "success" and response.get("data"):
+                with self._lock:
+                    if stop_event.is_set():
+                        return
+                    self._play_video_locked(self.default_video, loop=True)
+                return
+
+    def _reset_player_state(self) -> None:
+        if self._process and self._process.poll() is None:
+            try:
+                self._process.send_signal(signal.SIGINT)
+                self._process.wait(timeout=3)
+            except (OSError, subprocess.TimeoutExpired):
+                self._process.kill()
+
+        self._process = None
+        self._current = None
+        self._cancel_idle_monitor_locked()
 
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
