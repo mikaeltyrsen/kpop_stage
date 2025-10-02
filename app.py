@@ -169,7 +169,7 @@ def api_play() -> Any:
 
 def main() -> None:
     controller.start_default_loop()
-    app.run(host="0.0.0.0", port=666)
+    app.run(host="0.0.0.0", port=5000)
 
 
 if __name__ == "__main__":
