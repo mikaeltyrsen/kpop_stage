@@ -138,6 +138,8 @@ class PlaybackController:
             self._send_ipc_command("loadfile", str(video_path), "replace")
             loop_value = "inf" if loop else "no"
             self._send_ipc_command("set_property", "loop-file", loop_value)
+            # Ensure playback resumes even if mpv left the file paused at EOF.
+            self._send_ipc_command("set_property", "pause", "no")
         except OSError as exc:
             LOGGER.exception("Unable to communicate with mpv over IPC")
             self._reset_player_state()
@@ -274,11 +276,17 @@ class PlaybackController:
         while not stop_event.is_set():
             time.sleep(0.5)
             try:
-                response = self._send_ipc_command("get_property", "idle-active")
+                idle_response = self._send_ipc_command("get_property", "idle-active")
             except OSError:
                 return
 
-            if response.get("error") == "success" and response.get("data"):
+            idle = idle_response.get("error") == "success" and idle_response.get("data")
+            eof_reached = False
+            if not idle:
+                eof_response = self._send_ipc_command("get_property", "eof-reached")
+                eof_reached = eof_response.get("error") == "success" and eof_response.get("data")
+
+            if idle or eof_reached:
                 with self._lock:
                     if stop_event.is_set():
                         return
