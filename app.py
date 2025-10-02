@@ -471,6 +471,30 @@ def api_dmx_template(video_id: str) -> Any:
     return jsonify({"status": "saved"})
 
 
+@app.route("/api/dmx/preview", methods=["POST", "DELETE"])
+def api_dmx_preview() -> Any:
+    if request.method == "DELETE":
+        dmx_manager.stop_show()
+        return jsonify({"status": "stopped"})
+
+    data = request.get_json(force=True, silent=True) or {}
+    actions_payload = data.get("actions")
+    if not isinstance(actions_payload, list):
+        return jsonify({"error": "Missing 'actions' list in request body"}), 400
+
+    start_time = data.get("start_time", 0.0)
+
+    try:
+        dmx_manager.start_preview(actions_payload, start_time=start_time)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception:  # pragma: no cover - defensive logging
+        LOGGER.exception("Unable to start preview mode")
+        return jsonify({"error": "Unable to start preview mode"}), 500
+
+    return jsonify({"status": "previewing"})
+
+
 def main() -> None:
     try:
         controller.start_default_loop()

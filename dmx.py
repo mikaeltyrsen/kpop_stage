@@ -340,6 +340,48 @@ class DMXShowManager:
             self.runner.stop()
             self.output.blackout()
 
+    def start_preview(self, raw_actions: Iterable[Dict[str, object]], start_time: float = 0.0) -> None:
+        try:
+            offset = float(start_time)
+        except (TypeError, ValueError) as exc:  # pragma: no cover - defensive
+            raise ValueError("start_time must be a number") from exc
+        offset = max(0.0, offset)
+        actions = [DMXAction.from_dict(entry) for entry in raw_actions]
+        ordered = sorted(actions, key=lambda action: action.time_seconds)
+
+        levels = [0] * self.output.channel_count
+        adjusted: List[DMXAction] = []
+        channel_levels: Dict[int, int] = {}
+
+        for action in ordered:
+            channel_index = action.channel - 1
+            previous_level = channel_levels.get(action.channel, 0)
+            if action.time_seconds < offset:
+                if action.fade > 0 and action.time_seconds + action.fade > offset:
+                    progress = (offset - action.time_seconds) / action.fade
+                    progress = max(0.0, min(1.0, progress))
+                    level = round(previous_level + (action.value - previous_level) * progress)
+                else:
+                    level = action.value
+                channel_levels[action.channel] = level
+                levels[channel_index] = level
+                continue
+
+            adjusted.append(
+                DMXAction(
+                    time_seconds=action.time_seconds - offset,
+                    channel=action.channel,
+                    value=action.value,
+                    fade=action.fade,
+                )
+            )
+            channel_levels[action.channel] = action.value
+
+        self.runner.stop()
+        self.output.set_levels(levels)
+        if adjusted:
+            self.runner.start(adjusted)
+
     def stop_show(self) -> None:
         self.runner.stop()
         self.output.blackout()
