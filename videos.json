@@ -2,10 +2,10 @@
   "default_video": "default_loop.mp4",
   "videos": [
     {
-      "id": "sample",
-      "name": "Sample Music Video",
-      "file": "videos/sample.mp4",
-      "poster": "/static/posters/sample.jpg"
+      "id": "01",
+      "name": "Soda Pop",
+      "file": "videos/soda_pop.mp4",
+      "poster": "/static/posters/soda_pop.jpg"
     }
   ]
 }
