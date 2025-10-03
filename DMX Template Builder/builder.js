@@ -1053,15 +1053,20 @@ function renderChannelPresets() {
 }
 
 function updateWorkspaceVisibility() {
-  const presetsVisible = Boolean(showingChannelPresets);
+  const hasSelectedSong = Boolean(currentVideo);
+  const presetsVisible = !hasSelectedSong && Boolean(showingChannelPresets);
+
   if (channelPresetsSection) {
     channelPresetsSection.hidden = !presetsVisible;
     channelPresetsSection.setAttribute("aria-hidden", presetsVisible ? "false" : "true");
   }
+
   if (builderLayout) {
-    builderLayout.hidden = presetsVisible;
-    builderLayout.setAttribute("aria-hidden", presetsVisible ? "true" : "false");
+    const builderVisible = hasSelectedSong;
+    builderLayout.hidden = !builderVisible;
+    builderLayout.setAttribute("aria-hidden", builderVisible ? "false" : "true");
   }
+
   if (openChannelPresetsButton) {
     openChannelPresetsButton.setAttribute("aria-pressed", presetsVisible ? "true" : "false");
   }
