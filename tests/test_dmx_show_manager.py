@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 import time
 from pathlib import Path
+from types import ModuleType, SimpleNamespace
 from typing import Iterable, List, Optional
 
 import pytest
@@ -10,7 +11,7 @@ import pytest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import dmx
-from dmx import DMXAction, DMXOutput, DMXShowManager
+from dmx import DMXAction, DMXOutput, DMXShowManager, _resolve_serial_port
 
 
 class DummyOutput:
@@ -102,4 +103,42 @@ def test_dmx_output_continuous_refresh(monkeypatch: pytest.MonkeyPatch) -> None:
 
     bright_frames = [frame for frame in frames if frame and frame[0] == 255]
     assert len(bright_frames) >= 2
+
+
+def test_resolve_serial_port_via_serial_number(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("DMX_SERIAL_PORT", raising=False)
+    monkeypatch.setenv("DMX_SERIAL_NUMBER", "BG00TZ1P")
+
+    ports = [
+        SimpleNamespace(
+            device="/dev/ttyUSB0",
+            serial_number="BG00TZ1P",
+            description="FT232R USB UART",
+            hwid="USB VID:PID=0403:6001 SNR=BG00TZ1P",
+        ),
+        SimpleNamespace(
+            device="/dev/ttyUSB1",
+            serial_number="OTHER",
+            description="Other Adapter",
+            hwid="USB VID:PID=0000:0000 SNR=OTHER",
+        ),
+    ]
+
+    list_ports_module = ModuleType("serial.tools.list_ports")
+    list_ports_module.comports = lambda: ports  # type: ignore[assignment]
+    serial_tools_module = ModuleType("serial.tools")
+    serial_tools_module.list_ports = list_ports_module  # type: ignore[assignment]
+    serial_module = ModuleType("serial")
+    serial_module.EIGHTBITS = 8
+    serial_module.PARITY_NONE = "N"
+    serial_module.STOPBITS_TWO = 2
+    serial_module.Serial = lambda **_: None  # type: ignore[assignment]
+
+    monkeypatch.setitem(sys.modules, "serial", serial_module)
+    monkeypatch.setitem(sys.modules, "serial.tools", serial_tools_module)
+    monkeypatch.setitem(sys.modules, "serial.tools.list_ports", list_ports_module)
+    monkeypatch.setattr(dmx, "serial", serial_module)
+
+    resolved = _resolve_serial_port()
+    assert resolved == "/dev/ttyUSB0"
 
