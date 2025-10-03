@@ -18,7 +18,7 @@ import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional, cast
 
 LOGGER = logging.getLogger("kpop_stage.dmx")
 
@@ -127,11 +127,20 @@ class DMXOutput:
 
             return log_sender
 
-        wrapper = ClientWrapper()
-        client = wrapper.Client()
-        lock = threading.Lock()
+        thread_local = threading.local()
+
+        def _get_thread_resources() -> tuple[Any, Any, threading.Lock]:
+            resources = getattr(thread_local, "resources", None)
+            if resources is None:
+                wrapper = ClientWrapper()
+                client = wrapper.Client()
+                lock = threading.Lock()
+                resources = (wrapper, client, lock)
+                thread_local.resources = resources
+            return cast(tuple[Any, Any, threading.Lock], resources)
 
         def send(data: bytearray) -> None:
+            wrapper, client, lock = _get_thread_resources()
             done = threading.Event()
 
             def _callback(status: bool) -> None:  # pragma: no cover - depends on hardware
