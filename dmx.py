@@ -38,6 +38,7 @@ DEFAULT_CHANNELS = 512
 DMX_FPS = 30.0
 DMX_BREAK_DURATION = float(os.environ.get("DMX_BREAK_DURATION", "0.00012"))
 DMX_MARK_AFTER_BREAK = float(os.environ.get("DMX_MARK_AFTER_BREAK", "0.000012"))
+DEFAULT_STARTUP_LEVELS = "1=255,2=255,3=255"
 
 
 def _clamp(value: int, low: int, high: int) -> int:
@@ -115,6 +116,79 @@ def _resolve_serial_port() -> Optional[str]:
             serial_identifier,
         )
     return resolved_port
+
+
+def _parse_startup_levels(raw: str) -> List[tuple[int, int]]:
+    """Parse DMX_STARTUP_LEVELS assignments into channel/value tuples."""
+
+    assignments: List[tuple[int, int]] = []
+    for entry in raw.split(","):
+        token = entry.strip()
+        if not token:
+            continue
+        if "=" in token:
+            channel_text, value_text = token.split("=", 1)
+        elif ":" in token:
+            channel_text, value_text = token.split(":", 1)
+        else:
+            LOGGER.warning(
+                "Unable to parse DMX_STARTUP_LEVELS entry '%s'. Use CHANNEL=VALUE format.",
+                token,
+            )
+            continue
+
+        try:
+            channel = int(channel_text.strip())
+            value = int(value_text.strip())
+        except ValueError:
+            LOGGER.warning(
+                "Invalid DMX_STARTUP_LEVELS assignment '%s'. Channels and values must be integers.",
+                token,
+            )
+            continue
+
+        if channel < 1 or channel > DEFAULT_CHANNELS:
+            LOGGER.warning(
+                "Ignoring DMX_STARTUP_LEVELS assignment '%s'. Channel must be between 1 and %s.",
+                token,
+                DEFAULT_CHANNELS,
+            )
+            continue
+
+        assignments.append((channel, _clamp(value, 0, 255)))
+
+    return assignments
+
+
+def _apply_startup_levels(output: "DMXOutput", config: str) -> None:
+    """Apply startup channel levels defined via DMX_STARTUP_LEVELS."""
+
+    normalized = config.strip()
+    if not normalized:
+        return
+
+    if normalized.lower() in {"off", "none", "false", "0"}:
+        LOGGER.info("Skipping DMX startup levels (DMX_STARTUP_LEVELS=%s)", config)
+        return
+
+    assignments = _parse_startup_levels(normalized)
+    if not assignments:
+        LOGGER.warning(
+            "DMX_STARTUP_LEVELS did not contain any valid channel assignments: %s",
+            config,
+        )
+        return
+
+    for channel, value in assignments:
+        try:
+            output.set_channel(channel, value)
+        except Exception:  # pragma: no cover - defensive
+            LOGGER.exception("Unable to apply DMX startup level for channel %s", channel)
+
+    LOGGER.info(
+        "Applied DMX startup levels: %s",
+        ", ".join(f"{channel}={value}" for channel, value in assignments),
+    )
 
 
 def _parse_timecode(value: str) -> float:
@@ -215,7 +289,9 @@ class DMXOutput:
         if ClientWrapper is None:
             LOGGER.warning(
                 "python-ola not available. DMX output will run in dry-run mode. "
-                "Install OLA on the Raspberry Pi to control real fixtures."
+                "Install the python-ola bindings (e.g. 'sudo apt install ola-python' "
+                "or 'pip install python-ola') alongside the OLA daemon to control "
+                "real fixtures."
             )
 
             def log_sender(data: bytearray) -> None:
@@ -287,7 +363,8 @@ class DMXOutput:
         except Exception as exc:  # pragma: no cover - depends on hardware
             LOGGER.error(
                 "Unable to open DMX serial port %s (%s). "
-                "Falling back to OLA/dry-run output.",
+                "Falling back to OLA/dry-run output. Clear DMX_SERIAL_PORT to use "
+                "OLA exclusively or verify the adapter path before restarting.",
                 port,
                 exc,
             )
@@ -645,4 +722,9 @@ class DMXShowManager:
 
 def create_manager(templates_dir: Path, universe: int = 0) -> DMXShowManager:
     output = DMXOutput(universe=universe)
+    startup_config = os.environ.get("DMX_STARTUP_LEVELS", DEFAULT_STARTUP_LEVELS)
+    try:
+        _apply_startup_levels(output, startup_config)
+    except Exception:  # pragma: no cover - defensive
+        LOGGER.exception("Unable to apply DMX startup levels during initialisation")
     return DMXShowManager(templates_dir, output)

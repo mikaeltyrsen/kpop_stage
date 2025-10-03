@@ -91,7 +91,7 @@ A lightweight Flask application designed for a Raspberry Pi-powered music video 
 
 The controller can drive DMX fixtures either through [OLA](https://www.openlighting.org/ola/) or by writing directly to a USB-to-RS485 adapter such as an FT232RL+SP485 based cable.
 
-- **Using OLA (recommended):** Install the `python-ola` dependency along with the OLA daemon on your Raspberry Pi. Configure OLA to expose your USB or network DMX interface and the app will stream frames automatically. The app targets OLA universe `0` by default; set `DMX_UNIVERSE` in the environment if you need to use a different universe number.
+- **Using OLA (recommended):** Install the OLA daemon *and* the Python bindings on your Raspberry Pi. On Raspberry Pi OS you can run `sudo apt install ola ola-python`, or install the bindings in your virtualenv with `pip install python-ola`. Configure OLA to expose your USB or network DMX interface and the app will stream frames automatically. The app targets OLA universe `0` by default; set `DMX_UNIVERSE` in the environment if you need to use a different universe number.
 - **Direct USB cable support:** If you are using a simple FTDI USB-to-DMX interface, install `pyserial` and set the `DMX_SERIAL_PORT` environment variable before starting the app.  You can also provide a USB serial number via `DMX_SERIAL_NUMBER` and the app will locate the matching adapter automatically:
 
   ```bash
@@ -104,7 +104,8 @@ The controller can drive DMX fixtures either through [OLA](https://www.openlight
   python app.py
   ```
 
-  The serial sender defaults to DMX512 timing (250000 baud, 8N2). You can fine tune the break and mark-after-break durations with `DMX_BREAK_DURATION` and `DMX_MARK_AFTER_BREAK` environment variables if your hardware requires different timings.
+  The serial sender defaults to DMX512 timing (250000 baud, 8N2). You can fine tune the break and mark-after-break durations with `DMX_BREAK_DURATION` and `DMX_MARK_AFTER_BREAK` environment variables if your hardware requires different timings. Leave `DMX_SERIAL_PORT` unset if you want to rely solely on OLA for output.
+- **Startup scene for testing:** On startup the app immediately sets channels 1, 2, and 3 to full (255) so you can confirm that DMX output is flowing even before a show plays. Customise this behaviour with the `DMX_STARTUP_LEVELS` environment variable, using a comma-separated list of `CHANNEL=VALUE` assignments (for example `DMX_STARTUP_LEVELS="1=128,2=64,3=255"`). Set the variable to `off` (or leave it blank) to disable the automatic scene.
 
 ## Systemd service (optional)
 

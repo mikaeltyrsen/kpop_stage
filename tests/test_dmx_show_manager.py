@@ -142,3 +142,96 @@ def test_resolve_serial_port_via_serial_number(monkeypatch: pytest.MonkeyPatch) 
     resolved = _resolve_serial_port()
     assert resolved == "/dev/ttyUSB0"
 
+
+def test_create_manager_applies_default_startup_levels(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    class StartupOutput:
+        def __init__(self, universe: int = 0, channel_count: int = dmx.DEFAULT_CHANNELS) -> None:
+            self.universe = universe
+            self.channel_count = channel_count
+            self.applied: List[tuple[int, int]] = []
+
+        def set_channel(self, channel: int, value: int) -> None:
+            self.applied.append((channel, value))
+
+        def set_levels(self, levels: Iterable[int]) -> None:  # pragma: no cover - stub
+            pass
+
+        def transition_channel(self, *args: object, **kwargs: object) -> None:  # pragma: no cover - stub
+            pass
+
+        def blackout(self) -> None:  # pragma: no cover - stub
+            pass
+
+        def shutdown(self) -> None:  # pragma: no cover - stub
+            pass
+
+    monkeypatch.delenv("DMX_STARTUP_LEVELS", raising=False)
+    monkeypatch.setattr(dmx, "DMXOutput", StartupOutput)
+
+    manager = dmx.create_manager(tmp_path, universe=1)
+    output = manager.output
+    assert isinstance(output, StartupOutput)
+    assert output.applied == [(1, 255), (2, 255), (3, 255)]
+
+
+def test_create_manager_honours_startup_levels_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    class StartupOutput:
+        def __init__(self, universe: int = 0, channel_count: int = dmx.DEFAULT_CHANNELS) -> None:
+            self.universe = universe
+            self.channel_count = channel_count
+            self.applied: List[tuple[int, int]] = []
+
+        def set_channel(self, channel: int, value: int) -> None:
+            self.applied.append((channel, value))
+
+        def set_levels(self, levels: Iterable[int]) -> None:  # pragma: no cover - stub
+            pass
+
+        def transition_channel(self, *args: object, **kwargs: object) -> None:  # pragma: no cover - stub
+            pass
+
+        def blackout(self) -> None:  # pragma: no cover - stub
+            pass
+
+        def shutdown(self) -> None:  # pragma: no cover - stub
+            pass
+
+    monkeypatch.setenv("DMX_STARTUP_LEVELS", "4=10,5=99")
+    monkeypatch.setattr(dmx, "DMXOutput", StartupOutput)
+
+    manager = dmx.create_manager(tmp_path, universe=2)
+    output = manager.output
+    assert isinstance(output, StartupOutput)
+    assert output.applied == [(4, 10), (5, 99)]
+
+
+def test_create_manager_allows_disabling_startup_levels(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    class StartupOutput:
+        def __init__(self, universe: int = 0, channel_count: int = dmx.DEFAULT_CHANNELS) -> None:
+            self.universe = universe
+            self.channel_count = channel_count
+            self.applied: List[tuple[int, int]] = []
+
+        def set_channel(self, channel: int, value: int) -> None:
+            self.applied.append((channel, value))
+
+        def set_levels(self, levels: Iterable[int]) -> None:  # pragma: no cover - stub
+            pass
+
+        def transition_channel(self, *args: object, **kwargs: object) -> None:  # pragma: no cover - stub
+            pass
+
+        def blackout(self) -> None:  # pragma: no cover - stub
+            pass
+
+        def shutdown(self) -> None:  # pragma: no cover - stub
+            pass
+
+    monkeypatch.setenv("DMX_STARTUP_LEVELS", "off")
+    monkeypatch.setattr(dmx, "DMXOutput", StartupOutput)
+
+    manager = dmx.create_manager(tmp_path, universe=0)
+    output = manager.output
+    assert isinstance(output, StartupOutput)
+    assert output.applied == []
+
