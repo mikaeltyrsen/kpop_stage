@@ -62,8 +62,12 @@ const DEFAULT_ACTION = Object.freeze({
 
 init();
 
-function init() {
-  initChannelPresetsUI();
+async function init() {
+  try {
+    await initChannelPresetsUI();
+  } catch (error) {
+    console.error("Unable to initialize channel presets", error);
+  }
   if (openChannelPresetsButton) {
     openChannelPresetsButton.addEventListener("click", handleOpenChannelPresets);
   }
@@ -1418,9 +1422,9 @@ function exportTemplate(preparedActions, options = {}) {
   }
 }
 
-function initChannelPresetsUI() {
+async function initChannelPresetsUI() {
   if (!channelPresetsContainer) return;
-  channelPresets = loadChannelPresets();
+  channelPresets = await loadChannelPresets();
   renderChannelPresets();
   if (addChannelPresetButton) {
     addChannelPresetButton.addEventListener("click", () => {
@@ -1748,7 +1752,44 @@ function handlePresetValueNumberInput(event, presetId, valueId) {
   queuePreviewSync();
 }
 
-function loadChannelPresets() {
+async function loadChannelPresets() {
+  const fallback = loadChannelPresetsFromLocalStorage();
+  try {
+    const { payload } = await fetchFromApiCandidates("/channel-presets");
+    const presets = Array.isArray(payload?.presets) ? payload.presets : [];
+    const sanitized = presets.map((item) => sanitizeChannelPreset(item)).filter(Boolean);
+    saveChannelPresetsToLocalStorage(sanitized);
+    return sanitized;
+  } catch (error) {
+    console.error("Unable to load channel presets from server", error);
+    return fallback;
+  }
+}
+
+function saveChannelPresets() {
+  const payload = buildChannelPresetPayload();
+  saveChannelPresetsToLocalStorage(payload);
+  persistChannelPresets(payload).catch((error) => {
+    console.error("Unable to save channel presets", error);
+  });
+}
+
+function buildChannelPresetPayload() {
+  return channelPresets.map((preset) => ({
+    id: preset.id,
+    name: preset.name || "",
+    channel: clamp(Number.parseInt(preset.channel, 10) || 1, 1, 512),
+    values: Array.isArray(preset.values)
+      ? preset.values.map((value) => ({
+          id: value.id,
+          name: value.name || "",
+          value: clamp(Number.parseInt(value.value, 10) || 0, 0, 255),
+        }))
+      : [],
+  }));
+}
+
+function loadChannelPresetsFromLocalStorage() {
   if (typeof window === "undefined" || !window.localStorage) {
     return [];
   }
@@ -1759,31 +1800,39 @@ function loadChannelPresets() {
     if (!Array.isArray(parsed)) return [];
     return parsed.map((item) => sanitizeChannelPreset(item)).filter(Boolean);
   } catch (error) {
-    console.error("Unable to load channel presets", error);
+    console.error("Unable to load channel presets from local storage", error);
     return [];
   }
 }
 
-function saveChannelPresets() {
+function saveChannelPresetsToLocalStorage(presets) {
   if (typeof window === "undefined" || !window.localStorage) {
     return;
   }
   try {
-    const payload = channelPresets.map((preset) => ({
-      id: preset.id,
-      name: preset.name || "",
-      channel: clamp(Number.parseInt(preset.channel, 10) || 1, 1, 512),
-      values: Array.isArray(preset.values)
-        ? preset.values.map((value) => ({
-            id: value.id,
-            name: value.name || "",
-            value: clamp(Number.parseInt(value.value, 10) || 0, 0, 255),
-          }))
-        : [],
-    }));
-    window.localStorage.setItem(CHANNEL_PRESET_STORAGE_KEY, JSON.stringify(payload));
+    window.localStorage.setItem(CHANNEL_PRESET_STORAGE_KEY, JSON.stringify(presets));
   } catch (error) {
-    console.error("Unable to save channel presets", error);
+    console.error("Unable to cache channel presets locally", error);
+  }
+}
+
+async function persistChannelPresets(presets) {
+  const response = await fetchApi("/channel-presets", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ presets }),
+  });
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+  try {
+    const payload = await response.json();
+    if (payload && Array.isArray(payload.presets)) {
+      const sanitized = payload.presets.map((item) => sanitizeChannelPreset(item)).filter(Boolean);
+      saveChannelPresetsToLocalStorage(sanitized);
+    }
+  } catch (error) {
+    console.error("Unable to parse channel preset save response", error);
   }
 }
 

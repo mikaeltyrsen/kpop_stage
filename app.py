@@ -8,8 +8,9 @@ import socket
 import subprocess
 import threading
 import time
+import uuid
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 from flask import (
     Flask,
@@ -28,6 +29,7 @@ DATA_FILE = BASE_DIR / "videos.json"
 MEDIA_DIR = BASE_DIR / "media"
 DMX_TEMPLATE_DIR = BASE_DIR / "dmx_templates"
 DMX_BUILDER_DIR = BASE_DIR / "DMX Template Builder"
+CHANNEL_PRESETS_FILE = BASE_DIR / "channel_presets.json"
 
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 (MEDIA_DIR / "videos").mkdir(parents=True, exist_ok=True)
@@ -36,6 +38,92 @@ DMX_BUILDER_DIR.mkdir(parents=True, exist_ok=True)
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 LOGGER = logging.getLogger("kpop_stage")
+
+
+def _generate_channel_preset_id(prefix: str) -> str:
+    return f"{prefix}_{uuid.uuid4().hex}"
+
+
+def _clamp(value: int, minimum: int, maximum: int) -> int:
+    return max(minimum, min(maximum, value))
+
+
+def sanitize_channel_value(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    if not isinstance(raw, dict):
+        return None
+    value_id = raw.get("id")
+    if not isinstance(value_id, str) or not value_id:
+        value_id = _generate_channel_preset_id("value")
+    name = raw.get("name") if isinstance(raw.get("name"), str) else ""
+    try:
+        numeric_value = int(raw.get("value", 0))
+    except (TypeError, ValueError):
+        numeric_value = 0
+    clamped = _clamp(numeric_value, 0, 255)
+    return {"id": value_id, "name": name, "value": clamped}
+
+
+def sanitize_channel_preset(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    if not isinstance(raw, dict):
+        return None
+    preset_id = raw.get("id")
+    if not isinstance(preset_id, str) or not preset_id:
+        preset_id = _generate_channel_preset_id("preset")
+    name = raw.get("name") if isinstance(raw.get("name"), str) else ""
+    try:
+        channel_value = int(raw.get("channel", 1))
+    except (TypeError, ValueError):
+        channel_value = 1
+    channel = _clamp(channel_value, 1, 512)
+    values_raw = raw.get("values")
+    values: Iterable[Dict[str, Any]]
+    if isinstance(values_raw, list):
+        values = filter(None, (sanitize_channel_value(entry) for entry in values_raw))
+    else:
+        values = []
+    return {"id": preset_id, "name": name, "channel": channel, "values": list(values)}
+
+
+def load_channel_presets_from_disk() -> List[Dict[str, Any]]:
+    if not CHANNEL_PRESETS_FILE.exists():
+        return []
+    try:
+        with CHANNEL_PRESETS_FILE.open("r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, json.JSONDecodeError):
+        LOGGER.exception("Unable to read channel presets file")
+        return []
+
+    if isinstance(data, dict):
+        raw_presets = data.get("presets", [])
+    else:
+        raw_presets = data
+
+    if not isinstance(raw_presets, list):
+        LOGGER.warning("Channel presets file did not contain a list of presets")
+        return []
+
+    sanitized: List[Dict[str, Any]] = []
+    for entry in raw_presets:
+        preset = sanitize_channel_preset(entry)
+        if preset:
+            sanitized.append(preset)
+    return sanitized
+
+
+def save_channel_presets_to_disk(presets: Iterable[Dict[str, Any]]) -> None:
+    sanitized: List[Dict[str, Any]] = []
+    for entry in presets:
+        preset = sanitize_channel_preset(entry)
+        if preset:
+            sanitized.append(preset)
+
+    try:
+        with CHANNEL_PRESETS_FILE.open("w", encoding="utf-8") as fh:
+            json.dump({"presets": sanitized}, fh, indent=2)
+    except OSError:
+        LOGGER.exception("Unable to write channel presets file")
+        raise
 
 
 def load_video_config(config_path: Path) -> Dict[str, Any]:
@@ -411,6 +499,35 @@ def dmx_template_builder_assets(filename: str):
     if not target.exists():
         abort(404)
     return send_from_directory(DMX_BUILDER_DIR, filename)
+
+
+@app.route("/api/channel-presets", methods=["GET"])
+def api_get_channel_presets() -> Any:
+    presets = load_channel_presets_from_disk()
+    return jsonify({"presets": presets})
+
+
+@app.route("/api/channel-presets", methods=["PUT"])
+def api_put_channel_presets() -> Any:
+    data = request.get_json(silent=True)  # type: ignore[no-untyped-call]
+    if data is None:
+        return jsonify({"error": "Request body must be JSON"}), 400
+
+    if isinstance(data, list):
+        raw_presets = data
+    else:
+        raw_presets = data.get("presets")
+
+    if not isinstance(raw_presets, list):
+        return jsonify({"error": "Request must include a list of presets"}), 400
+
+    try:
+        save_channel_presets_to_disk(raw_presets)
+    except OSError:
+        return jsonify({"error": "Unable to save channel presets"}), 500
+
+    presets = load_channel_presets_from_disk()
+    return jsonify({"presets": presets})
 
 
 @app.route("/api/videos")
