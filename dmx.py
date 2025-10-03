@@ -759,14 +759,15 @@ class DMXShowManager:
 
 def create_manager(templates_dir: Path, universe: int = 0) -> DMXShowManager:
     output = DMXOutput(universe=universe)
-    startup_config = os.environ.get("DMX_STARTUP_LEVELS", DEFAULT_STARTUP_LEVELS)
-    try:
-        _apply_startup_levels(output, startup_config)
-    except Exception:  # pragma: no cover - defensive
-        LOGGER.exception("Unable to apply DMX startup levels during initialisation")
     manager = DMXShowManager(templates_dir, output)
     try:
         manager.update_baseline_levels(output.get_levels())
     except Exception:
         LOGGER.exception("Unable to capture DMX baseline levels during initialisation")
+
+    startup_config = os.environ.get("DMX_STARTUP_LEVELS", DEFAULT_STARTUP_LEVELS)
+    try:
+        _apply_startup_levels(output, startup_config)
+    except Exception:  # pragma: no cover - defensive
+        LOGGER.exception("Unable to apply DMX startup levels during initialisation")
     return manager
