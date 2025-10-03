@@ -140,7 +140,10 @@ class DMXOutput:
                 wrapper.Stop()
 
             with lock:
-                client.SendDmx(universe, data, _callback)
+                # python-ola expects a bytes-like object that implements ``tobytes``.
+                # ``bytearray`` does not provide that method, so we convert to
+                # ``bytes`` explicitly before sending to avoid AttributeError.
+                client.SendDmx(universe, bytes(data), _callback)
                 wrapper.Run()  # Blocks until wrapper.Stop() called in callback
             if not done.wait(timeout=1.0):
                 LOGGER.warning("Timed out waiting for DMX send confirmation")
