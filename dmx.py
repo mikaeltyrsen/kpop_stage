@@ -14,6 +14,7 @@ import array
 import atexit
 import json
 import logging
+import math
 import os
 import threading
 import time
@@ -645,10 +646,16 @@ class DMXShowManager:
         adjusted: List[DMXAction] = []
         channel_levels: Dict[int, int] = {}
 
+        # Allow a millisecond tolerance when comparing timestamps so that
+        # floating point rounding does not prevent actions at the starting
+        # timestamp from being treated as already active.
+        epsilon = 0.001
+
         for action in ordered:
             channel_index = action.channel - 1
             previous_level = channel_levels.get(action.channel, 0)
-            if action.time_seconds < offset:
+            starts_now = math.isclose(action.time_seconds, offset, abs_tol=epsilon)
+            if action.time_seconds < offset or (starts_now and action.fade <= 0):
                 if action.fade > 0 and action.time_seconds + action.fade > offset:
                     progress = (offset - action.time_seconds) / action.fade
                     progress = max(0.0, min(1.0, progress))

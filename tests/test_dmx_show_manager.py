@@ -4,7 +4,7 @@ import sys
 import time
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
-from typing import Iterable, List, Optional
+from typing import Iterable, List
 
 import pytest
 
@@ -29,7 +29,7 @@ class DummyOutput:
 
 class DummyRunner:
     def __init__(self) -> None:
-        self.started_actions: Optional[List[DMXAction]] = None
+        self.started_actions: List[DMXAction] = []
         self.stop_calls = 0
 
     def start(self, actions: Iterable[DMXAction]) -> None:  # pragma: no cover - simple stub
@@ -104,6 +104,25 @@ def test_preview_uses_zero_baseline_for_levels(tmp_path: Path) -> None:
     assert output.level_history
     latest_levels = output.level_history[-1]
     assert latest_levels == [100, 0, 0]
+
+
+def test_preview_applies_zero_fade_action_at_start_time(tmp_path: Path) -> None:
+    output = DummyOutput(channel_count=3)
+    manager = create_manager(tmp_path, output)
+
+    raw_actions = [
+        {"time": "00:00:00", "channel": 1, "value": 255, "fade": 0},
+        {"time": "00:00:05", "channel": 2, "value": 200, "fade": 0},
+    ]
+
+    manager.start_preview(raw_actions, start_time=5.0)
+
+    assert output.level_history
+    latest_levels = output.level_history[-1]
+    assert latest_levels == [255, 200, 0]
+
+    runner: DummyRunner = manager.runner  # type: ignore[assignment]
+    assert runner.started_actions == []
 
 
 def test_dmx_output_continuous_refresh(monkeypatch: pytest.MonkeyPatch) -> None:
