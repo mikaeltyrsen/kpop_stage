@@ -9,7 +9,7 @@ import subprocess
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from flask import (
     Flask,
@@ -60,6 +60,31 @@ def resolve_media_path(path_value: str) -> Path:
     if not path.is_absolute():
         path = MEDIA_DIR / path
     return path.resolve()
+
+
+def _mpv_flag_is_true(value: Union[str, int, float, bool, None]) -> bool:
+    """Interpret common mpv truthy/falsey responses.
+
+    mpv's IPC interface sometimes returns string values like "yes"/"no" rather
+    than canonical booleans.  Treat those (and numeric strings) sensibly so the
+    playback controller doesn't mistake "no" for a truthy value.
+    """
+
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return value != 0
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"", "0", "false", "no", "off"}:
+            return False
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        try:
+            return float(normalized) != 0.0
+        except ValueError:
+            return bool(normalized)
+    return bool(value)
 
 
 class PlaybackController:
@@ -283,7 +308,9 @@ class PlaybackController:
             except OSError:
                 return
 
-            idle = idle_response.get("error") == "success" and idle_response.get("data")
+            idle = idle_response.get("error") == "success" and _mpv_flag_is_true(
+                idle_response.get("data")
+            )
 
             if not has_started_playing:
                 # mpv reports eof-reached=True for a short window after a file ends,
@@ -304,9 +331,9 @@ class PlaybackController:
             eof_reached = False
             if not idle:
                 eof_response = self._send_ipc_command("get_property", "eof-reached")
-                eof_reached = (
-                    eof_response.get("error") == "success" and eof_response.get("data")
-                )
+                eof_reached = _mpv_flag_is_true(eof_response.get("data")) if (
+                    eof_response.get("error") == "success"
+                ) else False
 
             if idle or eof_reached:
                 with self._lock:
