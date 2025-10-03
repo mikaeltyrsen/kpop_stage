@@ -454,6 +454,12 @@ class DMXOutput:
         with self._lock:
             return self._levels[idx]
 
+    def get_levels(self) -> List[int]:
+        """Return a snapshot of the current DMX universe levels."""
+
+        with self._lock:
+            return list(self._levels)
+
     def set_levels(self, levels: Iterable[int]) -> None:
         values = list(levels)
         if len(values) != self.channel_count:
@@ -577,6 +583,15 @@ class DMXShowManager:
         self.runner = DMXShowRunner(output)
         self._lock = threading.Lock()
         self._has_active_show = False
+        self._baseline_levels: List[int] = [0] * self.output.channel_count
+
+    def update_baseline_levels(self, levels: Iterable[int]) -> None:
+        """Replace the stored baseline DMX levels used when starting shows."""
+
+        values = list(levels)
+        if len(values) != self.output.channel_count:
+            raise ValueError("Baseline levels must match DMX channel count")
+        self._baseline_levels = [_clamp(value, 0, 255) for value in values]
 
     def template_path_for_video(self, video_entry: Dict[str, object]) -> Path:
         template_value = video_entry.get("dmx_template")
@@ -619,8 +634,8 @@ class DMXShowManager:
             LOGGER.error("Skipping DMX show due to template error")
             return
         self.runner.stop()
-        zero_levels = [0] * self.output.channel_count
-        self.output.set_levels(zero_levels)
+        baseline_levels = list(self._baseline_levels)
+        self.output.set_levels(baseline_levels)
 
         with self._lock:
             self._has_active_show = bool(actions)
@@ -642,9 +657,12 @@ class DMXShowManager:
         actions = [DMXAction.from_dict(entry) for entry in raw_actions]
         ordered = sorted(actions, key=lambda action: action.time_seconds)
 
-        levels = [0] * self.output.channel_count
+        baseline_levels = list(self._baseline_levels)
+        levels = baseline_levels[:]
         adjusted: List[DMXAction] = []
-        channel_levels: Dict[int, int] = {}
+        channel_levels: Dict[int, int] = {
+            channel: level for channel, level in enumerate(baseline_levels, start=1)
+        }
 
         # Allow a millisecond tolerance when comparing timestamps so that
         # floating point rounding does not prevent actions at the starting
@@ -746,4 +764,9 @@ def create_manager(templates_dir: Path, universe: int = 0) -> DMXShowManager:
         _apply_startup_levels(output, startup_config)
     except Exception:  # pragma: no cover - defensive
         LOGGER.exception("Unable to apply DMX startup levels during initialisation")
-    return DMXShowManager(templates_dir, output)
+    manager = DMXShowManager(templates_dir, output)
+    try:
+        manager.update_baseline_levels(output.get_levels())
+    except Exception:
+        LOGGER.exception("Unable to capture DMX baseline levels during initialisation")
+    return manager

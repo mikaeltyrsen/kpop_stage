@@ -48,6 +48,7 @@ def create_manager(tmp_path: Path, output: DummyOutput) -> DMXShowManager:
 def test_start_show_resets_levels_before_running(tmp_path: Path) -> None:
     output = DummyOutput(channel_count=4)
     manager = create_manager(tmp_path, output)
+    manager.update_baseline_levels([10, 20, 30, 40])
 
     actions = [
         DMXAction(time_seconds=0.0, channel=1, value=255, fade=0.0),
@@ -59,7 +60,7 @@ def test_start_show_resets_levels_before_running(tmp_path: Path) -> None:
     manager.start_show_for_video({"id": "video"})
 
     assert output.level_history
-    assert output.level_history[0] == [0, 0, 0, 0]
+    assert output.level_history[0] == [10, 20, 30, 40]
 
     runner: DummyRunner = manager.runner  # type: ignore[assignment]
     assert runner.stop_calls == 1
@@ -90,9 +91,10 @@ def test_stop_show_blackouts_after_show_runs(tmp_path: Path) -> None:
     assert output.blackout_called == 1
 
 
-def test_preview_uses_zero_baseline_for_levels(tmp_path: Path) -> None:
+def test_preview_uses_baseline_for_levels(tmp_path: Path) -> None:
     output = DummyOutput(channel_count=3)
     manager = create_manager(tmp_path, output)
+    manager.update_baseline_levels([10, 20, 30])
 
     raw_actions = [
         {"time": "00:00:00", "channel": 1, "value": 200, "fade": 2},
@@ -103,12 +105,13 @@ def test_preview_uses_zero_baseline_for_levels(tmp_path: Path) -> None:
 
     assert output.level_history
     latest_levels = output.level_history[-1]
-    assert latest_levels == [100, 0, 0]
+    assert latest_levels == [105, 20, 30]
 
 
 def test_preview_applies_zero_fade_action_at_start_time(tmp_path: Path) -> None:
     output = DummyOutput(channel_count=3)
     manager = create_manager(tmp_path, output)
+    manager.update_baseline_levels([10, 20, 30])
 
     raw_actions = [
         {"time": "00:00:00", "channel": 1, "value": 255, "fade": 0},
@@ -119,7 +122,7 @@ def test_preview_applies_zero_fade_action_at_start_time(tmp_path: Path) -> None:
 
     assert output.level_history
     latest_levels = output.level_history[-1]
-    assert latest_levels == [255, 200, 0]
+    assert latest_levels == [255, 200, 30]
 
     runner: DummyRunner = manager.runner  # type: ignore[assignment]
     assert runner.started_actions == []
