@@ -11,6 +11,7 @@ const previewToggle = document.getElementById("preview-mode-toggle");
 const rowTemplate = document.getElementById("action-row-template");
 const channelPresetsContainer = document.getElementById("channel-presets");
 const addChannelPresetButton = document.getElementById("add-channel-preset");
+const toggleChannelPresetsButton = document.getElementById("toggle-channel-presets");
 
 const PREVIEW_STATE_LABELS = {
   on: "Preview Mode: On",
@@ -28,6 +29,8 @@ let previewMode = false;
 let previewSyncHandle = null;
 let suppressPreviewPause = false;
 let channelPresets = [];
+let channelPresetsCollapsed = false;
+const collapsedChannelPresetIds = new Set();
 
 const API_BASE_CANDIDATES = [
   "/api",
@@ -859,11 +862,19 @@ function initChannelPresetsUI() {
       addChannelPreset();
     });
   }
+  if (toggleChannelPresetsButton) {
+    toggleChannelPresetsButton.addEventListener("click", () => {
+      channelPresetsCollapsed = !channelPresetsCollapsed;
+      updateChannelPresetsVisibility();
+    });
+  }
+  updateChannelPresetsVisibility();
 }
 
 function renderChannelPresets() {
   if (!channelPresetsContainer) return;
 
+  pruneCollapsedChannelPresets();
   channelPresetsContainer.innerHTML = "";
 
   if (!channelPresets.length) {
@@ -871,6 +882,7 @@ function renderChannelPresets() {
     emptyState.className = "preset-settings__empty";
     emptyState.textContent = "No channel presets yet. Use “Add Channel Preset” to create one.";
     channelPresetsContainer.append(emptyState);
+    updateChannelPresetsVisibility();
     return;
   }
 
@@ -880,13 +892,40 @@ function renderChannelPresets() {
     card.className = "preset-card";
     card.dataset.presetId = preset.id;
 
+    const isCollapsed = collapsedChannelPresetIds.has(preset.id);
+    if (isCollapsed) {
+      card.classList.add("is-collapsed");
+    }
+    const contentId = `preset-content-${preset.id}`;
+
     const header = document.createElement("div");
     header.className = "preset-card__header";
+
+    const titleGroup = document.createElement("div");
+    titleGroup.className = "preset-card__title-group";
+
+    const toggleButton = document.createElement("button");
+    toggleButton.type = "button";
+    toggleButton.className = "preset-card__toggle";
+    toggleButton.textContent = isCollapsed ? "+" : "−";
+    toggleButton.setAttribute("aria-expanded", isCollapsed ? "false" : "true");
+    toggleButton.setAttribute("aria-controls", contentId);
+    toggleButton.setAttribute("aria-label", isCollapsed ? "Expand preset" : "Collapse preset");
+    toggleButton.title = isCollapsed ? "Expand preset" : "Collapse preset";
+    toggleButton.addEventListener("click", () => {
+      if (collapsedChannelPresetIds.has(preset.id)) {
+        collapsedChannelPresetIds.delete(preset.id);
+      } else {
+        collapsedChannelPresetIds.add(preset.id);
+      }
+      renderChannelPresets();
+    });
 
     const title = document.createElement("h3");
     title.className = "preset-card__title";
     title.textContent = formatChannelPresetTitle(preset);
-    header.append(title);
+    titleGroup.append(toggleButton, title);
+    header.append(titleGroup);
 
     const actionsEl = document.createElement("div");
     actionsEl.className = "preset-card__actions";
@@ -899,6 +938,11 @@ function renderChannelPresets() {
     header.append(actionsEl);
 
     card.append(header);
+
+    const content = document.createElement("div");
+    content.className = "preset-card__content";
+    content.id = contentId;
+    content.hidden = isCollapsed;
 
     const row = document.createElement("div");
     row.className = "preset-card__row";
@@ -928,7 +972,7 @@ function renderChannelPresets() {
     channelField.append(channelLabel, channelInput);
 
     row.append(nameField, channelField);
-    card.append(row);
+    content.append(row);
 
     const valuesSection = document.createElement("div");
     valuesSection.className = "preset-values";
@@ -985,8 +1029,33 @@ function renderChannelPresets() {
     addValueButton.addEventListener("click", () => addChannelPresetValue(preset.id));
     valuesSection.append(addValueButton);
 
-    card.append(valuesSection);
+    content.append(valuesSection);
+    card.append(content);
     channelPresetsContainer.append(card);
+  });
+  updateChannelPresetsVisibility();
+}
+
+function updateChannelPresetsVisibility() {
+  if (channelPresetsContainer) {
+    channelPresetsContainer.hidden = channelPresetsCollapsed;
+    channelPresetsContainer.setAttribute("aria-hidden", channelPresetsCollapsed ? "true" : "false");
+  }
+  if (toggleChannelPresetsButton) {
+    const label = channelPresetsCollapsed ? "Expand Presets" : "Collapse Presets";
+    toggleChannelPresetsButton.textContent = label;
+    toggleChannelPresetsButton.setAttribute("aria-expanded", channelPresetsCollapsed ? "false" : "true");
+    toggleChannelPresetsButton.setAttribute("aria-label", label);
+    toggleChannelPresetsButton.title = label;
+  }
+}
+
+function pruneCollapsedChannelPresets() {
+  const validIds = new Set(channelPresets.map((preset) => preset.id));
+  Array.from(collapsedChannelPresetIds).forEach((presetId) => {
+    if (!validIds.has(presetId)) {
+      collapsedChannelPresetIds.delete(presetId);
+    }
   });
 }
 
@@ -998,6 +1067,7 @@ function addChannelPreset() {
     values: [],
   };
   channelPresets.push(preset);
+  channelPresetsCollapsed = false;
   saveChannelPresets();
   renderChannelPresets();
   renderActions();
@@ -1007,6 +1077,10 @@ function removeChannelPreset(presetId) {
   const index = channelPresets.findIndex((preset) => preset.id === presetId);
   if (index === -1) return;
   channelPresets.splice(index, 1);
+  collapsedChannelPresetIds.delete(presetId);
+  if (!channelPresets.length) {
+    channelPresetsCollapsed = false;
+  }
   saveChannelPresets();
   actions.forEach((action) => {
     if (action.channelPresetId === presetId) {
@@ -1081,6 +1155,7 @@ function handlePresetChannelInput(event, presetId) {
   updatePresetCardTitle(event.target.closest(".preset-card"), preset);
   refreshChannelPresetOptions(preset);
   updateActionsForChannelPreset(presetId);
+  renderChannelPresets();
   renderActions();
   queuePreviewSync();
 }

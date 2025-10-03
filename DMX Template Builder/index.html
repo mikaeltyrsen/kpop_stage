@@ -47,9 +47,19 @@
             build cues.
           </p>
         </div>
-        <button id="add-channel-preset" type="button" class="secondary">
-          Add Channel Preset
-        </button>
+        <div class="preset-settings__actions">
+          <button
+            id="toggle-channel-presets"
+            type="button"
+            class="secondary"
+            aria-expanded="true"
+          >
+            Collapse Presets
+          </button>
+          <button id="add-channel-preset" type="button" class="secondary">
+            Add Channel Preset
+          </button>
+        </div>
       </header>
       <div id="channel-presets" class="preset-settings__list" aria-live="polite"></div>
     </section>
