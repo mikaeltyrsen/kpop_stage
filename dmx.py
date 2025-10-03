@@ -111,7 +111,7 @@ class DMXAction:
 class DMXOutput:
     """Continuously pushes the latest DMX universe state to the hardware."""
 
-    def __init__(self, universe: int = 1, channel_count: int = DEFAULT_CHANNELS) -> None:
+    def __init__(self, universe: int = 0, channel_count: int = DEFAULT_CHANNELS) -> None:
         self.universe = universe
         self.channel_count = channel_count
         self._levels = [0] * self.channel_count
@@ -545,6 +545,6 @@ class DMXShowManager:
         tmp_path.replace(template_path)
 
 
-def create_manager(templates_dir: Path, universe: int = 1) -> DMXShowManager:
+def create_manager(templates_dir: Path, universe: int = 0) -> DMXShowManager:
     output = DMXOutput(universe=universe)
     return DMXShowManager(templates_dir, output)

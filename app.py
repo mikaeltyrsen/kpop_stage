@@ -518,7 +518,7 @@ class PlaybackController:
 app = Flask(__name__, static_folder="static", template_folder="templates")
 video_config = load_video_config(DATA_FILE)
 DEFAULT_VIDEO_PATH = resolve_media_path(video_config["default_video"])
-DMX_UNIVERSE = int(os.environ.get("DMX_UNIVERSE", "1"))
+DMX_UNIVERSE = int(os.environ.get("DMX_UNIVERSE", "0"))
 
 dmx_manager: DMXShowManager = create_manager(DMX_TEMPLATE_DIR, universe=DMX_UNIVERSE)
 controller = PlaybackController(
