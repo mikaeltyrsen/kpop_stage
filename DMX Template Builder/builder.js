@@ -33,7 +33,10 @@ let suppressPreviewPause = false;
 let channelPresets = [];
 let showingChannelPresets = true;
 const collapsedChannelPresetIds = new Set();
+const collapsedTimeGroups = new Set();
 let renderedRows = [];
+let groupHeaderRows = new Map();
+let actionGroupTimes = [];
 let lastKnownTimelineSeconds = 0;
 
 const ACTION_ID_PROPERTY = "__actionLocalId";
@@ -492,7 +495,9 @@ function renderActions(options = {}) {
 
   actions = sortActions(actions);
   actionsBody.innerHTML = "";
-  renderedRows = [];
+  renderedRows = new Array(actions.length).fill(null);
+  actionGroupTimes = new Array(actions.length).fill(null);
+  groupHeaderRows = new Map();
 
   if (!actions.length) {
     const emptyRow = document.createElement("tr");
@@ -501,68 +506,164 @@ function renderActions(options = {}) {
     cell.innerHTML = '<div class="empty-state">No lighting steps yet. Use “Add Step” to begin.</div>';
     emptyRow.append(cell);
     actionsBody.append(emptyRow);
+    collapsedTimeGroups.clear();
     updateActiveActionHighlight(lastKnownTimelineSeconds);
     return;
   }
 
+  const grouped = [];
   actions.forEach((action, index) => {
-    const actionId = getActionLocalId(action);
-    const row = rowTemplate.content.firstElementChild.cloneNode(true);
-    row.dataset.actionIndex = String(index);
-    row.dataset.actionId = actionId;
-
-    const timeInput = createInput({
-      type: "text",
-      value: action.time,
-      placeholder: "00:01:23",
-    });
-    setActionFieldMetadata(timeInput, actionId, "time");
-    timeInput.addEventListener("change", (event) => handleTimeChange(event, index));
-    timeInput.addEventListener("focus", () => seekToIndex(index));
-    appendToColumn(row, "time", timeInput);
-
-    const channelField = createChannelField(action, index, actionId);
-    appendToColumn(row, "channel", channelField);
-
-    const valueField = createValueField(action, index, actionId);
-    appendToColumn(row, "value", valueField);
-
-    const fadeInput = createInput({
-      type: "number",
-      value: action.fade,
-      min: 0,
-      step: 0.1,
-    });
-    setActionFieldMetadata(fadeInput, actionId, "fade");
-    fadeInput.addEventListener("change", (event) => handleFadeChange(event, index));
-    appendToColumn(row, "fade", fadeInput);
-
-    const toolsCell = row.querySelector('[data-column="tools"]');
-    const tools = document.createElement("div");
-    tools.className = "row-tools";
-
-    const jumpButton = document.createElement("button");
-    jumpButton.type = "button";
-    jumpButton.textContent = "Go";
-    jumpButton.addEventListener("click", () => seekToIndex(index));
-
-    const removeButton = document.createElement("button");
-    removeButton.type = "button";
-    removeButton.textContent = "Delete";
-    removeButton.addEventListener("click", () => removeAction(index));
-
-    tools.append(jumpButton, removeButton);
-    toolsCell.append(tools);
-
-    renderedRows.push(row);
-    actionsBody.append(row);
+    const timeKey = action.time || DEFAULT_ACTION.time;
+    actionGroupTimes[index] = timeKey;
+    const lastGroup = grouped[grouped.length - 1];
+    if (lastGroup && lastGroup.time === timeKey) {
+      lastGroup.items.push({ action, index });
+    } else {
+      grouped.push({ time: timeKey, items: [{ action, index }] });
+    }
   });
+
+  const activeTimes = new Set();
+
+  grouped.forEach(({ time, items }) => {
+    activeTimes.add(time);
+    const collapsed = collapsedTimeGroups.has(time);
+    const headerRow = createGroupHeaderRow(time, items.length, collapsed);
+    groupHeaderRows.set(time, headerRow);
+    actionsBody.append(headerRow);
+
+    if (!collapsed) {
+      items.forEach(({ action, index }) => {
+        const row = createActionRow(action, index, time);
+        renderedRows[index] = row;
+        actionsBody.append(row);
+      });
+    }
+  });
+
+  for (const time of [...collapsedTimeGroups]) {
+    if (!activeTimes.has(time)) {
+      collapsedTimeGroups.delete(time);
+    }
+  }
 
   if (focusDescriptor) {
     focusActionField(focusDescriptor);
   }
 
   updateActiveActionHighlight();
+}
+
+function createGroupHeaderRow(time, count, collapsed) {
+  const row = document.createElement("tr");
+  row.className = "action-group-header";
+  row.dataset.groupTime = time;
+
+  const cell = document.createElement("td");
+  cell.colSpan = 5;
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "action-group-header__button";
+  button.setAttribute("aria-expanded", String(!collapsed));
+  button.dataset.groupTime = time;
+  button.addEventListener("click", () => toggleGroupCollapsed(time));
+
+  const icon = document.createElement("span");
+  icon.className = "action-group-header__icon";
+  icon.textContent = collapsed ? "▶" : "▼";
+  icon.setAttribute("aria-hidden", "true");
+
+  const label = document.createElement("span");
+  label.className = "action-group-header__time";
+  label.textContent = time;
+
+  const countEl = document.createElement("span");
+  countEl.className = "action-group-header__count";
+  countEl.textContent = `(${count})`;
+
+  button.append(icon, label, countEl);
+  cell.append(button);
+  row.append(cell);
+
+  return row;
+}
+
+function createActionRow(action, index, groupTime) {
+  const actionId = getActionLocalId(action);
+  const row = rowTemplate.content.firstElementChild.cloneNode(true);
+  row.dataset.actionIndex = String(index);
+  row.dataset.actionId = actionId;
+  if (groupTime) {
+    row.dataset.groupTime = groupTime;
+    row.classList.add("action-group-item");
+  }
+
+  const timeInput = createInput({
+    type: "text",
+    value: action.time,
+    placeholder: "00:01:23",
+  });
+  setActionFieldMetadata(timeInput, actionId, "time");
+  timeInput.addEventListener("change", (event) => handleTimeChange(event, index));
+  timeInput.addEventListener("focus", () => seekToIndex(index));
+  appendToColumn(row, "time", timeInput);
+
+  const channelField = createChannelField(action, index, actionId);
+  appendToColumn(row, "channel", channelField);
+
+  const valueField = createValueField(action, index, actionId);
+  appendToColumn(row, "value", valueField);
+
+  const fadeInput = createInput({
+    type: "number",
+    value: action.fade,
+    min: 0,
+    step: 0.1,
+  });
+  setActionFieldMetadata(fadeInput, actionId, "fade");
+  fadeInput.addEventListener("change", (event) => handleFadeChange(event, index));
+  appendToColumn(row, "fade", fadeInput);
+
+  const toolsCell = row.querySelector('[data-column="tools"]');
+  const tools = document.createElement("div");
+  tools.className = "row-tools";
+
+  const jumpButton = document.createElement("button");
+  jumpButton.type = "button";
+  jumpButton.textContent = "Go";
+  jumpButton.addEventListener("click", () => seekToIndex(index));
+
+  const removeButton = document.createElement("button");
+  removeButton.type = "button";
+  removeButton.textContent = "Delete";
+  removeButton.addEventListener("click", () => removeAction(index));
+
+  tools.append(jumpButton, removeButton);
+  if (toolsCell) {
+    toolsCell.append(tools);
+  }
+
+  return row;
+}
+
+function toggleGroupCollapsed(time) {
+  if (collapsedTimeGroups.has(time)) {
+    collapsedTimeGroups.delete(time);
+  } else {
+    collapsedTimeGroups.add(time);
+  }
+  renderActions();
+  const focusTarget = Array.from(
+    actionsBody.querySelectorAll(".action-group-header__button")
+  ).find((button) => button.dataset.groupTime === time);
+  if (focusTarget) {
+    try {
+      focusTarget.focus({ preventScroll: true });
+    } catch (error) {
+      focusTarget.focus();
+    }
+  }
 }
 
 function updateActiveActionHighlight(secondsOverride) {
@@ -609,9 +710,33 @@ function findLatestActionIndexAtTime(targetSeconds) {
 
 function setHighlightedAction(index) {
   const normalizedIndex = Number.isInteger(index) && index >= 0 ? index : null;
-  renderedRows.forEach((row, idx) => {
-    row.classList.toggle("is-active", normalizedIndex === idx);
+  groupHeaderRows.forEach((row) => {
+    row.classList.remove("is-active");
   });
+  renderedRows.forEach((row) => {
+    if (row) {
+      row.classList.remove("is-active");
+    }
+  });
+
+  if (normalizedIndex === null) {
+    return;
+  }
+
+  const row = renderedRows[normalizedIndex];
+  if (row) {
+    row.classList.add("is-active");
+    return;
+  }
+
+  const groupTime = actionGroupTimes[normalizedIndex];
+  if (!groupTime) {
+    return;
+  }
+  const headerRow = groupHeaderRows.get(groupTime);
+  if (headerRow) {
+    headerRow.classList.add("is-active");
+  }
 }
 
 function updateChannelStatusDisplay(seconds) {
