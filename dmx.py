@@ -269,7 +269,6 @@ class DMXOutput:
             )
             return None
 
-        LOGGER.info("Using DMX serial port %s for DMX output", port)
         serial_config: Dict[str, Any] = {
             "port": port,
             "baudrate": 250000,
@@ -302,6 +301,7 @@ class DMXOutput:
                     port,
                     exc_info=True,
                 )
+        LOGGER.info("Using DMX serial port %s for DMX output", port)
 
         thread_local = threading.local()
         lock = threading.Lock()
