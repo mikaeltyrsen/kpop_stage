@@ -469,6 +469,7 @@ async function loadTemplate(videoId) {
     resetActionIdCounter();
     actions = (data.actions || []).map((action) => ({ ...DEFAULT_ACTION, ...action }));
     actions.forEach(ensureActionLocalId);
+    autoAssignPresetsToActions(actions);
     templatePath = data.video?.dmx_template || "";
     const videoUrl = data.video?.video_url || currentVideo?.video_url || "";
 
@@ -487,6 +488,81 @@ async function loadTemplate(videoId) {
     showStatus(error.message || "Unable to load template", "error");
     renderActions();
   }
+}
+
+function autoAssignPresetsToActions(list) {
+  if (!Array.isArray(list) || !list.length) return;
+  if (!Array.isArray(channelPresets) || !channelPresets.length) return;
+
+  list.forEach((action) => {
+    if (!action || typeof action !== "object") return;
+
+    let preset = null;
+    if (action.channelPresetId) {
+      preset = getChannelPreset(action.channelPresetId);
+      if (!preset) {
+        action.channelPresetId = null;
+      }
+    }
+
+    if (!action.channelPresetId) {
+      const channelNumber = Number.parseInt(action.channel, 10);
+      if (Number.isFinite(channelNumber)) {
+        preset =
+          channelPresets.find(
+            (item) => Number.isFinite(item.channel) && item.channel === channelNumber,
+          ) || null;
+        if (preset) {
+          action.channelPresetId = preset.id;
+        }
+      }
+    } else if (!preset) {
+      preset = getChannelPreset(action.channelPresetId);
+    }
+
+    if (!preset) {
+      action.valuePresetId = null;
+      return;
+    }
+
+    const presetChannel = Number.parseInt(preset.channel, 10);
+    if (Number.isFinite(presetChannel)) {
+      action.channel = clamp(presetChannel, 1, 512);
+    }
+
+    if (!Array.isArray(preset.values) || !preset.values.length) {
+      action.valuePresetId = null;
+      return;
+    }
+
+    let valuePreset = null;
+    if (action.valuePresetId) {
+      valuePreset = preset.values.find((value) => value.id === action.valuePresetId) || null;
+      if (!valuePreset) {
+        action.valuePresetId = null;
+      }
+    }
+
+    if (!valuePreset) {
+      const actionValue = Number.parseInt(action.value, 10);
+      if (Number.isFinite(actionValue)) {
+        valuePreset =
+          preset.values.find(
+            (value) => Number.isFinite(value.value) && value.value === actionValue,
+          ) || null;
+      }
+      if (valuePreset) {
+        action.valuePresetId = valuePreset.id;
+      }
+    }
+
+    if (valuePreset) {
+      const presetValue = Number.parseInt(valuePreset.value, 10);
+      if (Number.isFinite(presetValue)) {
+        action.value = clamp(presetValue, 0, 255);
+      }
+    }
+  });
 }
 
 function renderActions(options = {}) {
