@@ -92,11 +92,15 @@ A lightweight Flask application designed for a Raspberry Pi-powered music video 
 The controller can drive DMX fixtures either through [OLA](https://www.openlighting.org/ola/) or by writing directly to a USB-to-RS485 adapter such as an FT232RL+SP485 based cable.
 
 - **Using OLA (recommended):** Install the `python-ola` dependency along with the OLA daemon on your Raspberry Pi. Configure OLA to expose your USB or network DMX interface and the app will stream frames automatically. The app targets OLA universe `0` by default; set `DMX_UNIVERSE` in the environment if you need to use a different universe number.
-- **Direct USB cable support:** If you are using a simple FTDI USB-to-DMX interface, install `pyserial` and set the `DMX_SERIAL_PORT` environment variable before starting the app:
+- **Direct USB cable support:** If you are using a simple FTDI USB-to-DMX interface, install `pyserial` and set the `DMX_SERIAL_PORT` environment variable before starting the app.  You can also provide a USB serial number via `DMX_SERIAL_NUMBER` and the app will locate the matching adapter automatically:
 
   ```bash
   pip install pyserial
-  export DMX_SERIAL_PORT=/dev/ttyUSB0  # adjust for your adapter path
+  # Option A: provide the device path directly
+  export DMX_SERIAL_PORT=/dev/ttyUSB0
+
+  # Option B: allow the app to discover the port using the adapter serial number
+  export DMX_SERIAL_NUMBER=BG00TZ1P
   python app.py
   ```
 

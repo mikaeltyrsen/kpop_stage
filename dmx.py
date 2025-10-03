@@ -44,6 +44,79 @@ def _clamp(value: int, low: int, high: int) -> int:
     return max(low, min(high, value))
 
 
+def _resolve_serial_port() -> Optional[str]:
+    """Resolve the DMX serial port from environment configuration."""
+
+    configured_port = os.environ.get("DMX_SERIAL_PORT")
+    if configured_port:
+        return configured_port
+
+    serial_identifier = os.environ.get("DMX_SERIAL_NUMBER")
+    if not serial_identifier:
+        return None
+
+    if serial is None:  # pragma: no cover - depends on optional dependency
+        LOGGER.error(
+            "DMX_SERIAL_NUMBER is set to %s but pyserial is not installed. "
+            "Install pyserial or provide DMX_SERIAL_PORT to use direct DMX output.",
+            serial_identifier,
+        )
+        return None
+
+    try:  # pragma: no cover - optional dependency
+        from serial.tools import list_ports  # type: ignore
+    except Exception:  # pragma: no cover - defensive
+        LOGGER.exception(
+            "Unable to import serial.tools.list_ports to resolve DMX interface %s",
+            serial_identifier,
+        )
+        return None
+
+    identifier_normalized = serial_identifier.strip().lower()
+    if not identifier_normalized:
+        return None
+
+    matches: List[str] = []
+    for port in list_ports.comports():
+        candidates = [
+            getattr(port, "serial_number", None),
+            getattr(port, "hwid", None),
+            getattr(port, "description", None),
+            getattr(port, "device", None),
+        ]
+        for candidate in candidates:
+            if not candidate:
+                continue
+            if identifier_normalized in str(candidate).strip().lower():
+                device = str(getattr(port, "device", ""))
+                if device:
+                    matches.append(device)
+                break
+
+    if not matches:
+        LOGGER.error(
+            "Unable to locate DMX serial interface matching identifier '%s'",
+            serial_identifier,
+        )
+        return None
+
+    if len(matches) > 1:
+        LOGGER.warning(
+            "Multiple DMX serial interfaces matched identifier '%s'. Using %s.",
+            serial_identifier,
+            matches[0],
+        )
+
+    resolved_port = matches[0]
+    if resolved_port:
+        LOGGER.info(
+            "Resolved DMX serial interface %s using identifier '%s'",
+            resolved_port,
+            serial_identifier,
+        )
+    return resolved_port
+
+
 def _parse_timecode(value: str) -> float:
     """Convert a timecode (HH:MM:SS[.mmm]) string into seconds."""
     if not value:
@@ -126,7 +199,7 @@ class DMXOutput:
     def _build_sender(
         self, universe: int
     ) -> tuple[Callable[[bytearray], None], Optional[Callable[[], None]]]:
-        serial_port = os.environ.get("DMX_SERIAL_PORT")
+        serial_port = _resolve_serial_port()
         if serial_port:
             try:
                 sender = self._build_serial_sender(serial_port)
