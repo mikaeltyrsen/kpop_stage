@@ -333,12 +333,17 @@ class DMXShowManager:
         except RuntimeError:
             LOGGER.error("Skipping DMX show due to template error")
             return
+        self.runner.stop()
+        zero_levels = [0] * self.output.channel_count
+        self.output.set_levels(zero_levels)
+
         if actions:
             self.runner.start(actions)
         else:
-            LOGGER.info("No DMX template for video '%s'. Running blackout.", video_entry.get("name"))
-            self.runner.stop()
-            self.output.blackout()
+            LOGGER.info(
+                "No DMX template for video '%s'. Running blackout.",
+                video_entry.get("name"),
+            )
 
     def start_preview(self, raw_actions: Iterable[Dict[str, object]], start_time: float = 0.0) -> None:
         try:
