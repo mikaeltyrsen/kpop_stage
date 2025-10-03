@@ -10,6 +10,7 @@ Raspberry Pi when OLA is installed.
 """
 from __future__ import annotations
 
+import array
 import atexit
 import json
 import logging
@@ -140,10 +141,12 @@ class DMXOutput:
                 wrapper.Stop()
 
             with lock:
-                # python-ola expects a bytes-like object that implements ``tobytes``.
-                # ``bytearray`` does not provide that method, so we convert to
-                # ``bytes`` explicitly before sending to avoid AttributeError.
-                client.SendDmx(universe, bytes(data), _callback)
+                # python-ola expects an ``array('B')`` or similar object that
+                # provides a ``tobytes`` method.  ``bytearray`` does not, so we
+                # wrap the data to match the library expectations before
+                # sending.
+                payload = array.array("B", data)
+                client.SendDmx(universe, payload, _callback)
                 wrapper.Run()  # Blocks until wrapper.Stop() called in callback
             if not done.wait(timeout=1.0):
                 LOGGER.warning("Timed out waiting for DMX send confirmation")
