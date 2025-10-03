@@ -273,6 +273,9 @@ class PlaybackController:
         thread.start()
 
     def _monitor_idle_and_restore_default(self, stop_event: threading.Event) -> None:
+        start_time = time.monotonic()
+        has_started_playing = False
+
         while not stop_event.is_set():
             time.sleep(0.5)
             try:
@@ -281,10 +284,29 @@ class PlaybackController:
                 return
 
             idle = idle_response.get("error") == "success" and idle_response.get("data")
+
+            if not has_started_playing:
+                # mpv reports eof-reached=True for a short window after a file ends,
+                # even immediately after loading a new file.  Ignore idle/eof until
+                # we've confirmed that playback actually started so we don't bounce
+                # straight back to the default loop when replaying a song.
+                if not idle:
+                    has_started_playing = True
+                elif time.monotonic() - start_time < 5.0:
+                    continue
+                else:
+                    with self._lock:
+                        if stop_event.is_set():
+                            return
+                        self._play_video_locked(self.default_video, loop=True)
+                    return
+
             eof_reached = False
             if not idle:
                 eof_response = self._send_ipc_command("get_property", "eof-reached")
-                eof_reached = eof_response.get("error") == "success" and eof_response.get("data")
+                eof_reached = (
+                    eof_response.get("error") == "success" and eof_response.get("data")
+                )
 
             if idle or eof_reached:
                 with self._lock:
