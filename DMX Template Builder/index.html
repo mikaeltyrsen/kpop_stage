@@ -41,7 +41,6 @@
       >
         Preview Mode: Off
       </button>
-      <button id="sort-rows" type="button" class="control-button" disabled>Sort by Time</button>
       <button id="save-template" type="button" class="primary" disabled>Save Template</button>
       <button id="export-template" type="button" class="secondary" disabled>Export JSON</button>
       <span id="status-message" role="status" aria-live="polite"></span>
@@ -72,6 +71,17 @@
       <section class="preview-panel">
         <h2>Video Preview</h2>
         <video id="preview-video" controls preload="metadata"></video>
+        <section
+          id="channel-status"
+          class="channel-status"
+          aria-live="polite"
+          aria-label="Active channels"
+        >
+          <h3 class="channel-status__title">Active Channels</h3>
+          <div id="channel-status-list" class="channel-status__content">
+            <p class="channel-status__empty">All channels at blackout.</p>
+          </div>
+        </section>
         <div class="video-hints">
           <p>
             Select a row in the table to jump to that cue. The time input keeps the

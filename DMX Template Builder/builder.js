@@ -1,6 +1,5 @@
 const videoSelect = document.getElementById("video-select");
 const addRowButton = document.getElementById("add-row");
-const sortRowsButton = document.getElementById("sort-rows");
 const saveButton = document.getElementById("save-template");
 const exportButton = document.getElementById("export-template");
 const statusEl = document.getElementById("status-message");
@@ -10,6 +9,7 @@ const videoEl = document.getElementById("preview-video");
 const previewToggle = document.getElementById("preview-mode-toggle");
 const rowTemplate = document.getElementById("action-row-template");
 const channelPresetsContainer = document.getElementById("channel-presets");
+const channelStatusListEl = document.getElementById("channel-status-list");
 const addChannelPresetButton = document.getElementById("add-channel-preset");
 const channelPresetsSection = document.querySelector(".preset-settings");
 const builderLayout = document.querySelector(".builder-layout");
@@ -33,6 +33,11 @@ let suppressPreviewPause = false;
 let channelPresets = [];
 let showingChannelPresets = true;
 const collapsedChannelPresetIds = new Set();
+let renderedRows = [];
+let lastKnownTimelineSeconds = 0;
+
+const ACTION_ID_PROPERTY = "__actionLocalId";
+let actionIdCounter = 0;
 
 const API_BASE_CANDIDATES = [
   "/api",
@@ -62,11 +67,6 @@ function init() {
   loadVideos();
   videoSelect.addEventListener("change", handleVideoSelection);
   addRowButton.addEventListener("click", handleAddRow);
-  sortRowsButton.addEventListener("click", () => {
-    actions = sortActions(actions);
-    renderActions();
-    queuePreviewSync();
-  });
   saveButton.addEventListener("click", handleSaveTemplate);
   exportButton.addEventListener("click", () => exportTemplate());
   if (previewToggle) {
@@ -76,8 +76,82 @@ function init() {
     videoEl.addEventListener("play", handleVideoPlay);
     videoEl.addEventListener("pause", handleVideoPause);
     videoEl.addEventListener("seeked", handleVideoSeeked);
+    videoEl.addEventListener("timeupdate", handleVideoTimeUpdate);
+    videoEl.addEventListener("loadedmetadata", handleVideoLoadedMetadata);
   }
   updateWorkspaceVisibility();
+}
+
+function resetActionIdCounter() {
+  actionIdCounter = 0;
+}
+
+function generateActionId() {
+  actionIdCounter += 1;
+  return `action-${actionIdCounter}`;
+}
+
+function ensureActionLocalId(action) {
+  if (!action || typeof action !== "object") {
+    return "";
+  }
+  if (!Object.prototype.hasOwnProperty.call(action, ACTION_ID_PROPERTY)) {
+    Object.defineProperty(action, ACTION_ID_PROPERTY, {
+      value: generateActionId(),
+      enumerable: false,
+      configurable: false,
+      writable: false,
+    });
+  }
+  return action[ACTION_ID_PROPERTY];
+}
+
+function getActionLocalId(action) {
+  return ensureActionLocalId(action);
+}
+
+function describeFocusedActionField(element) {
+  if (!element || !element.dataset) return null;
+  const { actionId, field } = element.dataset;
+  if (!actionId || !field) return null;
+  const descriptor = { actionId, field };
+  if (typeof element.selectionStart === "number" && typeof element.selectionEnd === "number") {
+    descriptor.selectionStart = element.selectionStart;
+    descriptor.selectionEnd = element.selectionEnd;
+  }
+  return descriptor;
+}
+
+function focusActionField(descriptor) {
+  if (!descriptor) return;
+  if (!actionsBody) return;
+  const { actionId, field } = descriptor;
+  if (!actionId || !field) return;
+  const selector = `[data-action-id="${actionId}"][data-field="${field}"]`;
+  const target = actionsBody.querySelector(selector);
+  if (!target) return;
+  try {
+    target.focus({ preventScroll: true });
+  } catch (error) {
+    target.focus();
+  }
+  if (
+    target instanceof HTMLInputElement &&
+    typeof descriptor.selectionStart === "number" &&
+    typeof descriptor.selectionEnd === "number"
+  ) {
+    try {
+      target.setSelectionRange(descriptor.selectionStart, descriptor.selectionEnd);
+    } catch (error) {
+      // Ignore selection errors for input types that do not support setSelectionRange.
+    }
+  }
+}
+
+function setActionFieldMetadata(element, actionId, field) {
+  if (!element) return;
+  element.dataset.actionId = actionId;
+  element.dataset.field = field;
 }
 
 function handleAddRow() {
@@ -308,8 +382,17 @@ function handleVideoPause() {
 }
 
 function handleVideoSeeked() {
+  updateActiveActionHighlight();
   if (!previewMode) return;
   queuePreviewSync();
+}
+
+function handleVideoTimeUpdate() {
+  updateActiveActionHighlight();
+}
+
+function handleVideoLoadedMetadata() {
+  updateActiveActionHighlight(0);
 }
 
 async function loadVideos() {
@@ -345,6 +428,7 @@ function handleVideoSelection() {
     currentVideo = null;
     showingChannelPresets = true;
     actions = [];
+    resetActionIdCounter();
     templatePath = "";
     setControlsEnabled(false);
     renderActions();
@@ -379,7 +463,9 @@ async function loadTemplate(videoId) {
     }
 
     const data = await response.json();
+    resetActionIdCounter();
     actions = (data.actions || []).map((action) => ({ ...DEFAULT_ACTION, ...action }));
+    actions.forEach(ensureActionLocalId);
     templatePath = data.video?.dmx_template || "";
     const videoUrl = data.video?.video_url || currentVideo?.video_url || "";
 
@@ -400,8 +486,13 @@ async function loadTemplate(videoId) {
   }
 }
 
-function renderActions() {
+function renderActions(options = {}) {
+  const focusDescriptor =
+    options.preserveFocus || describeFocusedActionField(document.activeElement);
+
+  actions = sortActions(actions);
   actionsBody.innerHTML = "";
+  renderedRows = [];
 
   if (!actions.length) {
     const emptyRow = document.createElement("tr");
@@ -410,25 +501,30 @@ function renderActions() {
     cell.innerHTML = '<div class="empty-state">No lighting steps yet. Use “Add Step” to begin.</div>';
     emptyRow.append(cell);
     actionsBody.append(emptyRow);
+    updateActiveActionHighlight(lastKnownTimelineSeconds);
     return;
   }
 
   actions.forEach((action, index) => {
+    const actionId = getActionLocalId(action);
     const row = rowTemplate.content.firstElementChild.cloneNode(true);
+    row.dataset.actionIndex = String(index);
+    row.dataset.actionId = actionId;
 
     const timeInput = createInput({
       type: "text",
       value: action.time,
       placeholder: "00:01:23",
     });
+    setActionFieldMetadata(timeInput, actionId, "time");
     timeInput.addEventListener("change", (event) => handleTimeChange(event, index));
     timeInput.addEventListener("focus", () => seekToIndex(index));
     appendToColumn(row, "time", timeInput);
 
-    const channelField = createChannelField(action, index);
+    const channelField = createChannelField(action, index, actionId);
     appendToColumn(row, "channel", channelField);
 
-    const valueField = createValueField(action, index);
+    const valueField = createValueField(action, index, actionId);
     appendToColumn(row, "value", valueField);
 
     const fadeInput = createInput({
@@ -437,6 +533,7 @@ function renderActions() {
       min: 0,
       step: 0.1,
     });
+    setActionFieldMetadata(fadeInput, actionId, "fade");
     fadeInput.addEventListener("change", (event) => handleFadeChange(event, index));
     appendToColumn(row, "fade", fadeInput);
 
@@ -457,8 +554,129 @@ function renderActions() {
     tools.append(jumpButton, removeButton);
     toolsCell.append(tools);
 
+    renderedRows.push(row);
     actionsBody.append(row);
   });
+
+  if (focusDescriptor) {
+    focusActionField(focusDescriptor);
+  }
+
+  updateActiveActionHighlight();
+}
+
+function updateActiveActionHighlight(secondsOverride) {
+  const seconds = resolveTimelineSeconds(secondsOverride);
+  lastKnownTimelineSeconds = seconds;
+  const index = findLatestActionIndexAtTime(seconds);
+  setHighlightedAction(index);
+  updateChannelStatusDisplay(seconds);
+}
+
+function resolveTimelineSeconds(secondsOverride) {
+  if (typeof secondsOverride === "number" && Number.isFinite(secondsOverride)) {
+    return Math.max(0, secondsOverride);
+  }
+  return getVideoCurrentTimeSeconds();
+}
+
+function getVideoCurrentTimeSeconds() {
+  if (!videoEl) {
+    return Math.max(0, lastKnownTimelineSeconds);
+  }
+  const current = Number.parseFloat(videoEl.currentTime);
+  if (Number.isFinite(current)) {
+    return Math.max(0, current);
+  }
+  return Math.max(0, lastKnownTimelineSeconds);
+}
+
+function findLatestActionIndexAtTime(targetSeconds) {
+  const epsilon = 0.001;
+  let bestIndex = null;
+  let bestTime = -Infinity;
+  actions.forEach((action, index) => {
+    const actionSeconds = parseTimeString(action.time);
+    if (actionSeconds === null) return;
+    if (actionSeconds - targetSeconds > epsilon) return;
+    if (actionSeconds > bestTime || (actionSeconds === bestTime && (bestIndex === null || index > bestIndex))) {
+      bestTime = actionSeconds;
+      bestIndex = index;
+    }
+  });
+  return bestIndex;
+}
+
+function setHighlightedAction(index) {
+  const normalizedIndex = Number.isInteger(index) && index >= 0 ? index : null;
+  renderedRows.forEach((row, idx) => {
+    row.classList.toggle("is-active", normalizedIndex === idx);
+  });
+}
+
+function updateChannelStatusDisplay(seconds) {
+  if (!channelStatusListEl) return;
+  channelStatusListEl.innerHTML = "";
+  const activeChannels = computeChannelStatesAtTime(seconds);
+  if (!activeChannels.length) {
+    const empty = document.createElement("p");
+    empty.className = "channel-status__empty";
+    empty.textContent = "All channels at blackout.";
+    channelStatusListEl.append(empty);
+    return;
+  }
+
+  const list = document.createElement("ul");
+  list.className = "channel-status__list";
+
+  activeChannels.forEach(({ channel, value }) => {
+    const item = document.createElement("li");
+    item.className = "channel-status__item";
+
+    const label = document.createElement("span");
+    label.className = "channel-status__item-label";
+    label.textContent = `Channel ${channel}`;
+
+    const valueEl = document.createElement("span");
+    valueEl.textContent = value;
+
+    item.append(label, valueEl);
+    list.append(item);
+  });
+
+  channelStatusListEl.append(list);
+}
+
+function computeChannelStatesAtTime(targetSeconds) {
+  if (!actions.length) return [];
+  const epsilon = 0.001;
+  const timeline = actions
+    .map((action, index) => ({
+      action,
+      index,
+      seconds: parseTimeString(action.time),
+    }))
+    .filter((item) => item.seconds !== null && item.seconds - targetSeconds <= epsilon)
+    .sort((a, b) => {
+      if (a.seconds === b.seconds) {
+        return a.index - b.index;
+      }
+      return a.seconds - b.seconds;
+    });
+
+  const states = new Map();
+  timeline.forEach(({ action }) => {
+    const channel = Number.parseInt(action.channel, 10);
+    const value = Number.parseInt(action.value, 10);
+    if (!Number.isFinite(channel) || channel < 1 || channel > 512) return;
+    if (!Number.isFinite(value)) return;
+    states.set(channel, clamp(value, 0, 255));
+  });
+
+  return Array.from(states.entries())
+    .filter(([, value]) => value > 0)
+    .sort((a, b) => a[0] - b[0])
+    .map(([channel, value]) => ({ channel, value }));
 }
 
 function createInput({ type, value, placeholder, min, max, step }) {
@@ -474,11 +692,12 @@ function createInput({ type, value, placeholder, min, max, step }) {
   return input;
 }
 
-function createChannelField(action, index) {
+function createChannelField(action, index, actionId) {
   const wrapper = document.createElement("div");
   wrapper.className = "preset-select";
 
   const select = document.createElement("select");
+  setActionFieldMetadata(select, actionId, "channelPreset");
   select.addEventListener("change", (event) => handleChannelPresetChange(event, index));
 
   const customOption = document.createElement("option");
@@ -516,6 +735,7 @@ function createChannelField(action, index) {
     max: 512,
     step: 1,
   });
+  setActionFieldMetadata(input, actionId, "channel");
   input.addEventListener("change", (event) => handleChannelNumberChange(event, index));
   if (selectedPreset) {
     input.value = selectedPreset.channel;
@@ -530,11 +750,12 @@ function createChannelField(action, index) {
   return wrapper;
 }
 
-function createValueField(action, index) {
+function createValueField(action, index, actionId) {
   const wrapper = document.createElement("div");
   wrapper.className = "preset-select";
 
   const select = document.createElement("select");
+  setActionFieldMetadata(select, actionId, "valuePreset");
   select.addEventListener("change", (event) => handleValuePresetChange(event, index));
 
   const customOption = document.createElement("option");
@@ -582,6 +803,7 @@ function createValueField(action, index) {
     max: 255,
     step: 1,
   });
+  setActionFieldMetadata(input, actionId, "value");
   input.addEventListener("change", (event) => handleValueNumberChange(event, index));
   if (selectedValuePreset) {
     input.value = selectedValuePreset.value;
@@ -616,8 +838,24 @@ function handleTimeChange(event, index) {
   event.target.setCustomValidity("");
   const formatted = secondsToTimecode(seconds);
   event.target.value = formatted;
-  actions[index].time = formatted;
-  seekToIndex(index);
+  const action = actions[index];
+  if (!action) {
+    queuePreviewSync();
+    return;
+  }
+  const actionId = getActionLocalId(action);
+  action.time = formatted;
+  const focusDescriptor = {
+    actionId,
+    field: "time",
+    selectionStart: event.target.selectionStart,
+    selectionEnd: event.target.selectionEnd,
+  };
+  renderActions({ preserveFocus: focusDescriptor });
+  const newIndex = actions.findIndex((item) => getActionLocalId(item) === actionId);
+  if (newIndex !== -1) {
+    seekToIndex(newIndex);
+  }
   queuePreviewSync();
 }
 
@@ -636,6 +874,7 @@ function handleNumberChange(event, index, key, min, max) {
   event.target.classList.remove("invalid");
   event.target.setCustomValidity("");
   queuePreviewSync();
+  updateActiveActionHighlight(lastKnownTimelineSeconds);
 }
 
 function handleChannelNumberChange(event, index) {
@@ -740,7 +979,8 @@ function seekToIndex(index) {
   if (!action) return;
   const seconds = parseTimeString(action.time);
   if (seconds === null) return;
-  if (!videoEl.src) return;
+  updateActiveActionHighlight(seconds);
+  if (!videoEl || !videoEl.src) return;
   videoEl.currentTime = seconds;
   if (previewMode) {
     playVideoSilently();
@@ -751,8 +991,10 @@ function seekToIndex(index) {
 }
 
 function addAction(action) {
-  actions.push({ ...DEFAULT_ACTION, ...action });
-  renderActions();
+  const newAction = { ...DEFAULT_ACTION, ...action };
+  const actionId = getActionLocalId(newAction);
+  actions.push(newAction);
+  renderActions({ preserveFocus: { actionId, field: "time" } });
   queuePreviewSync();
 }
 
@@ -773,7 +1015,6 @@ function sortActions(list) {
 
 function setControlsEnabled(enabled) {
   addRowButton.disabled = !enabled;
-  sortRowsButton.disabled = !enabled;
   saveButton.disabled = !enabled;
   exportButton.disabled = !enabled;
   if (previewToggle) {
@@ -788,8 +1029,11 @@ function setControlsEnabled(enabled) {
 
 function resetVideoPreview() {
   pauseVideoSilently();
+  if (!videoEl) return;
   videoEl.removeAttribute("src");
   videoEl.load();
+  lastKnownTimelineSeconds = 0;
+  updateActiveActionHighlight(0);
 }
 
 function setVideoSource(url) {
@@ -798,9 +1042,11 @@ function setVideoSource(url) {
     return;
   }
   const absolute = new URL(url, window.location.href).href;
-  if (videoEl.src !== absolute) {
+  if (videoEl && videoEl.src !== absolute) {
     videoEl.src = url;
     videoEl.load();
+    lastKnownTimelineSeconds = 0;
+    updateActiveActionHighlight(0);
   }
 }
 
