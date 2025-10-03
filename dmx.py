@@ -251,17 +251,16 @@ class DMXOutput:
         return send, _close_serial
 
     def _run_sender(self) -> None:
+        cached_levels = bytearray(self._levels)
         while not self._stop_event.is_set():
-            data: Optional[bytearray] = None
             with self._lock:
                 if self._dirty:
-                    data = bytearray(self._levels)
+                    cached_levels = bytearray(self._levels)
                     self._dirty = False
-            if data is not None:
-                try:
-                    self._sender(data)
-                except Exception:  # pragma: no cover - defensive logging
-                    LOGGER.exception("Error while sending DMX data")
+            try:
+                self._sender(bytearray(cached_levels))
+            except Exception:  # pragma: no cover - defensive logging
+                LOGGER.exception("Error while sending DMX data")
             self._stop_event.wait(1.0 / DMX_FPS)
 
     def set_channel(self, channel: int, value: int) -> None:

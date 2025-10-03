@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import sys
+import time
 from pathlib import Path
 from typing import Iterable, List, Optional
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from dmx import DMXAction, DMXShowManager
+import dmx
+from dmx import DMXAction, DMXOutput, DMXShowManager
 
 
 class DummyOutput:
@@ -75,4 +79,27 @@ def test_preview_uses_zero_baseline_for_levels(tmp_path: Path) -> None:
     assert output.level_history
     latest_levels = output.level_history[-1]
     assert latest_levels == [100, 0, 0]
+
+
+def test_dmx_output_continuous_refresh(monkeypatch: pytest.MonkeyPatch) -> None:
+    frames: List[bytes] = []
+
+    def fake_build_sender(self: DMXOutput, universe: int):
+        def fake_sender(payload: bytearray) -> None:
+            frames.append(bytes(payload))
+
+        return fake_sender, None
+
+    monkeypatch.setattr(dmx, "DMX_FPS", 80.0)
+    monkeypatch.setattr(DMXOutput, "_build_sender", fake_build_sender, raising=False)
+
+    output = DMXOutput()
+    try:
+        output.set_channel(1, 255)
+        time.sleep(0.1)
+    finally:
+        output.shutdown()
+
+    bright_frames = [frame for frame in frames if frame and frame[0] == 255]
+    assert len(bright_frames) >= 2
 
