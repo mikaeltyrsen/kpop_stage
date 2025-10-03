@@ -8,8 +8,20 @@
   </head>
   <body>
     <header class="builder-header">
-      <h1>DMX Template Builder</h1>
-      <p>Create and edit lighting cues that sync with your show videos.</p>
+      <div class="builder-header__content">
+        <h1>DMX Template Builder</h1>
+        <p>Create and edit lighting cues that sync with your show videos.</p>
+      </div>
+      <div class="builder-header__actions">
+        <button
+          id="open-channel-presets"
+          type="button"
+          class="secondary toggle-button"
+          aria-pressed="true"
+        >
+          Channel Presets
+        </button>
+      </div>
     </header>
 
     <section class="builder-controls">
@@ -36,6 +48,25 @@
     </section>
 
     <section class="template-info" id="template-info" hidden></section>
+
+    <section class="preset-settings" aria-labelledby="channel-presets-heading">
+      <header class="preset-settings__header">
+        <div>
+          <h2 id="channel-presets-heading">Channel Presets</h2>
+          <p>
+            Create friendly names for your fixtures and their common values.
+            These presets appear in the channel and value dropdowns when you
+            build cues.
+          </p>
+        </div>
+        <div class="preset-settings__actions">
+          <button id="add-channel-preset" type="button" class="secondary">
+            Add Channel Preset
+          </button>
+        </div>
+      </header>
+      <div id="channel-presets" class="preset-settings__list" aria-live="polite"></div>
+    </section>
 
     <main class="builder-layout">
       <section class="preview-panel">
