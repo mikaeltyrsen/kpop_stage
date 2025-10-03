@@ -87,6 +87,21 @@ A lightweight Flask application designed for a Raspberry Pi-powered music video 
 
    The app launches the default loop and exposes the control page at `http://<pi-ip-address>:666/`.
 
+## DMX output
+
+The controller can drive DMX fixtures either through [OLA](https://www.openlighting.org/ola/) or by writing directly to a USB-to-RS485 adapter such as an FT232RL+SP485 based cable.
+
+- **Using OLA (recommended):** Install the `python-ola` dependency along with the OLA daemon on your Raspberry Pi. Configure OLA to expose your USB or network DMX interface and the app will stream frames automatically.
+- **Direct USB cable support:** If you are using a simple FTDI USB-to-DMX interface, install `pyserial` and set the `DMX_SERIAL_PORT` environment variable before starting the app:
+
+  ```bash
+  pip install pyserial
+  export DMX_SERIAL_PORT=/dev/ttyUSB0  # adjust for your adapter path
+  python app.py
+  ```
+
+  The serial sender defaults to DMX512 timing (250000 baud, 8N2). You can fine tune the break and mark-after-break durations with `DMX_BREAK_DURATION` and `DMX_MARK_AFTER_BREAK` environment variables if your hardware requires different timings.
+
 ## Systemd service (optional)
 
 To start the controller automatically on boot, create `/etc/systemd/system/kpop-stage.service`:

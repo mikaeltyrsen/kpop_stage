@@ -14,6 +14,7 @@ import array
 import atexit
 import json
 import logging
+import os
 import threading
 import time
 from dataclasses import dataclass
@@ -27,9 +28,16 @@ try:  # pragma: no-cover - optional dependency
 except ImportError:  # pragma: no-cover - optional dependency
     ClientWrapper = None  # type: ignore
 
+try:  # pragma: no-cover - optional dependency
+    import serial  # type: ignore
+except ImportError:  # pragma: no-cover - optional dependency
+    serial = None  # type: ignore
+
 
 DEFAULT_CHANNELS = 512
 DMX_FPS = 30.0
+DMX_BREAK_DURATION = float(os.environ.get("DMX_BREAK_DURATION", "0.00012"))
+DMX_MARK_AFTER_BREAK = float(os.environ.get("DMX_MARK_AFTER_BREAK", "0.000012"))
 
 
 def _clamp(value: int, low: int, high: int) -> int:
@@ -110,12 +118,27 @@ class DMXOutput:
         self._lock = threading.Lock()
         self._dirty = False
         self._stop_event = threading.Event()
-        self._sender = self._build_sender(universe)
+        self._sender, self._sender_cleanup = self._build_sender(universe)
         self._thread = threading.Thread(target=self._run_sender, daemon=True)
         self._thread.start()
         atexit.register(self.shutdown)
 
-    def _build_sender(self, universe: int) -> Callable[[bytearray], None]:
+    def _build_sender(
+        self, universe: int
+    ) -> tuple[Callable[[bytearray], None], Optional[Callable[[], None]]]:
+        serial_port = os.environ.get("DMX_SERIAL_PORT")
+        if serial_port:
+            try:
+                sender = self._build_serial_sender(serial_port)
+            except Exception:  # pragma: no cover - depends on hardware
+                LOGGER.exception(
+                    "Unable to initialise DMX serial port %s. Falling back to OLA/dry-run output.",
+                    serial_port,
+                )
+            else:
+                if sender:
+                    return sender
+
         if ClientWrapper is None:
             LOGGER.warning(
                 "python-ola not available. DMX output will run in dry-run mode. "
@@ -125,7 +148,7 @@ class DMXOutput:
             def log_sender(data: bytearray) -> None:
                 LOGGER.debug("DMX dry-run universe %s: %s", universe, list(data[:16]))
 
-            return log_sender
+            return log_sender, None
 
         thread_local = threading.local()
 
@@ -160,7 +183,72 @@ class DMXOutput:
             if not done.wait(timeout=1.0):
                 LOGGER.warning("Timed out waiting for DMX send confirmation")
 
-        return send
+        return send, None
+
+    def _build_serial_sender(
+        self, port: str
+    ) -> Optional[tuple[Callable[[bytearray], None], Optional[Callable[[], None]]]]:
+        if serial is None:
+            LOGGER.error(
+                "DMX_SERIAL_PORT is set to %s but pyserial is not installed. "
+                "Install pyserial to enable direct USB DMX output.",
+                port,
+            )
+            return None
+
+        LOGGER.info("Using DMX serial port %s for DMX output", port)
+        thread_local = threading.local()
+        lock = threading.Lock()
+
+        def _get_serial() -> Any:
+            ser = getattr(thread_local, "serial", None)
+            if ser is None or not getattr(ser, "is_open", False):
+                try:
+                    ser = serial.Serial(
+                        port=port,
+                        baudrate=250000,
+                        bytesize=serial.EIGHTBITS,
+                        parity=serial.PARITY_NONE,
+                        stopbits=serial.STOPBITS_TWO,
+                        timeout=1,
+                        write_timeout=1,
+                    )
+                except Exception:  # pragma: no cover - depends on hardware
+                    LOGGER.exception("Unable to open DMX serial port %s", port)
+                    raise
+                thread_local.serial = ser
+            return ser
+
+        def _close_serial() -> None:
+            ser = getattr(thread_local, "serial", None)
+            if ser is not None:
+                try:
+                    ser.close()
+                except Exception:  # pragma: no cover - depends on hardware
+                    LOGGER.exception("Error while closing DMX serial port %s", port)
+                finally:
+                    thread_local.serial = None
+
+        def send(data: bytearray) -> None:
+            try:
+                ser = _get_serial()
+            except Exception:
+                return
+
+            frame = bytes([0]) + bytes(data[: self.channel_count])
+            with lock:
+                try:
+                    ser.break_condition = True
+                    time.sleep(DMX_BREAK_DURATION)
+                    ser.break_condition = False
+                    time.sleep(DMX_MARK_AFTER_BREAK)
+                    ser.write(frame)
+                    ser.flush()
+                except Exception:  # pragma: no cover - depends on hardware
+                    LOGGER.exception("Error while sending DMX data over %s", port)
+                    _close_serial()
+
+        return send, _close_serial
 
     def _run_sender(self) -> None:
         while not self._stop_event.is_set():
@@ -241,6 +329,12 @@ class DMXOutput:
         self._stop_event.set()
         if self._thread.is_alive():
             self._thread.join(timeout=1.0)
+        cleanup = getattr(self, "_sender_cleanup", None)
+        if cleanup:
+            try:
+                cleanup()
+            except Exception:  # pragma: no cover - defensive
+                LOGGER.exception("Error while cleaning up DMX sender")
 
 
 class DMXShowRunner:
