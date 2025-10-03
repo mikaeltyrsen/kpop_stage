@@ -754,16 +754,21 @@ function updateChannelStatusDisplay(seconds) {
   const list = document.createElement("ul");
   list.className = "channel-status__list";
 
-  activeChannels.forEach(({ channel, value }) => {
+  activeChannels.forEach((state) => {
     const item = document.createElement("li");
     item.className = "channel-status__item";
 
+    const channelPreset = findChannelPresetForState(state);
+    const valuePreset = findValuePresetForState(state, channelPreset);
+
     const label = document.createElement("span");
     label.className = "channel-status__item-label";
-    label.textContent = `Channel ${channel}`;
+    label.textContent = formatChannelStatusChannelLabel(state, channelPreset);
 
     const valueEl = document.createElement("span");
-    valueEl.textContent = value;
+    valueEl.textContent = formatChannelStatusValueLabel(state, valuePreset);
+
+    item.title = formatChannelStatusTooltip(state, channelPreset, valuePreset);
 
     item.append(label, valueEl);
     list.append(item);
@@ -795,13 +800,101 @@ function computeChannelStatesAtTime(targetSeconds) {
     const value = Number.parseInt(action.value, 10);
     if (!Number.isFinite(channel) || channel < 1 || channel > 512) return;
     if (!Number.isFinite(value)) return;
-    states.set(channel, clamp(value, 0, 255));
+
+    const normalizedValue = clamp(value, 0, 255);
+    const channelPresetId =
+      typeof action.channelPresetId === "string" && action.channelPresetId
+        ? action.channelPresetId
+        : null;
+    const valuePresetId =
+      typeof action.valuePresetId === "string" && action.valuePresetId
+        ? action.valuePresetId
+        : null;
+
+    states.set(channel, {
+      channel,
+      value: normalizedValue,
+      channelPresetId,
+      valuePresetId,
+    });
   });
 
-  return Array.from(states.entries())
-    .filter(([, value]) => value > 0)
-    .sort((a, b) => a[0] - b[0])
-    .map(([channel, value]) => ({ channel, value }));
+  return Array.from(states.values())
+    .filter((state) => state.value > 0)
+    .sort((a, b) => a.channel - b.channel);
+}
+
+function findChannelPresetForState(state) {
+  if (!state) return null;
+  if (state.channelPresetId) {
+    const preset = getChannelPreset(state.channelPresetId);
+    if (preset) {
+      return preset;
+    }
+  }
+  const channelNumber = Number.parseInt(state.channel, 10);
+  if (!Number.isFinite(channelNumber)) {
+    return null;
+  }
+  return (
+    channelPresets.find((preset) => Number.isFinite(preset.channel) && preset.channel === channelNumber) ||
+    null
+  );
+}
+
+function findValuePresetForState(state, channelPreset) {
+  if (!state || !channelPreset) return null;
+  if (state.valuePresetId) {
+    const preset = channelPreset.values?.find((value) => value.id === state.valuePresetId);
+    if (preset) {
+      return preset;
+    }
+  }
+  const numericValue = Number.parseInt(state.value, 10);
+  if (!Number.isFinite(numericValue)) {
+    return null;
+  }
+  if (!Array.isArray(channelPreset.values)) {
+    return null;
+  }
+  return channelPreset.values.find((value) => Number.isFinite(value.value) && value.value === numericValue) || null;
+}
+
+function formatChannelStatusChannelLabel(state, channelPreset) {
+  if (channelPreset) {
+    if (channelPreset.name) {
+      return channelPreset.name;
+    }
+    if (Number.isFinite(channelPreset.channel)) {
+      return `Channel ${channelPreset.channel}`;
+    }
+  }
+  return `Channel ${state.channel}`;
+}
+
+function formatChannelStatusValueLabel(state, valuePreset) {
+  if (valuePreset) {
+    if (valuePreset.name) {
+      return valuePreset.name;
+    }
+    if (Number.isFinite(valuePreset.value)) {
+      return String(valuePreset.value);
+    }
+  }
+  if (Number.isFinite(state.value)) {
+    return String(state.value);
+  }
+  return `${state.value ?? "0"}`;
+}
+
+function formatChannelStatusTooltip(state, channelPreset, valuePreset) {
+  const channelNumber = Number.isFinite(state.channel) ? state.channel : Number.parseInt(state.channel, 10);
+  const valueNumber = Number.isFinite(state.value) ? state.value : Number.parseInt(state.value, 10);
+  const baseChannel = Number.isFinite(channelNumber) ? `Channel ${channelNumber}` : "Channel";
+  const baseValue = Number.isFinite(valueNumber) ? `Value ${valueNumber}` : "Value";
+  const channelLabel = channelPreset?.name ? `${channelPreset.name} (${baseChannel})` : baseChannel;
+  const valueLabel = valuePreset?.name ? `${valuePreset.name} (${baseValue})` : baseValue;
+  return `${channelLabel} — ${valueLabel}`;
 }
 
 function createInput({ type, value, placeholder, min, max, step }) {
