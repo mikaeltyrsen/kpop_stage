@@ -8,8 +8,20 @@
   </head>
   <body>
     <header class="builder-header">
-      <h1>DMX Template Builder</h1>
-      <p>Create and edit lighting cues that sync with your show videos.</p>
+      <div class="builder-header__content">
+        <h1>DMX Template Builder</h1>
+        <p>Create and edit lighting cues that sync with your show videos.</p>
+      </div>
+      <div class="builder-header__actions">
+        <button
+          id="open-channel-presets"
+          type="button"
+          class="secondary toggle-button"
+          aria-pressed="true"
+        >
+          Channel Presets
+        </button>
+      </div>
     </header>
 
     <section class="builder-controls">
@@ -48,14 +60,6 @@
           </p>
         </div>
         <div class="preset-settings__actions">
-          <button
-            id="toggle-channel-presets"
-            type="button"
-            class="secondary"
-            aria-expanded="true"
-          >
-            Collapse Presets
-          </button>
           <button id="add-channel-preset" type="button" class="secondary">
             Add Channel Preset
           </button>

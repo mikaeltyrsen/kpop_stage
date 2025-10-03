@@ -11,7 +11,9 @@ const previewToggle = document.getElementById("preview-mode-toggle");
 const rowTemplate = document.getElementById("action-row-template");
 const channelPresetsContainer = document.getElementById("channel-presets");
 const addChannelPresetButton = document.getElementById("add-channel-preset");
-const toggleChannelPresetsButton = document.getElementById("toggle-channel-presets");
+const channelPresetsSection = document.querySelector(".preset-settings");
+const builderLayout = document.querySelector(".builder-layout");
+const openChannelPresetsButton = document.getElementById("open-channel-presets");
 
 const PREVIEW_STATE_LABELS = {
   on: "Preview Mode: On",
@@ -29,7 +31,7 @@ let previewMode = false;
 let previewSyncHandle = null;
 let suppressPreviewPause = false;
 let channelPresets = [];
-let channelPresetsCollapsed = false;
+let showingChannelPresets = true;
 const collapsedChannelPresetIds = new Set();
 
 const API_BASE_CANDIDATES = [
@@ -54,6 +56,9 @@ init();
 
 function init() {
   initChannelPresetsUI();
+  if (openChannelPresetsButton) {
+    openChannelPresetsButton.addEventListener("click", handleOpenChannelPresets);
+  }
   loadVideos();
   videoSelect.addEventListener("change", handleVideoSelection);
   addRowButton.addEventListener("click", handleAddRow);
@@ -72,11 +77,24 @@ function init() {
     videoEl.addEventListener("pause", handleVideoPause);
     videoEl.addEventListener("seeked", handleVideoSeeked);
   }
+  updateWorkspaceVisibility();
 }
 
 function handleAddRow() {
   const time = getCurrentVideoTimecode();
   addAction({ time });
+}
+
+function handleOpenChannelPresets() {
+  if (videoSelect.value) {
+    videoSelect.value = "";
+    handleVideoSelection();
+    return;
+  }
+  if (!showingChannelPresets) {
+    showingChannelPresets = true;
+    updateWorkspaceVisibility();
+  }
 }
 
 function getCurrentVideoTimecode() {
@@ -325,18 +343,25 @@ function handleVideoSelection() {
   const videoId = videoSelect.value;
   if (!videoId) {
     currentVideo = null;
+    showingChannelPresets = true;
     actions = [];
     templatePath = "";
     setControlsEnabled(false);
     renderActions();
     resetVideoPreview();
     templateInfoEl.hidden = true;
+    updateWorkspaceVisibility();
     return;
   }
 
+  showingChannelPresets = false;
+  updateWorkspaceVisibility();
   currentVideo = videos.find((video) => video.id === videoId) || null;
   if (!currentVideo) {
     showStatus("Selected song could not be found.", "error");
+    videoSelect.value = "";
+    showingChannelPresets = true;
+    updateWorkspaceVisibility();
     return;
   }
 
@@ -862,13 +887,6 @@ function initChannelPresetsUI() {
       addChannelPreset();
     });
   }
-  if (toggleChannelPresetsButton) {
-    toggleChannelPresetsButton.addEventListener("click", () => {
-      channelPresetsCollapsed = !channelPresetsCollapsed;
-      updateChannelPresetsVisibility();
-    });
-  }
-  updateChannelPresetsVisibility();
 }
 
 function renderChannelPresets() {
@@ -882,7 +900,6 @@ function renderChannelPresets() {
     emptyState.className = "preset-settings__empty";
     emptyState.textContent = "No channel presets yet. Use “Add Channel Preset” to create one.";
     channelPresetsContainer.append(emptyState);
-    updateChannelPresetsVisibility();
     return;
   }
 
@@ -1033,20 +1050,20 @@ function renderChannelPresets() {
     card.append(content);
     channelPresetsContainer.append(card);
   });
-  updateChannelPresetsVisibility();
 }
 
-function updateChannelPresetsVisibility() {
-  if (channelPresetsContainer) {
-    channelPresetsContainer.hidden = channelPresetsCollapsed;
-    channelPresetsContainer.setAttribute("aria-hidden", channelPresetsCollapsed ? "true" : "false");
+function updateWorkspaceVisibility() {
+  const presetsVisible = Boolean(showingChannelPresets);
+  if (channelPresetsSection) {
+    channelPresetsSection.hidden = !presetsVisible;
+    channelPresetsSection.setAttribute("aria-hidden", presetsVisible ? "false" : "true");
   }
-  if (toggleChannelPresetsButton) {
-    const label = channelPresetsCollapsed ? "Expand Presets" : "Collapse Presets";
-    toggleChannelPresetsButton.textContent = label;
-    toggleChannelPresetsButton.setAttribute("aria-expanded", channelPresetsCollapsed ? "false" : "true");
-    toggleChannelPresetsButton.setAttribute("aria-label", label);
-    toggleChannelPresetsButton.title = label;
+  if (builderLayout) {
+    builderLayout.hidden = presetsVisible;
+    builderLayout.setAttribute("aria-hidden", presetsVisible ? "true" : "false");
+  }
+  if (openChannelPresetsButton) {
+    openChannelPresetsButton.setAttribute("aria-pressed", presetsVisible ? "true" : "false");
   }
 }
 
@@ -1067,7 +1084,6 @@ function addChannelPreset() {
     values: [],
   };
   channelPresets.push(preset);
-  channelPresetsCollapsed = false;
   saveChannelPresets();
   renderChannelPresets();
   renderActions();
@@ -1078,9 +1094,6 @@ function removeChannelPreset(presetId) {
   if (index === -1) return;
   channelPresets.splice(index, 1);
   collapsedChannelPresetIds.delete(presetId);
-  if (!channelPresets.length) {
-    channelPresetsCollapsed = false;
-  }
   saveChannelPresets();
   actions.forEach((action) => {
     if (action.channelPresetId === presetId) {
@@ -1284,8 +1297,13 @@ function formatChannelPresetTitle(preset) {
 
 function formatChannelPresetLabel(preset) {
   const channelNumber = Number.isFinite(preset.channel) ? preset.channel : null;
-  const channelLabel = channelNumber !== null ? `Channel ${channelNumber}` : "Channel";
-  return preset.name ? `${preset.name} (${channelLabel})` : channelLabel;
+  if (preset.name) {
+    return preset.name;
+  }
+  if (channelNumber !== null) {
+    return `Channel ${channelNumber}`;
+  }
+  return "Channel Preset";
 }
 
 function formatValuePresetLabel(valuePreset) {

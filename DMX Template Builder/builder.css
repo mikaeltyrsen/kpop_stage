@@ -20,6 +20,26 @@ body {
   padding: 1.5rem clamp(1rem, 3vw, 2.5rem);
   background: linear-gradient(135deg, #111827 0%, #1f2937 40%, #312e81 100%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.builder-header__content {
+  flex: 1 1 20rem;
+  min-width: 15rem;
+}
+
+.builder-header__actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.builder-header__actions .toggle-button {
+  white-space: nowrap;
 }
 
 .builder-header h1 {
