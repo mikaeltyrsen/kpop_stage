@@ -114,14 +114,14 @@ class DMXOutput:
         self._thread.start()
         atexit.register(self.shutdown)
 
-    def _build_sender(self, universe: int) -> Callable[[bytes], None]:
+    def _build_sender(self, universe: int) -> Callable[[bytearray], None]:
         if ClientWrapper is None:
             LOGGER.warning(
                 "python-ola not available. DMX output will run in dry-run mode. "
                 "Install OLA on the Raspberry Pi to control real fixtures."
             )
 
-            def log_sender(data: bytes) -> None:
+            def log_sender(data: bytearray) -> None:
                 LOGGER.debug("DMX dry-run universe %s: %s", universe, list(data[:16]))
 
             return log_sender
@@ -130,7 +130,7 @@ class DMXOutput:
         client = wrapper.Client()
         lock = threading.Lock()
 
-        def send(data: bytes) -> None:
+        def send(data: bytearray) -> None:
             done = threading.Event()
 
             def _callback(status: bool) -> None:  # pragma: no cover - depends on hardware
@@ -149,10 +149,10 @@ class DMXOutput:
 
     def _run_sender(self) -> None:
         while not self._stop_event.is_set():
-            data: Optional[bytes] = None
+            data: Optional[bytearray] = None
             with self._lock:
                 if self._dirty:
-                    data = bytes(self._levels)
+                    data = bytearray(self._levels)
                     self._dirty = False
             if data is not None:
                 try:
