@@ -11,6 +11,7 @@ body {
   display: flex;
   justify-content: center;
   padding: 2rem;
+  padding-bottom: 8rem;
   box-sizing: border-box;
 }
 
@@ -163,4 +164,213 @@ p {
 
 #toast.error {
   background: rgba(120, 35, 35, 0.92);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.player-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 2rem;
+  background: rgba(10, 10, 12, 0.92);
+  backdrop-filter: blur(18px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 -14px 36px rgba(0, 0, 0, 0.45);
+  z-index: 10;
+}
+
+.player-bar .stop-button {
+  margin-left: 1rem;
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: min(320px, 100%);
+  flex: 1 1 280px;
+}
+
+.player-artwork {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  background-position: center;
+  background-size: cover;
+  flex-shrink: 0;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
+}
+
+.player-artwork.is-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.player-artwork.is-placeholder::after {
+  content: "No artwork";
+}
+
+.player-bar.is-default .player-artwork {
+  display: none;
+}
+
+.player-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.player-status {
+  font-size: 0.9rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.player-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex: 2 1 420px;
+  justify-content: flex-end;
+}
+
+.player-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 220px;
+}
+
+.player-bar.is-default .player-progress {
+  display: none;
+}
+
+.player-progress-track {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.player-progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg, #ff3cac, #784ba0, #2b86c5);
+  transition: width 200ms ease;
+}
+
+.player-time {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.player-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.player-bar.is-default .player-actions {
+  display: none;
+}
+
+.volume-slider {
+  -webkit-appearance: none;
+  width: 140px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  outline: none;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.volume-slider:hover,
+.volume-slider:focus {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ff3cac;
+  box-shadow: 0 0 0 4px rgba(255, 60, 172, 0.22);
+  transition: transform 120ms ease;
+}
+
+.volume-slider:active::-webkit-slider-thumb {
+  transform: scale(1.1);
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: #ff3cac;
+  box-shadow: 0 0 0 4px rgba(255, 60, 172, 0.22);
+  transition: transform 120ms ease;
+}
+
+.volume-slider:active::-moz-range-thumb {
+  transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 1.5rem 1.5rem 9rem;
+  }
+
+  .player-bar {
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+  }
+
+  .player-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .volume-slider {
+    width: 100%;
+  }
 }

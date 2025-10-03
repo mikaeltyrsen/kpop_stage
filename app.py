@@ -367,6 +367,78 @@ class PlaybackController:
         except json.JSONDecodeError:
             return {"error": "invalid"}
 
+    def _get_property_locked(self, name: str) -> Any:
+        try:
+            response = self._send_ipc_command("get_property", name)
+        except OSError:
+            return None
+
+        if response.get("error") == "success":
+            return response.get("data")
+        return None
+
+    @staticmethod
+    def _coerce_float(value: Any) -> Optional[float]:
+        if isinstance(value, (int, float)):
+            return float(value)
+        if isinstance(value, str):
+            try:
+                return float(value)
+            except ValueError:
+                return None
+        return None
+
+    def query_state(self) -> Dict[str, Any]:
+        with self._lock:
+            current = self._current
+            is_default = current is None or current == self.default_video
+            process_running = self._process is not None and self._process.poll() is None
+
+            volume_value: Optional[float] = None
+            position_value: Optional[float] = None
+            duration_value: Optional[float] = None
+            paused_value: Optional[bool] = None
+
+            if process_running:
+                volume_raw = self._get_property_locked("volume")
+                position_raw = self._get_property_locked("time-pos")
+                duration_raw = self._get_property_locked("duration")
+                pause_raw = self._get_property_locked("pause")
+
+                volume_value = self._coerce_float(volume_raw)
+                position_value = self._coerce_float(position_raw)
+                duration_value = self._coerce_float(duration_raw)
+                if pause_raw is not None:
+                    paused_value = _mpv_flag_is_true(pause_raw)
+
+            return {
+                "current": str(current) if current else None,
+                "is_default": is_default,
+                "is_running": process_running,
+                "volume": volume_value,
+                "position": position_value,
+                "duration": duration_value,
+                "paused": paused_value,
+            }
+
+    def set_volume(self, volume: Union[int, float]) -> float:
+        clamped = max(0.0, min(100.0, float(volume)))
+        with self._lock:
+            if not (self._process and self._process.poll() is None):
+                self._ensure_player_running()
+
+            try:
+                self._send_ipc_command("set_property", "volume", str(clamped))
+            except OSError as exc:
+                LOGGER.exception("Unable to communicate with mpv while setting volume")
+                self._reset_player_state()
+                raise RuntimeError("Unable to control mpv player") from exc
+
+            current_volume = self._get_property_locked("volume")
+
+        coerced = self._coerce_float(current_volume)
+        return clamped if coerced is None else coerced
+
     def _cancel_idle_monitor_locked(self) -> None:
         if self._idle_monitor_stop:
             self._idle_monitor_stop.set()
@@ -457,6 +529,16 @@ controller = PlaybackController(
 
 def get_video_entry(video_id: str) -> Optional[Dict[str, Any]]:
     return next((v for v in video_config["videos"] if v.get("id") == video_id), None)
+
+
+def get_video_entry_by_path(video_path: Path) -> Optional[Dict[str, Any]]:
+    for entry in video_config["videos"]:
+        file_value = entry.get("file")
+        if not file_value:
+            continue
+        if resolve_media_path(file_value) == video_path:
+            return entry
+    return None
 
 
 @app.route("/")
@@ -592,6 +674,64 @@ def api_stop() -> Any:
     dmx_manager.stop_show()
 
     return jsonify({"status": "default_loop"})
+
+
+@app.route("/api/status")
+def api_status() -> Any:
+    state = controller.query_state()
+    mode = "default_loop" if state.get("is_default") else "video"
+
+    video_info: Optional[Dict[str, Any]] = None
+    current_value = state.get("current")
+    if mode == "video" and isinstance(current_value, str):
+        try:
+            current_path = Path(current_value)
+        except (TypeError, ValueError):
+            current_path = None
+        if current_path:
+            entry = get_video_entry_by_path(current_path)
+            if entry:
+                video_info = {
+                    "id": entry.get("id"),
+                    "name": entry.get("name"),
+                    "poster": entry.get("poster"),
+                }
+
+    payload: Dict[str, Any] = {
+        "mode": mode,
+        "volume": state.get("volume"),
+        "position": state.get("position"),
+        "duration": state.get("duration"),
+        "paused": state.get("paused"),
+        "video": video_info,
+    }
+
+    return jsonify(payload)
+
+
+@app.route("/api/volume", methods=["POST"])
+def api_volume() -> Any:
+    data = request.get_json(force=True, silent=True) or {}
+    if "volume" not in data:
+        return jsonify({"error": "Missing 'volume' in request body"}), 400
+
+    try:
+        requested_volume = float(data["volume"])
+    except (TypeError, ValueError):
+        return jsonify({"error": "Volume must be a number"}), 400
+
+    try:
+        new_volume = controller.set_volume(requested_volume)
+    except FileNotFoundError:
+        LOGGER.error(controller.default_missing_message)
+        return jsonify({"error": "Default loop video missing on server"}), 500
+    except RuntimeError as exc:
+        return jsonify({"error": str(exc)}), 500
+    except Exception:
+        LOGGER.exception("Unable to set playback volume")
+        return jsonify({"error": "Unable to set playback volume"}), 500
+
+    return jsonify({"status": "ok", "volume": new_volume})
 
 
 @app.route("/api/dmx/templates/<video_id>", methods=["GET", "POST"])
