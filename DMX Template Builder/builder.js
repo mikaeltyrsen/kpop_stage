@@ -9,6 +9,8 @@ const templateInfoEl = document.getElementById("template-info");
 const videoEl = document.getElementById("preview-video");
 const previewToggle = document.getElementById("preview-mode-toggle");
 const rowTemplate = document.getElementById("action-row-template");
+const channelPresetsContainer = document.getElementById("channel-presets");
+const addChannelPresetButton = document.getElementById("add-channel-preset");
 
 const PREVIEW_STATE_LABELS = {
   on: "Preview Mode: On",
@@ -25,6 +27,7 @@ let apiBasePath = null;
 let previewMode = false;
 let previewSyncHandle = null;
 let suppressPreviewPause = false;
+let channelPresets = [];
 
 const API_BASE_CANDIDATES = [
   "/api",
@@ -33,11 +36,21 @@ const API_BASE_CANDIDATES = [
   "/dmx-template-builder/api",
 ];
 
-const DEFAULT_ACTION = Object.freeze({ time: "00:00:00", channel: 1, value: 0, fade: 0 });
+const CHANNEL_PRESET_STORAGE_KEY = "dmxTemplateBuilder.channelPresets";
+
+const DEFAULT_ACTION = Object.freeze({
+  time: "00:00:00",
+  channel: 1,
+  value: 0,
+  fade: 0,
+  channelPresetId: null,
+  valuePresetId: null,
+});
 
 init();
 
 function init() {
+  initChannelPresetsUI();
   loadVideos();
   videoSelect.addEventListener("change", handleVideoSelection);
   addRowButton.addEventListener("click", handleAddRow);
@@ -384,25 +397,11 @@ function renderActions() {
     timeInput.addEventListener("focus", () => seekToIndex(index));
     appendToColumn(row, "time", timeInput);
 
-    const channelInput = createInput({
-      type: "number",
-      value: action.channel,
-      min: 1,
-      max: 512,
-      step: 1,
-    });
-    channelInput.addEventListener("change", (event) => handleNumberChange(event, index, "channel", 1, 512));
-    appendToColumn(row, "channel", channelInput);
+    const channelField = createChannelField(action, index);
+    appendToColumn(row, "channel", channelField);
 
-    const valueInput = createInput({
-      type: "number",
-      value: action.value,
-      min: 0,
-      max: 255,
-      step: 1,
-    });
-    valueInput.addEventListener("change", (event) => handleNumberChange(event, index, "value", 0, 255));
-    appendToColumn(row, "value", valueInput);
+    const valueField = createValueField(action, index);
+    appendToColumn(row, "value", valueField);
 
     const fadeInput = createInput({
       type: "number",
@@ -447,6 +446,128 @@ function createInput({ type, value, placeholder, min, max, step }) {
   return input;
 }
 
+function createChannelField(action, index) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "preset-select";
+
+  const select = document.createElement("select");
+  select.addEventListener("change", (event) => handleChannelPresetChange(event, index));
+
+  const customOption = document.createElement("option");
+  customOption.value = "custom";
+  customOption.textContent = "Custom…";
+  select.append(customOption);
+
+  const sortedPresets = getSortedChannelPresets();
+  let selectedPreset = null;
+  sortedPresets.forEach((preset) => {
+    const option = document.createElement("option");
+    option.value = preset.id;
+    option.dataset.channelPresetId = preset.id;
+    option.textContent = formatChannelPresetLabel(preset);
+    select.append(option);
+    if (preset.id === action.channelPresetId) {
+      selectedPreset = preset;
+    }
+  });
+
+  if (action.channelPresetId && !selectedPreset) {
+    action.channelPresetId = null;
+  }
+
+  if (selectedPreset) {
+    select.value = selectedPreset.id;
+  } else {
+    select.value = "custom";
+  }
+
+  const input = createInput({
+    type: "number",
+    value: action.channel,
+    min: 1,
+    max: 512,
+    step: 1,
+  });
+  input.addEventListener("change", (event) => handleChannelNumberChange(event, index));
+  if (selectedPreset) {
+    input.value = selectedPreset.channel;
+    input.disabled = true;
+    input.title = "Channel is set by preset";
+  } else {
+    input.disabled = false;
+    input.title = "";
+  }
+
+  wrapper.append(select, input);
+  return wrapper;
+}
+
+function createValueField(action, index) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "preset-select";
+
+  const select = document.createElement("select");
+  select.addEventListener("change", (event) => handleValuePresetChange(event, index));
+
+  const customOption = document.createElement("option");
+  customOption.value = "custom";
+  customOption.textContent = "Custom…";
+  select.append(customOption);
+
+  let selectedChannelPreset = null;
+  if (action.channelPresetId) {
+    selectedChannelPreset =
+      channelPresets.find((preset) => preset.id === action.channelPresetId) || null;
+    if (!selectedChannelPreset) {
+      action.channelPresetId = null;
+      action.valuePresetId = null;
+    }
+  }
+
+  const valuePresets = selectedChannelPreset ? selectedChannelPreset.values || [] : [];
+  let selectedValuePreset = null;
+  valuePresets.forEach((valuePreset) => {
+    const option = document.createElement("option");
+    option.value = valuePreset.id;
+    option.dataset.valuePresetId = valuePreset.id;
+    option.textContent = formatValuePresetLabel(valuePreset);
+    select.append(option);
+    if (valuePreset.id === action.valuePresetId) {
+      selectedValuePreset = valuePreset;
+    }
+  });
+
+  if (action.valuePresetId && !selectedValuePreset) {
+    action.valuePresetId = null;
+  }
+
+  if (selectedValuePreset) {
+    select.value = selectedValuePreset.id;
+  } else {
+    select.value = "custom";
+  }
+
+  const input = createInput({
+    type: "number",
+    value: action.value,
+    min: 0,
+    max: 255,
+    step: 1,
+  });
+  input.addEventListener("change", (event) => handleValueNumberChange(event, index));
+  if (selectedValuePreset) {
+    input.value = selectedValuePreset.value;
+    input.disabled = true;
+    input.title = "Value is set by preset";
+  } else {
+    input.disabled = false;
+    input.title = "";
+  }
+
+  wrapper.append(select, input);
+  return wrapper;
+}
+
 function appendToColumn(row, column, element) {
   const cell = row.querySelector(`[data-column="${column}"]`);
   if (cell) {
@@ -489,6 +610,23 @@ function handleNumberChange(event, index, key, min, max) {
   queuePreviewSync();
 }
 
+function handleChannelNumberChange(event, index) {
+  const action = actions[index];
+  if (action) {
+    action.channelPresetId = null;
+    action.valuePresetId = null;
+  }
+  handleNumberChange(event, index, "channel", 1, 512);
+}
+
+function handleValueNumberChange(event, index) {
+  const action = actions[index];
+  if (action) {
+    action.valuePresetId = null;
+  }
+  handleNumberChange(event, index, "value", 0, 255);
+}
+
 function handleFadeChange(event, index) {
   const raw = event.target.value;
   const parsed = Number.parseFloat(raw);
@@ -503,6 +641,69 @@ function handleFadeChange(event, index) {
   event.target.value = actions[index].fade;
   event.target.classList.remove("invalid");
   event.target.setCustomValidity("");
+  queuePreviewSync();
+}
+
+function handleChannelPresetChange(event, index) {
+  const selectedId = event.target.value;
+  const action = actions[index];
+  if (!action) return;
+
+  if (selectedId && selectedId !== "custom") {
+    const preset = channelPresets.find((item) => item.id === selectedId);
+    if (preset) {
+      action.channelPresetId = preset.id;
+      const presetChannel = Number.parseInt(preset.channel, 10);
+      if (Number.isFinite(presetChannel)) {
+        action.channel = clamp(presetChannel, 1, 512);
+      }
+
+      if (Array.isArray(preset.values) && preset.values.length) {
+        const existing = preset.values.find((value) => value.id === action.valuePresetId);
+        const selectedValue = existing || preset.values[0];
+        action.valuePresetId = selectedValue.id;
+        const valueNumber = Number.parseInt(selectedValue.value, 10);
+        if (Number.isFinite(valueNumber)) {
+          action.value = clamp(valueNumber, 0, 255);
+        }
+      } else {
+        action.valuePresetId = null;
+      }
+
+      renderActions();
+      queuePreviewSync();
+      return;
+    }
+  }
+
+  action.channelPresetId = null;
+  action.valuePresetId = null;
+  renderActions();
+  queuePreviewSync();
+}
+
+function handleValuePresetChange(event, index) {
+  const selectedId = event.target.value;
+  const action = actions[index];
+  if (!action) return;
+
+  if (selectedId && selectedId !== "custom" && action.channelPresetId) {
+    const preset = channelPresets.find((item) => item.id === action.channelPresetId);
+    const valuePreset = preset?.values?.find((value) => value.id === selectedId);
+    if (valuePreset) {
+      action.valuePresetId = valuePreset.id;
+      const valueNumber = Number.parseInt(valuePreset.value, 10);
+      if (Number.isFinite(valueNumber)) {
+        action.value = clamp(valueNumber, 0, 255);
+      }
+      renderActions();
+      queuePreviewSync();
+      return;
+    }
+  }
+
+  action.valuePresetId = null;
+  renderActions();
   queuePreviewSync();
 }
 
@@ -647,6 +848,460 @@ function exportTemplate(preparedActions, options = {}) {
   if (!options.silent) {
     showStatus("Template exported as a download.", "success");
   }
+}
+
+function initChannelPresetsUI() {
+  if (!channelPresetsContainer) return;
+  channelPresets = loadChannelPresets();
+  renderChannelPresets();
+  if (addChannelPresetButton) {
+    addChannelPresetButton.addEventListener("click", () => {
+      addChannelPreset();
+    });
+  }
+}
+
+function renderChannelPresets() {
+  if (!channelPresetsContainer) return;
+
+  channelPresetsContainer.innerHTML = "";
+
+  if (!channelPresets.length) {
+    const emptyState = document.createElement("div");
+    emptyState.className = "preset-settings__empty";
+    emptyState.textContent = "No channel presets yet. Use “Add Channel Preset” to create one.";
+    channelPresetsContainer.append(emptyState);
+    return;
+  }
+
+  const sorted = getSortedChannelPresets();
+  sorted.forEach((preset) => {
+    const card = document.createElement("article");
+    card.className = "preset-card";
+    card.dataset.presetId = preset.id;
+
+    const header = document.createElement("div");
+    header.className = "preset-card__header";
+
+    const title = document.createElement("h3");
+    title.className = "preset-card__title";
+    title.textContent = formatChannelPresetTitle(preset);
+    header.append(title);
+
+    const actionsEl = document.createElement("div");
+    actionsEl.className = "preset-card__actions";
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "secondary";
+    removeButton.textContent = "Remove";
+    removeButton.addEventListener("click", () => removeChannelPreset(preset.id));
+    actionsEl.append(removeButton);
+    header.append(actionsEl);
+
+    card.append(header);
+
+    const row = document.createElement("div");
+    row.className = "preset-card__row";
+
+    const nameField = document.createElement("label");
+    nameField.className = "preset-field";
+    const nameLabel = document.createElement("span");
+    nameLabel.textContent = "Name";
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.placeholder = "Mover - Pan";
+    nameInput.value = preset.name || "";
+    nameInput.addEventListener("input", (event) => handlePresetNameInput(event, preset.id));
+    nameField.append(nameLabel, nameInput);
+
+    const channelField = document.createElement("label");
+    channelField.className = "preset-field";
+    const channelLabel = document.createElement("span");
+    channelLabel.textContent = "Channel";
+    const channelInput = document.createElement("input");
+    channelInput.type = "number";
+    channelInput.min = 1;
+    channelInput.max = 512;
+    channelInput.step = 1;
+    channelInput.value = preset.channel ?? "";
+    channelInput.addEventListener("change", (event) => handlePresetChannelInput(event, preset.id));
+    channelField.append(channelLabel, channelInput);
+
+    row.append(nameField, channelField);
+    card.append(row);
+
+    const valuesSection = document.createElement("div");
+    valuesSection.className = "preset-values";
+
+    const valuesHeading = document.createElement("h3");
+    valuesHeading.textContent = "Values";
+    valuesSection.append(valuesHeading);
+
+    if (!preset.values.length) {
+      const emptyValues = document.createElement("p");
+      emptyValues.className = "preset-values__empty";
+      emptyValues.textContent = "No saved values yet. Add common colours or positions.";
+      valuesSection.append(emptyValues);
+    }
+
+    preset.values.forEach((valuePreset) => {
+      const valueRow = document.createElement("div");
+      valueRow.className = "preset-value-row";
+      valueRow.dataset.valuePresetId = valuePreset.id;
+
+      const valueName = document.createElement("input");
+      valueName.type = "text";
+      valueName.placeholder = "Green";
+      valueName.value = valuePreset.name || "";
+      valueName.addEventListener("input", (event) => {
+        handlePresetValueNameInput(event, preset.id, valuePreset.id);
+      });
+
+      const valueInput = document.createElement("input");
+      valueInput.type = "number";
+      valueInput.min = 0;
+      valueInput.max = 255;
+      valueInput.step = 1;
+      valueInput.value = valuePreset.value ?? 0;
+      valueInput.addEventListener("change", (event) => {
+        handlePresetValueNumberInput(event, preset.id, valuePreset.id);
+      });
+
+      const removeValueButton = document.createElement("button");
+      removeValueButton.type = "button";
+      removeValueButton.textContent = "Remove";
+      removeValueButton.addEventListener("click", () => {
+        removeChannelPresetValue(preset.id, valuePreset.id);
+      });
+
+      valueRow.append(valueName, valueInput, removeValueButton);
+      valuesSection.append(valueRow);
+    });
+
+    const addValueButton = document.createElement("button");
+    addValueButton.type = "button";
+    addValueButton.className = "secondary";
+    addValueButton.textContent = "Add Value";
+    addValueButton.addEventListener("click", () => addChannelPresetValue(preset.id));
+    valuesSection.append(addValueButton);
+
+    card.append(valuesSection);
+    channelPresetsContainer.append(card);
+  });
+}
+
+function addChannelPreset() {
+  const preset = {
+    id: generateId("preset"),
+    name: "",
+    channel: findNextAvailableChannel(),
+    values: [],
+  };
+  channelPresets.push(preset);
+  saveChannelPresets();
+  renderChannelPresets();
+  renderActions();
+}
+
+function removeChannelPreset(presetId) {
+  const index = channelPresets.findIndex((preset) => preset.id === presetId);
+  if (index === -1) return;
+  channelPresets.splice(index, 1);
+  saveChannelPresets();
+  actions.forEach((action) => {
+    if (action.channelPresetId === presetId) {
+      action.channelPresetId = null;
+      action.valuePresetId = null;
+    }
+  });
+  renderChannelPresets();
+  renderActions();
+  queuePreviewSync();
+}
+
+function addChannelPresetValue(presetId) {
+  const preset = getChannelPreset(presetId);
+  if (!preset) return;
+  if (!Array.isArray(preset.values)) {
+    preset.values = [];
+  }
+  const value = {
+    id: generateId("value"),
+    name: "",
+    value: findNextAvailableValue(preset),
+  };
+  preset.values.push(value);
+  saveChannelPresets();
+  renderChannelPresets();
+  renderActions();
+}
+
+function removeChannelPresetValue(presetId, valueId) {
+  const preset = getChannelPreset(presetId);
+  if (!preset || !Array.isArray(preset.values)) return;
+  const index = preset.values.findIndex((value) => value.id === valueId);
+  if (index === -1) return;
+  preset.values.splice(index, 1);
+  saveChannelPresets();
+  actions.forEach((action) => {
+    if (action.channelPresetId === presetId && action.valuePresetId === valueId) {
+      action.valuePresetId = null;
+    }
+  });
+  renderChannelPresets();
+  renderActions();
+  queuePreviewSync();
+}
+
+function handlePresetNameInput(event, presetId) {
+  const preset = getChannelPreset(presetId);
+  if (!preset) return;
+  preset.name = event.target.value;
+  saveChannelPresets();
+  updatePresetCardTitle(event.target.closest(".preset-card"), preset);
+  refreshChannelPresetOptions(preset);
+}
+
+function handlePresetChannelInput(event, presetId) {
+  const preset = getChannelPreset(presetId);
+  if (!preset) return;
+  const raw = Number.parseInt(event.target.value, 10);
+  if (Number.isNaN(raw)) {
+    event.target.classList.add("invalid");
+    event.target.setCustomValidity("Channel must be between 1 and 512.");
+    event.target.reportValidity();
+    return;
+  }
+  const clamped = clamp(raw, 1, 512);
+  event.target.value = clamped;
+  event.target.classList.remove("invalid");
+  event.target.setCustomValidity("");
+  preset.channel = clamped;
+  saveChannelPresets();
+  updatePresetCardTitle(event.target.closest(".preset-card"), preset);
+  refreshChannelPresetOptions(preset);
+  updateActionsForChannelPreset(presetId);
+  renderActions();
+  queuePreviewSync();
+}
+
+function handlePresetValueNameInput(event, presetId, valueId) {
+  const valuePreset = getChannelValuePreset(presetId, valueId);
+  if (!valuePreset) return;
+  valuePreset.name = event.target.value;
+  saveChannelPresets();
+  refreshValuePresetOptions(presetId, valuePreset);
+}
+
+function handlePresetValueNumberInput(event, presetId, valueId) {
+  const valuePreset = getChannelValuePreset(presetId, valueId);
+  if (!valuePreset) return;
+  const raw = Number.parseInt(event.target.value, 10);
+  if (Number.isNaN(raw)) {
+    event.target.classList.add("invalid");
+    event.target.setCustomValidity("Value must be between 0 and 255.");
+    event.target.reportValidity();
+    return;
+  }
+  const clamped = clamp(raw, 0, 255);
+  event.target.value = clamped;
+  event.target.classList.remove("invalid");
+  event.target.setCustomValidity("");
+  valuePreset.value = clamped;
+  saveChannelPresets();
+  refreshValuePresetOptions(presetId, valuePreset);
+  updateActionsForValuePreset(presetId, valueId);
+  renderActions();
+  queuePreviewSync();
+}
+
+function loadChannelPresets() {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return [];
+  }
+  try {
+    const raw = window.localStorage.getItem(CHANNEL_PRESET_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((item) => sanitizeChannelPreset(item)).filter(Boolean);
+  } catch (error) {
+    console.error("Unable to load channel presets", error);
+    return [];
+  }
+}
+
+function saveChannelPresets() {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return;
+  }
+  try {
+    const payload = channelPresets.map((preset) => ({
+      id: preset.id,
+      name: preset.name || "",
+      channel: clamp(Number.parseInt(preset.channel, 10) || 1, 1, 512),
+      values: Array.isArray(preset.values)
+        ? preset.values.map((value) => ({
+            id: value.id,
+            name: value.name || "",
+            value: clamp(Number.parseInt(value.value, 10) || 0, 0, 255),
+          }))
+        : [],
+    }));
+    window.localStorage.setItem(CHANNEL_PRESET_STORAGE_KEY, JSON.stringify(payload));
+  } catch (error) {
+    console.error("Unable to save channel presets", error);
+  }
+}
+
+function sanitizeChannelPreset(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const id = typeof raw.id === "string" && raw.id ? raw.id : generateId("preset");
+  const name = typeof raw.name === "string" ? raw.name : "";
+  const channelNumber = Number.parseInt(raw.channel, 10);
+  const channel = Number.isFinite(channelNumber) ? clamp(channelNumber, 1, 512) : 1;
+  const values = Array.isArray(raw.values)
+    ? raw.values.map((value) => sanitizeChannelValue(value)).filter(Boolean)
+    : [];
+  return { id, name, channel, values };
+}
+
+function sanitizeChannelValue(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const id = typeof raw.id === "string" && raw.id ? raw.id : generateId("value");
+  const name = typeof raw.name === "string" ? raw.name : "";
+  const rawValue = Number.parseInt(raw.value, 10);
+  const value = Number.isFinite(rawValue) ? clamp(rawValue, 0, 255) : 0;
+  return { id, name, value };
+}
+
+function getChannelPreset(presetId) {
+  return channelPresets.find((preset) => preset.id === presetId) || null;
+}
+
+function getChannelValuePreset(presetId, valueId) {
+  const preset = getChannelPreset(presetId);
+  if (!preset || !Array.isArray(preset.values)) return null;
+  return preset.values.find((value) => value.id === valueId) || null;
+}
+
+function updatePresetCardTitle(card, preset) {
+  if (!card) return;
+  const title = card.querySelector(".preset-card__title");
+  if (title) {
+    title.textContent = formatChannelPresetTitle(preset);
+  }
+}
+
+function formatChannelPresetTitle(preset) {
+  const channelNumber = Number.isFinite(preset.channel) ? preset.channel : null;
+  if (preset.name && channelNumber !== null) {
+    return `${preset.name} — Channel ${channelNumber}`;
+  }
+  if (preset.name) {
+    return preset.name;
+  }
+  if (channelNumber !== null) {
+    return `Channel ${channelNumber}`;
+  }
+  return "New channel preset";
+}
+
+function formatChannelPresetLabel(preset) {
+  const channelNumber = Number.isFinite(preset.channel) ? preset.channel : null;
+  const channelLabel = channelNumber !== null ? `Channel ${channelNumber}` : "Channel";
+  return preset.name ? `${preset.name} (${channelLabel})` : channelLabel;
+}
+
+function formatValuePresetLabel(valuePreset) {
+  const valueNumber = Number.isFinite(valuePreset.value) ? valuePreset.value : 0;
+  return valuePreset.name ? `${valuePreset.name} (${valueNumber})` : `Value ${valueNumber}`;
+}
+
+function getSortedChannelPresets() {
+  return [...channelPresets].sort((a, b) => {
+    const aChannel = Number.isFinite(a.channel) ? a.channel : Number.POSITIVE_INFINITY;
+    const bChannel = Number.isFinite(b.channel) ? b.channel : Number.POSITIVE_INFINITY;
+    if (aChannel !== bChannel) {
+      return aChannel - bChannel;
+    }
+    return (a.name || "").localeCompare(b.name || "");
+  });
+}
+
+function refreshChannelPresetOptions(preset) {
+  if (!actionsBody) return;
+  const selector = `option[data-channel-preset-id="${preset.id}"]`;
+  actionsBody.querySelectorAll(selector).forEach((option) => {
+    option.textContent = formatChannelPresetLabel(preset);
+  });
+}
+
+function refreshValuePresetOptions(presetId, valuePreset) {
+  if (!actionsBody) return;
+  const selector = `option[data-value-preset-id="${valuePreset.id}"]`;
+  actionsBody.querySelectorAll(selector).forEach((option) => {
+    option.textContent = formatValuePresetLabel(valuePreset);
+  });
+}
+
+function updateActionsForChannelPreset(presetId) {
+  const preset = getChannelPreset(presetId);
+  if (!preset) return;
+  const channelNumber = Number.parseInt(preset.channel, 10);
+  if (!Number.isFinite(channelNumber)) return;
+  actions.forEach((action) => {
+    if (action.channelPresetId === presetId) {
+      action.channel = clamp(channelNumber, 1, 512);
+    }
+  });
+}
+
+function updateActionsForValuePreset(presetId, valueId) {
+  const valuePreset = getChannelValuePreset(presetId, valueId);
+  if (!valuePreset) return;
+  const numericValue = Number.parseInt(valuePreset.value, 10);
+  if (!Number.isFinite(numericValue)) return;
+  actions.forEach((action) => {
+    if (action.channelPresetId === presetId && action.valuePresetId === valueId) {
+      action.value = clamp(numericValue, 0, 255);
+    }
+  });
+}
+
+function findNextAvailableChannel() {
+  const used = new Set(
+    channelPresets
+      .map((preset) => Number.parseInt(preset.channel, 10))
+      .filter((value) => Number.isFinite(value)),
+  );
+  for (let channel = 1; channel <= 512; channel += 1) {
+    if (!used.has(channel)) {
+      return channel;
+    }
+  }
+  return 1;
+}
+
+function findNextAvailableValue(preset) {
+  const used = new Set(
+    (preset.values || [])
+      .map((value) => Number.parseInt(value.value, 10))
+      .filter((entry) => Number.isFinite(entry)),
+  );
+  for (let value = 0; value <= 255; value += 1) {
+    if (!used.has(value)) {
+      return value;
+    }
+  }
+  return 0;
+}
+
+function generateId(prefix = "id") {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return `${prefix}_${crypto.randomUUID()}`;
+  }
+  return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function normalizeBasePath(value) {

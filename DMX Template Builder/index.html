@@ -37,6 +37,23 @@
 
     <section class="template-info" id="template-info" hidden></section>
 
+    <section class="preset-settings" aria-labelledby="channel-presets-heading">
+      <header class="preset-settings__header">
+        <div>
+          <h2 id="channel-presets-heading">Channel Presets</h2>
+          <p>
+            Create friendly names for your fixtures and their common values.
+            These presets appear in the channel and value dropdowns when you
+            build cues.
+          </p>
+        </div>
+        <button id="add-channel-preset" type="button" class="secondary">
+          Add Channel Preset
+        </button>
+      </header>
+      <div id="channel-presets" class="preset-settings__list" aria-live="polite"></div>
+    </section>
+
     <main class="builder-layout">
       <section class="preview-panel">
         <h2>Video Preview</h2>
