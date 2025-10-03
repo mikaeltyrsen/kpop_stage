@@ -11,9 +11,6 @@
       <header>
         <h1>Music Video Selector</h1>
         <p>Choose a video to play on the stage screen.</p>
-        <div class="controls">
-          <button type="button" id="stop-button" class="stop-button">Stop</button>
-        </div>
       </header>
       <section id="video-list" class="video-grid" aria-live="polite"></section>
     </main>
@@ -27,6 +24,44 @@
       </article>
     </template>
     <div id="toast" role="status" aria-live="assertive"></div>
+    <div id="player-bar" class="player-bar is-default" aria-live="polite">
+      <div class="player-info">
+        <div class="player-artwork" aria-hidden="true"></div>
+        <div class="player-text">
+          <span class="player-status">Default loop active</span>
+          <span class="player-title">Stage screen is showing the loop.</span>
+        </div>
+      </div>
+      <div class="player-controls">
+        <div
+          class="player-progress"
+          role="progressbar"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="0"
+        >
+          <div class="player-progress-track">
+            <div class="player-progress-fill"></div>
+          </div>
+          <div class="player-time">
+            <span class="player-time-current">0:00</span>
+            <span class="player-time-total">0:00</span>
+          </div>
+        </div>
+        <div class="player-actions">
+          <input
+            type="range"
+            id="volume-slider"
+            class="volume-slider"
+            min="0"
+            max="100"
+            value="100"
+            aria-label="Volume"
+          />
+          <button type="button" id="player-stop-button" class="stop-button">Stop</button>
+        </div>
+      </div>
+    </div>
     <script src="/static/app.js" defer></script>
   </body>
 </html>
