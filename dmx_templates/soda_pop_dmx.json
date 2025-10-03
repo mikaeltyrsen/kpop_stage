@@ -1,6 +1,24 @@
 {
   "actions": [
     {
+      "time": "00:00:01",
+      "channel": 1,
+      "value": 255,
+      "fade": 1.0
+    },
+    {
+      "time": "00:00:01",
+      "channel": 2,
+      "value": 255,
+      "fade": 0.0
+    },
+    {
+      "time": "00:00:01",
+      "channel": 3,
+      "value": 255,
+      "fade": 0.0
+    },
+    {
       "time": "00:01:23",
       "channel": 1,
       "value": 255,
