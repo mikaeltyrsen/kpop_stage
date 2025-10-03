@@ -66,6 +66,30 @@ def test_start_show_resets_levels_before_running(tmp_path: Path) -> None:
     assert runner.started_actions == actions
 
 
+def test_stop_show_preserves_startup_scene_until_show_runs(tmp_path: Path) -> None:
+    output = DummyOutput(channel_count=4)
+    manager = create_manager(tmp_path, output)
+
+    manager.stop_show()
+
+    assert output.blackout_called == 0
+
+
+def test_stop_show_blackouts_after_show_runs(tmp_path: Path) -> None:
+    output = DummyOutput(channel_count=4)
+    manager = create_manager(tmp_path, output)
+
+    actions = [
+        DMXAction(time_seconds=0.0, channel=1, value=255, fade=0.0),
+    ]
+    manager.load_show_for_video = lambda _: actions  # type: ignore[assignment]
+
+    manager.start_show_for_video({"id": "video"})
+    manager.stop_show()
+
+    assert output.blackout_called == 1
+
+
 def test_preview_uses_zero_baseline_for_levels(tmp_path: Path) -> None:
     output = DummyOutput(channel_count=3)
     manager = create_manager(tmp_path, output)

@@ -575,6 +575,7 @@ class DMXShowManager:
         self.output = output
         self.runner = DMXShowRunner(output)
         self._lock = threading.Lock()
+        self._has_active_show = False
 
     def template_path_for_video(self, video_entry: Dict[str, object]) -> Path:
         template_value = video_entry.get("dmx_template")
@@ -619,6 +620,9 @@ class DMXShowManager:
         self.runner.stop()
         zero_levels = [0] * self.output.channel_count
         self.output.set_levels(zero_levels)
+
+        with self._lock:
+            self._has_active_show = bool(actions)
 
         if actions:
             self.runner.start(actions)
@@ -667,12 +671,20 @@ class DMXShowManager:
 
         self.runner.stop()
         self.output.set_levels(levels)
+        with self._lock:
+            self._has_active_show = bool(actions)
         if adjusted:
             self.runner.start(adjusted)
 
     def stop_show(self) -> None:
         self.runner.stop()
-        self.output.blackout()
+        should_blackout = False
+        with self._lock:
+            if self._has_active_show:
+                self._has_active_show = False
+                should_blackout = True
+        if should_blackout:
+            self.output.blackout()
 
     def serialize_actions(self, actions: Iterable[DMXAction]) -> List[Dict[str, object]]:
         serialized = []
