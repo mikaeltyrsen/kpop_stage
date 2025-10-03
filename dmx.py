@@ -197,6 +197,39 @@ class DMXOutput:
             return None
 
         LOGGER.info("Using DMX serial port %s for DMX output", port)
+        serial_config: Dict[str, Any] = {
+            "port": port,
+            "baudrate": 250000,
+            "bytesize": serial.EIGHTBITS,
+            "parity": serial.PARITY_NONE,
+            "stopbits": serial.STOPBITS_TWO,
+            "timeout": 1,
+            "write_timeout": 1,
+        }
+
+        try:
+            # Attempt to open the serial port once during initialisation so we
+            # can gracefully fall back to a dry-run sender when the hardware is
+            # not available (e.g. on development machines).
+            test_serial = serial.Serial(**serial_config)
+        except Exception as exc:  # pragma: no cover - depends on hardware
+            LOGGER.error(
+                "Unable to open DMX serial port %s (%s). "
+                "Falling back to OLA/dry-run output.",
+                port,
+                exc,
+            )
+            return None
+        else:  # pragma: no cover - depends on hardware
+            try:
+                test_serial.close()
+            except Exception:
+                LOGGER.debug(
+                    "Error while closing test connection to DMX serial port %s",
+                    port,
+                    exc_info=True,
+                )
+
         thread_local = threading.local()
         lock = threading.Lock()
 
@@ -204,15 +237,7 @@ class DMXOutput:
             ser = getattr(thread_local, "serial", None)
             if ser is None or not getattr(ser, "is_open", False):
                 try:
-                    ser = serial.Serial(
-                        port=port,
-                        baudrate=250000,
-                        bytesize=serial.EIGHTBITS,
-                        parity=serial.PARITY_NONE,
-                        stopbits=serial.STOPBITS_TWO,
-                        timeout=1,
-                        write_timeout=1,
-                    )
+                    ser = serial.Serial(**serial_config)
                 except Exception:  # pragma: no cover - depends on hardware
                     LOGGER.exception("Unable to open DMX serial port %s", port)
                     raise
