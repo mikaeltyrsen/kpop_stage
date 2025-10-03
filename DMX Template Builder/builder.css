@@ -501,6 +501,58 @@ body {
   border-bottom-color: rgba(129, 140, 248, 0.4);
 }
 
+.action-group-header td {
+  background: rgba(148, 163, 184, 0.14);
+  font-weight: 600;
+  padding-top: 0.6rem;
+  padding-bottom: 0.6rem;
+  border-bottom-color: rgba(148, 163, 184, 0.35);
+}
+
+.action-group-header.is-active td {
+  border-bottom-color: rgba(129, 140, 248, 0.4);
+}
+
+.action-group-header__button {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0.2rem 0.35rem;
+  border-radius: 0.45rem;
+}
+
+.action-group-header__button:focus-visible {
+  outline: 2px solid rgba(129, 140, 248, 0.6);
+  outline-offset: 1px;
+}
+
+.action-group-header__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+}
+
+.action-group-header__time {
+  flex: 1;
+  text-align: left;
+}
+
+.action-group-header__count {
+  font-weight: 500;
+  opacity: 0.75;
+}
+
+.action-group-item td:first-child {
+  padding-left: 2.4rem;
+}
+
 .actions-table td input,
 .actions-table td select {
   width: 100%;
