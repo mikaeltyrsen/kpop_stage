@@ -6,7 +6,6 @@ const statusEl = document.getElementById("status-message");
 const actionsBody = document.getElementById("actions-body");
 const templateInfoEl = document.getElementById("template-info");
 const videoEl = document.getElementById("preview-video");
-const previewToggle = document.getElementById("preview-mode-toggle");
 const rowTemplate = document.getElementById("action-row-template");
 const channelPresetsContainer = document.getElementById("channel-presets");
 const channelStatusListEl = document.getElementById("channel-status-list");
@@ -15,13 +14,6 @@ const channelPresetsSection = document.querySelector(".preset-settings");
 const builderLayout = document.querySelector(".builder-layout");
 const openChannelPresetsButton = document.getElementById("open-channel-presets");
 
-const PREVIEW_STATE_LABELS = {
-  on: "Preview Mode: On",
-  off: "Preview Mode: Off",
-  enabling: "Enabling Preview Mode…",
-  disabling: "Disabling Preview Mode…",
-};
-
 let videos = [];
 let currentVideo = null;
 let actions = [];
@@ -29,6 +21,7 @@ let templatePath = "";
 let apiBasePath = null;
 let previewMode = false;
 let previewSyncHandle = null;
+let previewActivationPromise = null;
 let suppressPreviewPause = false;
 let channelPresets = [];
 let showingChannelPresets = true;
@@ -76,9 +69,6 @@ async function init() {
   addRowButton.addEventListener("click", handleAddRow);
   saveButton.addEventListener("click", handleSaveTemplate);
   exportButton.addEventListener("click", () => exportTemplate());
-  if (previewToggle) {
-    previewToggle.addEventListener("click", handlePreviewToggle);
-  }
   if (videoEl) {
     videoEl.addEventListener("play", handleVideoPlay);
     videoEl.addEventListener("pause", handleVideoPause);
@@ -186,96 +176,71 @@ function getCurrentVideoTimecode() {
   return secondsToTimecode(currentTime);
 }
 
-async function handlePreviewToggle() {
-  if (!currentVideo) {
-    showStatus("Select a song before using preview mode.", "error");
-    return;
-  }
-  if (previewToggle) {
-    setPreviewToggleBusy(true, !previewMode);
-  }
-  try {
-    if (previewMode) {
-      await disablePreviewMode();
-    } else {
-      await enablePreviewMode();
-    }
-  } finally {
-    if (previewToggle) {
-      setPreviewToggleBusy(false);
-    }
-  }
-}
-
 async function enablePreviewMode() {
-  try {
-    await syncPreview({ force: true, showError: true });
-    previewMode = true;
-    updatePreviewToggle(true);
-    playVideoSilently();
-    showStatus("Preview mode enabled. Video and lights are live.", "success");
-  } catch (error) {
-    console.error(error);
-    previewMode = false;
-    updatePreviewToggle(false);
-    if (error && error.message) {
-      showStatus(error.message, "error");
-    } else {
-      showStatus("Unable to start preview mode.", "error");
-    }
-    throw error;
+  if (previewMode) {
+    return true;
   }
+  if (!currentVideo) {
+    return false;
+  }
+  if (previewActivationPromise) {
+    await previewActivationPromise;
+    if (previewMode || !currentVideo) {
+      return Boolean(previewMode);
+    }
+  }
+
+  const targetVideoId = currentVideo?.id || null;
+  previewActivationPromise = (async () => {
+    try {
+      await syncPreview({ force: true, showError: true });
+      if (!currentVideo || currentVideo.id !== targetVideoId) {
+        return false;
+      }
+      previewMode = true;
+      playVideoSilently();
+      return true;
+    } catch (error) {
+      console.error(error);
+      previewMode = false;
+      if (error && error.message) {
+        showStatus(error.message, "error");
+      } else {
+        showStatus("Unable to start live preview.", "error");
+      }
+      return false;
+    } finally {
+      previewActivationPromise = null;
+    }
+  })();
+
+  return previewActivationPromise;
 }
 
 async function disablePreviewMode(options = {}) {
   cancelPreviewSync();
   const wasActive = previewMode;
   previewMode = false;
-  updatePreviewToggle(false);
   try {
     await stopPreviewLights({ silent: options.silent });
   } catch (error) {
     console.error(error);
     if (!options.silent) {
-      showStatus(error.message || "Unable to stop preview mode.", "error");
+      showStatus(error.message || "Unable to stop live preview.", "error");
     }
   }
   pauseVideoSilently();
   if (wasActive && !options.silent) {
-    showStatus("Preview mode disabled.", "info");
+    showStatus("Live preview disabled.", "info");
   }
-}
-
-function updatePreviewToggle(active) {
-  if (!previewToggle) return;
-  const isActive = Boolean(active);
-  previewToggle.setAttribute("aria-pressed", isActive ? "true" : "false");
-  previewToggle.classList.toggle("is-active", isActive);
-  previewToggle.classList.remove("is-busy");
-  previewToggle.disabled = false;
-  const label = isActive ? PREVIEW_STATE_LABELS.on : PREVIEW_STATE_LABELS.off;
-  previewToggle.textContent = label;
-  previewToggle.setAttribute("title", label);
-}
-
-function setPreviewToggleBusy(isBusy, targetEnabledState) {
-  if (!previewToggle) return;
-  const shouldEnable = Boolean(targetEnabledState);
-  previewToggle.classList.toggle("is-busy", Boolean(isBusy));
-  previewToggle.disabled = Boolean(isBusy);
-  if (isBusy) {
-    const label = shouldEnable
-      ? PREVIEW_STATE_LABELS.enabling
-      : PREVIEW_STATE_LABELS.disabling;
-    previewToggle.textContent = label;
-    previewToggle.setAttribute("title", label);
-    return;
-  }
-  updatePreviewToggle(previewMode);
 }
 
 function queuePreviewSync() {
-  if (!previewMode) return;
+  if (!currentVideo) return;
+  if (!previewMode) {
+    enablePreviewMode();
+    return;
+  }
   if (previewSyncHandle) {
     clearTimeout(previewSyncHandle);
   }
@@ -296,7 +261,7 @@ function cancelPreviewSync() {
 
 async function syncPreview(options = {}) {
   if (!currentVideo) {
-    throw new Error("Select a song before using preview mode.");
+    throw new Error("Select a song before using live preview.");
   }
   if (!previewMode && !options.force) {
     return;
@@ -322,7 +287,7 @@ async function syncPreview(options = {}) {
 
 async function sendPreview(preparedActions) {
   if (!currentVideo) {
-    throw new Error("Select a song before using preview mode.");
+    throw new Error("Select a song before using live preview.");
   }
   const hasVideo = videoEl && Number.isFinite(videoEl.currentTime);
   const startTime = hasVideo ? Math.max(0, videoEl.currentTime) : 0;
@@ -347,7 +312,7 @@ async function stopPreviewLights(options = {}) {
     const response = await fetchApi(`/dmx/preview`, { method: "DELETE" });
     if (!response.ok) {
       const payload = await response.json().catch(() => ({}));
-      throw new Error(payload.error || `Unable to stop preview (${response.status})`);
+      throw new Error(payload.error || `Unable to stop live preview (${response.status})`);
     }
   } catch (error) {
     if (!options.silent) {
@@ -425,7 +390,7 @@ function populateVideoSelect(list) {
 }
 
 function handleVideoSelection() {
-  if (previewMode) {
+  if (currentVideo || previewMode || previewActivationPromise) {
     disablePreviewMode({ silent: true }).catch((error) => {
       console.error(error);
     });
@@ -481,11 +446,18 @@ async function loadTemplate(videoId) {
     setVideoSource(videoUrl);
     setControlsEnabled(true);
     renderActions();
+    enablePreviewMode();
 
     if (!actions.length) {
-      showStatus("Template loaded. Add your first cue to get started.", "info");
+      showStatus(
+        "Template loaded. Live preview is active. Add your first cue to get started.",
+        "info",
+      );
     } else {
-      showStatus(`Loaded ${actions.length} cue${actions.length === 1 ? "" : "s"}.`, "success");
+      showStatus(
+        `Loaded ${actions.length} cue${actions.length === 1 ? "" : "s"}. Live preview is active.`,
+        "success",
+      );
     }
   } catch (error) {
     console.error(error);
@@ -1280,12 +1252,8 @@ function seekToIndex(index) {
   updateActiveActionHighlight(seconds);
   if (!videoEl || !videoEl.src) return;
   videoEl.currentTime = seconds;
-  if (previewMode) {
-    playVideoSilently();
-    queuePreviewSync();
-  } else {
-    videoEl.pause();
-  }
+  playVideoSilently();
+  queuePreviewSync();
 }
 
 function addAction(action) {
@@ -1315,14 +1283,6 @@ function setControlsEnabled(enabled) {
   addRowButton.disabled = !enabled;
   saveButton.disabled = !enabled;
   exportButton.disabled = !enabled;
-  if (previewToggle) {
-    if (!enabled && previewMode) {
-      disablePreviewMode({ silent: true }).catch((error) => {
-        console.error(error);
-      });
-    }
-    previewToggle.disabled = !enabled;
-  }
 }
 
 function resetVideoPreview() {
