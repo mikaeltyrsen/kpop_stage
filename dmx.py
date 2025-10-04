@@ -532,17 +532,22 @@ class DMXShowRunner:
             LOGGER.info("No DMX actions to execute for this show")
             return
 
+        # Ensure any existing show is fully stopped before starting a new one.
+        self.stop()
+
+        stop_event = threading.Event()
+        thread = threading.Thread(
+            target=self._run_show,
+            args=(ordered_actions, stop_event),
+            daemon=True,
+        )
+
         with self._lock:
-            self.stop()
-            stop_event = threading.Event()
             self._stop_event = stop_event
-            self._thread = threading.Thread(
-                target=self._run_show,
-                args=(ordered_actions, stop_event),
-                daemon=True,
-            )
-            self._thread.start()
-            LOGGER.info("Started DMX show with %s actions", len(ordered_actions))
+            self._thread = thread
+
+        thread.start()
+        LOGGER.info("Started DMX show with %s actions", len(ordered_actions))
 
     def _run_show(self, actions: List[DMXAction], stop_event: threading.Event) -> None:
         start_time = time.monotonic()
