@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import random
 import sys
 import time
 from pathlib import Path
@@ -68,33 +67,21 @@ def test_start_show_resets_levels_before_running(tmp_path: Path) -> None:
     assert runner.started_actions == actions
 
 
-def test_soda_pop_custom_show_adds_randomised_actions(tmp_path: Path) -> None:
+def test_soda_pop_uses_template_without_custom_actions(tmp_path: Path) -> None:
     output = DummyOutput(channel_count=8)
     manager = create_manager(tmp_path, output)
     manager.update_baseline_levels([0] * output.channel_count)
-    manager._random = random.Random(12345)  # type: ignore[attr-defined]
-    manager.load_show_for_video = lambda _: []  # type: ignore[assignment]
+    expected_actions = [
+        DMXAction(time_seconds=0.0, channel=1, value=255, fade=0.0),
+        DMXAction(time_seconds=2.0, channel=2, value=128, fade=1.5),
+    ]
+    manager.load_show_for_video = lambda _: expected_actions  # type: ignore[assignment]
 
     manager.start_show_for_video({"id": "soda_pop"})
 
     runner: DummyRunner = manager.runner  # type: ignore[assignment]
     assert runner.stop_calls == 1
-    actions = runner.started_actions
-    assert actions
-
-    base_actions = [act for act in actions if act.channel == 1]
-    assert base_actions
-    assert base_actions[0].time_seconds == 0
-    assert base_actions[0].value == 255
-
-    flicker_actions = [act for act in actions if act.channel in (2, 3, 4)]
-    assert flicker_actions
-    assert all(0 <= act.time_seconds <= 10.0 for act in flicker_actions)
-    assert all(0 <= act.value <= 255 for act in flicker_actions)
-
-    for channel in (2, 3, 4):
-        updates = [act for act in flicker_actions if act.channel == channel]
-        assert len(updates) >= 10
+    assert runner.started_actions == expected_actions
 
 
 def test_stop_show_preserves_startup_scene_until_show_runs(tmp_path: Path) -> None:
