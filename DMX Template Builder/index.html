@@ -161,7 +161,13 @@
           </button>
         </div>
       </header>
-      <div id="light-templates" class="template-library__list" aria-live="polite"></div>
+      <div class="template-library__split">
+        <aside class="template-library__sidebar" aria-live="polite">
+          <h3 class="visually-hidden">Template list</h3>
+          <ul id="light-templates" class="template-list" role="list"></ul>
+        </aside>
+        <section id="template-detail" class="template-detail" aria-live="polite"></section>
+      </div>
     </section>
 
     <template id="action-row-template">

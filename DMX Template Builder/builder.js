@@ -19,6 +19,7 @@ const presetsPanel = document.getElementById("presets-panel");
 const templatesPanel = document.getElementById("templates-panel");
 const timelineEmptyState = document.getElementById("timeline-empty-state");
 const lightTemplatesContainer = document.getElementById("light-templates");
+const templateDetailContainer = document.getElementById("template-detail");
 const addLightTemplateButton = document.getElementById("add-light-template");
 const templatePickerEl = document.getElementById("template-picker");
 const templatePickerSearch = document.getElementById("template-picker-search");
@@ -44,8 +45,10 @@ const collapsedStepIds = new Set();
 let actionGroupIds = [];
 let stepInfoById = new Map();
 let draggingActionId = null;
+let draggingTemplateInstanceId = null;
 let lastKnownTimelineSeconds = 0;
 let lightTemplates = [];
+let activeLightTemplateId = null;
 let templatePickerStepId = null;
 let templateInstanceCounter = 0;
 
@@ -791,7 +794,8 @@ function renderActions(options = {}) {
   groupsInOrder.forEach((group) => {
     activeGroups.add(group.id);
     const collapsed = collapsedStepIds.has(group.id);
-    const headerRow = createGroupHeaderRow(group, collapsed);
+    const visibleCount = getGroupDisplayCount(group);
+    const headerRow = createGroupHeaderRow(group, collapsed, visibleCount);
     actionsBody.append(headerRow);
 
     if (!collapsed) {
@@ -807,17 +811,18 @@ function renderActions(options = {}) {
       group.items.forEach(({ action, index }) => {
         if (action.templateId && action.templateInstanceId) {
           if (action.templateInstanceId !== lastTemplateInstanceId) {
-            const bannerRow = createTemplateBannerRow(
+            const templateRow = createTemplateInstanceRow(
               group,
               action,
+              index,
               templateCounts.get(action.templateInstanceId) || 0,
             );
-            actionsBody.append(bannerRow);
+            actionsBody.append(templateRow);
           }
           lastTemplateInstanceId = action.templateInstanceId;
-        } else {
-          lastTemplateInstanceId = null;
+          return;
         }
+        lastTemplateInstanceId = null;
         const row = createActionRow(action, index, group);
         actionsBody.append(row);
       });
@@ -837,7 +842,26 @@ function renderActions(options = {}) {
   updateActiveActionHighlight();
 }
 
-function createGroupHeaderRow(group, collapsed) {
+function getGroupDisplayCount(group) {
+  if (!group || !Array.isArray(group.items)) {
+    return 0;
+  }
+  const seenInstances = new Set();
+  let total = 0;
+  group.items.forEach(({ action }) => {
+    if (action && action.templateId && action.templateInstanceId) {
+      if (!seenInstances.has(action.templateInstanceId)) {
+        seenInstances.add(action.templateInstanceId);
+        total += 1;
+      }
+    } else {
+      total += 1;
+    }
+  });
+  return total;
+}
+
+function createGroupHeaderRow(group, collapsed, displayCount) {
   const row = document.createElement("tr");
   row.className = "action-group-header";
   row.dataset.groupId = group.id;
@@ -898,7 +922,7 @@ function createGroupHeaderRow(group, collapsed) {
 
   const countEl = document.createElement("span");
   countEl.className = "action-group-header__count";
-  const count = group.items.length;
+  const count = Number.isFinite(displayCount) ? displayCount : group.items.length;
   countEl.textContent = `${count} row${count === 1 ? "" : "s"}`;
 
   const addRowButton = document.createElement("button");
@@ -930,19 +954,37 @@ function createGroupHeaderRow(group, collapsed) {
   return row;
 }
 
-function createTemplateBannerRow(group, action, count) {
+function createTemplateInstanceRow(group, action, index, count) {
+  const actionId = getActionLocalId(action);
   const row = document.createElement("tr");
-  row.className = "action-group-template";
+  row.className = "action-group-item action-group-template action-group-item--template";
   row.dataset.groupId = group.id;
+  row.dataset.groupTime = group.time;
+  row.dataset.actionIndex = String(index);
+  row.dataset.templateId = action.templateId || "";
   if (action.templateInstanceId) {
     row.dataset.templateInstanceId = action.templateInstanceId;
   }
+  row.draggable = true;
+
+  row.addEventListener("focusin", () => {
+    setHighlightedAction(index);
+    seekToIndex(index);
+  });
+  row.addEventListener("dragstart", handleRowDragStart);
+  row.addEventListener("dragend", handleRowDragEnd);
+  row.addEventListener("dragover", handleRowDragOver);
+  row.addEventListener("dragleave", handleRowDragLeave);
+  row.addEventListener("drop", handleRowDrop);
 
   const cell = document.createElement("td");
   cell.colSpan = 5;
 
   const content = document.createElement("div");
   content.className = "action-group-template__content";
+
+  const details = document.createElement("div");
+  details.className = "action-group-template__details";
 
   const title = document.createElement("span");
   title.className = "action-group-template__title";
@@ -954,13 +996,43 @@ function createTemplateBannerRow(group, action, count) {
   const total = Number.isFinite(count) ? count : group.items.length;
   countEl.textContent = `${total} row${total === 1 ? "" : "s"}`;
 
+  details.append(title, countEl);
+
+  const tools = document.createElement("div");
+  tools.className = "action-group-template__tools";
+
+  const goButton = document.createElement("button");
+  goButton.type = "button";
+  goButton.textContent = "Go";
+  setActionFieldMetadata(goButton, actionId, "template-go");
+  goButton.addEventListener("click", () => seekToIndex(index));
+  goButton.addEventListener("focus", () => setHighlightedAction(index));
+
+  const duplicateButton = document.createElement("button");
+  duplicateButton.type = "button";
+  duplicateButton.className = "secondary";
+  duplicateButton.textContent = "Duplicate";
+  setActionFieldMetadata(duplicateButton, actionId, "template-duplicate");
+  duplicateButton.addEventListener("click", () => duplicateTemplateInstance(action.templateInstanceId));
+  duplicateButton.addEventListener("focus", () => setHighlightedAction(index));
+
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.textContent = "Delete";
+  setActionFieldMetadata(deleteButton, actionId, "template-delete");
+  deleteButton.addEventListener("click", () => removeTemplateInstance(action.templateInstanceId));
+  deleteButton.addEventListener("focus", () => setHighlightedAction(index));
+
   const editButton = document.createElement("button");
   editButton.type = "button";
   editButton.className = "action-group-template__edit";
   editButton.textContent = "Edit Template";
+  setActionFieldMetadata(editButton, actionId, "template-edit");
   editButton.addEventListener("click", () => handleEditTemplateFromTimeline(action.templateId));
+  editButton.addEventListener("focus", () => setHighlightedAction(index));
 
-  content.append(title, countEl, editButton);
+  tools.append(goButton, duplicateButton, deleteButton, editButton);
+  content.append(details, tools);
   cell.append(content);
   row.append(cell);
   return row;
@@ -1064,7 +1136,7 @@ function updateActiveActionHighlight(secondsOverride) {
 }
 
 function handleGroupHeaderDragOver(event, stepId) {
-  if (!draggingActionId) return;
+  if (!draggingActionId && !draggingTemplateInstanceId) return;
   event.preventDefault();
   const row = event.currentTarget;
   row.classList.add("is-drop-target");
@@ -1079,7 +1151,7 @@ function handleGroupHeaderDragLeave(event) {
 }
 
 function handleGroupHeaderDrop(event, stepId) {
-  if (!draggingActionId) return;
+  if (!draggingActionId && !draggingTemplateInstanceId) return;
   event.preventDefault();
   const row = event.currentTarget;
   row.classList.remove("is-drop-target");
@@ -1089,19 +1161,36 @@ function handleGroupHeaderDrop(event, stepId) {
   const targetTime = groupInfo?.time || DEFAULT_ACTION.time;
   collapsedStepIds.delete(stepId);
   clearAllDropIndicators();
-  placeActionAt(draggingActionId, insertionIndex, {
-    targetGroupId: stepId,
-    targetTime,
-  });
-  draggingActionId = null;
+  if (draggingTemplateInstanceId) {
+    placeTemplateInstanceAt(draggingTemplateInstanceId, insertionIndex, {
+      targetGroupId: stepId,
+      targetTime,
+    });
+    draggingTemplateInstanceId = null;
+    draggingActionId = null;
+  } else if (draggingActionId) {
+    placeActionAt(draggingActionId, insertionIndex, {
+      targetGroupId: stepId,
+      targetTime,
+    });
+    draggingActionId = null;
+  }
 }
 
 function handleRowDragStart(event) {
   const row = event.currentTarget;
   if (!(row instanceof HTMLElement)) return;
+  const templateInstanceId = row.dataset.templateInstanceId;
   const actionId = row.dataset.actionId;
-  if (!actionId) return;
-  draggingActionId = actionId;
+  if (templateInstanceId) {
+    draggingTemplateInstanceId = templateInstanceId;
+    draggingActionId = null;
+  } else if (actionId) {
+    draggingActionId = actionId;
+    draggingTemplateInstanceId = null;
+  } else {
+    return;
+  }
   row.classList.add("is-dragging");
   if (row.dataset.groupId) {
     setHighlightedStep(row.dataset.groupId);
@@ -1109,7 +1198,10 @@ function handleRowDragStart(event) {
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = "move";
     try {
-      event.dataTransfer.setData("text/plain", actionId);
+      event.dataTransfer.setData(
+        "text/plain",
+        templateInstanceId ? templateInstanceId : actionId,
+      );
     } catch (error) {
       // Ignore data transfer errors from unsupported browsers.
     }
@@ -1122,11 +1214,12 @@ function handleRowDragEnd(event) {
     row.classList.remove("is-dragging");
   }
   draggingActionId = null;
+  draggingTemplateInstanceId = null;
   clearAllDropIndicators();
 }
 
 function handleRowDragOver(event) {
-  if (!draggingActionId) return;
+  if (!draggingActionId && !draggingTemplateInstanceId) return;
   event.preventDefault();
   const row = event.currentTarget;
   if (!(row instanceof HTMLElement)) return;
@@ -1147,7 +1240,7 @@ function handleRowDragLeave(event) {
 }
 
 function handleRowDrop(event) {
-  if (!draggingActionId) return;
+  if (!draggingActionId && !draggingTemplateInstanceId) return;
   event.preventDefault();
   const row = event.currentTarget;
   if (!(row instanceof HTMLElement)) return;
@@ -1163,11 +1256,20 @@ function handleRowDrop(event) {
   const groupInfo = groupId ? stepInfoById.get(groupId) : null;
   const insertionIndex = before ? indexValue : indexValue + 1;
   const targetTime = groupInfo?.time || row.dataset.groupTime || DEFAULT_ACTION.time;
-  placeActionAt(draggingActionId, insertionIndex, {
-    targetGroupId: groupId,
-    targetTime,
-  });
-  draggingActionId = null;
+  if (draggingTemplateInstanceId) {
+    placeTemplateInstanceAt(draggingTemplateInstanceId, insertionIndex, {
+      targetGroupId: groupId,
+      targetTime,
+    });
+    draggingTemplateInstanceId = null;
+    draggingActionId = null;
+  } else if (draggingActionId) {
+    placeActionAt(draggingActionId, insertionIndex, {
+      targetGroupId: groupId,
+      targetTime,
+    });
+    draggingActionId = null;
+  }
 }
 
 function clearAllDropIndicators() {
@@ -1212,6 +1314,60 @@ function placeActionAt(actionId, insertionIndex, options = {}) {
     setHighlightedAction(newIndex);
   } else if (finalGroupId) {
     setHighlightedStep(finalGroupId);
+  }
+  queuePreviewSync();
+}
+
+function placeTemplateInstanceAt(instanceId, insertionIndex, options = {}) {
+  if (!instanceId) return;
+  const info = getTemplateInstanceInfo(instanceId);
+  if (!info) return;
+
+  const removed = [];
+  for (let i = info.indices.length - 1; i >= 0; i -= 1) {
+    const idx = info.indices[i];
+    const [removedAction] = actions.splice(idx, 1);
+    if (removedAction) {
+      removed.unshift(removedAction);
+    }
+  }
+
+  if (!removed.length) {
+    return;
+  }
+
+  let targetIndex = Number.isInteger(insertionIndex) ? insertionIndex : actions.length;
+  if (info.firstIndex < targetIndex) {
+    targetIndex -= removed.length;
+  }
+  if (targetIndex < 0) {
+    targetIndex = 0;
+  }
+  if (targetIndex > actions.length) {
+    targetIndex = actions.length;
+  }
+
+  const targetGroupId = options.targetGroupId || info.stepId;
+  const timeCandidate = options.targetTime || info.time || DEFAULT_ACTION.time;
+  const targetSeconds =
+    parseTimeString(timeCandidate) ??
+    parseTimeString(info.time) ??
+    parseTimeString(DEFAULT_ACTION.time) ??
+    0;
+  const targetTimecode = secondsToTimecode(targetSeconds);
+
+  removed.forEach((action) => {
+    setActionStepId(action, targetGroupId);
+    action.time = targetTimecode;
+  });
+
+  actions.splice(targetIndex, 0, ...removed);
+  renderActions();
+  const newIndex = actions.findIndex((action) => action.templateInstanceId === instanceId);
+  if (newIndex !== -1) {
+    setHighlightedAction(newIndex);
+  } else if (targetGroupId) {
+    setHighlightedStep(targetGroupId);
   }
   queuePreviewSync();
 }
@@ -2635,49 +2791,134 @@ async function initLightTemplatesUI() {
 }
 
 function renderLightTemplates(options = {}) {
-  if (!lightTemplatesContainer) return;
+  if (!lightTemplatesContainer || !templateDetailContainer) return;
 
   const focusDescriptor =
     options.preserveFocus || describeFocusedTemplateField(document.activeElement);
 
-  lightTemplatesContainer.innerHTML = "";
-
-  if (!lightTemplates.length) {
-    const empty = document.createElement("p");
-    empty.className = "template-library__empty";
-    empty.textContent = "No templates yet. Use “New Template” to create one.";
-    lightTemplatesContainer.append(empty);
-  } else {
-    lightTemplates.forEach((template) => {
-      const card = renderLightTemplateCard(template);
-      lightTemplatesContainer.append(card);
-    });
+  if (options.focusTemplateId) {
+    activeLightTemplateId = options.focusTemplateId;
   }
+
+  if (activeLightTemplateId && !getLightTemplate(activeLightTemplateId)) {
+    activeLightTemplateId = null;
+  }
+
+  renderLightTemplateList();
+  renderLightTemplateDetail();
 
   const query = templatePickerSearch ? templatePickerSearch.value || "" : "";
   renderTemplatePickerResults(query);
 
   if (options.focusTemplateId) {
-    const card = lightTemplatesContainer.querySelector(
-      `.template-card[data-template-id="${options.focusTemplateId}"]`,
-    );
-    if (card) {
-      const input = card.querySelector('[data-field="template-name"]');
-      if (input instanceof HTMLElement) {
-        try {
-          input.focus({ preventScroll: true });
-        } catch (error) {
-          input.focus();
-        }
-      }
-    }
+    focusTemplateField({ templateId: options.focusTemplateId, field: "template-name" });
   } else if (focusDescriptor) {
     focusTemplateField(focusDescriptor);
   }
 }
 
+function renderLightTemplateList() {
+  if (!lightTemplatesContainer) return;
+
+  lightTemplatesContainer.innerHTML = "";
+
+  if (!lightTemplates.length) {
+    const empty = document.createElement("li");
+    empty.className = "template-list__empty";
+    empty.textContent = "No templates yet. Use “New Template” to create one.";
+    empty.setAttribute("role", "presentation");
+    lightTemplatesContainer.append(empty);
+    return;
+  }
+
+  lightTemplates.forEach((template) => {
+    const item = document.createElement("li");
+    item.className = "template-list__item";
+    item.dataset.templateId = template.id;
+    if (template.id === activeLightTemplateId) {
+      item.classList.add("is-active");
+    }
+
+    const summary = document.createElement("div");
+    summary.className = "template-list__summary";
+
+    const title = document.createElement("span");
+    title.className = "template-list__title";
+    title.textContent = formatLightTemplateTitle(template);
+
+    const meta = document.createElement("span");
+    meta.className = "template-list__meta";
+    meta.textContent = formatTemplateRowCount(template);
+
+    summary.append(title, meta);
+
+    const actions = document.createElement("div");
+    actions.className = "template-list__actions";
+
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "secondary";
+    editButton.textContent = "Edit";
+    editButton.addEventListener("click", () => {
+      if (activeLightTemplateId !== template.id) {
+        activeLightTemplateId = template.id;
+      }
+      renderLightTemplates({ focusTemplateId: template.id });
+    });
+
+    const duplicateButton = document.createElement("button");
+    duplicateButton.type = "button";
+    duplicateButton.className = "secondary";
+    duplicateButton.textContent = "Duplicate";
+    duplicateButton.addEventListener("click", () => duplicateLightTemplate(template.id));
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "secondary";
+    deleteButton.textContent = "Delete";
+    deleteButton.addEventListener("click", () => removeLightTemplate(template.id));
+
+    actions.append(editButton, duplicateButton, deleteButton);
+    item.append(summary, actions);
+    lightTemplatesContainer.append(item);
+  });
+}
+
+function renderLightTemplateDetail() {
+  if (!templateDetailContainer) return;
+
+  templateDetailContainer.innerHTML = "";
+
+  if (!activeLightTemplateId) {
+    const empty = document.createElement("p");
+    empty.className = "template-detail__empty";
+    empty.textContent = "Select “Edit” on a template to start editing.";
+    templateDetailContainer.append(empty);
+    return;
+  }
+
+  const template = getLightTemplate(activeLightTemplateId);
+  if (!template) {
+    const missing = document.createElement("p");
+    missing.className = "template-detail__empty";
+    missing.textContent = "Template not found. Choose another template from the list.";
+    templateDetailContainer.append(missing);
+    return;
+  }
+
+  const card = createTemplateDetailCard(template);
+  templateDetailContainer.append(card);
+}
+
 function describeFocusedTemplateField(element) {
-  if (!element || !(element instanceof HTMLElement)) return null;
+  if (
+    !element ||
+    !(element instanceof HTMLElement) ||
+    !templateDetailContainer ||
+    !templateDetailContainer.contains(element)
+  ) {
+    return null;
+  }
   const { templateId, rowId, field } = element.dataset || {};
   if (!templateId || !field) return null;
   const descriptor = { templateId, field };
@@ -2695,16 +2936,16 @@ function describeFocusedTemplateField(element) {
 }
 
 function focusTemplateField(descriptor) {
-  if (!descriptor || !lightTemplatesContainer) return;
+  if (!descriptor || !templateDetailContainer) return;
   const parts = [
-    `.template-card [data-template-id="${descriptor.templateId}"]`,
+    `[data-template-id="${descriptor.templateId}"]`,
     `[data-field="${descriptor.field}"]`,
   ];
   if (descriptor.rowId) {
     parts.push(`[data-row-id="${descriptor.rowId}"]`);
   }
   const selector = parts.join("");
-  const target = lightTemplatesContainer.querySelector(selector);
+  const target = templateDetailContainer.querySelector(selector);
   if (!target) return;
   try {
     target.focus({ preventScroll: true });
@@ -2724,7 +2965,7 @@ function focusTemplateField(descriptor) {
   }
 }
 
-function renderLightTemplateCard(template) {
+function createTemplateDetailCard(template) {
   const card = document.createElement("article");
   card.className = "template-card";
   card.dataset.templateId = template.id;
@@ -2739,6 +2980,11 @@ function renderLightTemplateCard(template) {
   title.className = "template-card__title";
   title.textContent = formatLightTemplateTitle(template);
   titleGroup.append(title);
+
+  const meta = document.createElement("span");
+  meta.className = "template-list__meta";
+  meta.textContent = formatTemplateRowCount(template);
+  titleGroup.append(meta);
 
   const actionsEl = document.createElement("div");
   actionsEl.className = "template-card__actions";
@@ -2797,19 +3043,48 @@ function renderLightTemplateCard(template) {
   return card;
 }
 
-function updateLightTemplateCardTitle(card, template) {
-  if (!card) return;
-  const title = card.querySelector(".template-card__title");
-  if (title) {
-    title.textContent = formatLightTemplateTitle(template);
-  }
-}
-
 function formatLightTemplateTitle(template) {
   if (template.name) {
     return template.name;
   }
   return "Untitled Template";
+}
+
+function formatTemplateRowCount(template) {
+  const rows = Array.isArray(template.rows) ? template.rows.length : 0;
+  return rows === 1 ? "1 row" : `${rows} rows`;
+}
+
+function updateTemplateDetailHeading(template) {
+  if (!templateDetailContainer || !template) return;
+  const card = templateDetailContainer.querySelector(
+    `.template-card[data-template-id="${template.id}"]`,
+  );
+  if (!card) return;
+  const title = card.querySelector(".template-card__title");
+  if (title) {
+    title.textContent = formatLightTemplateTitle(template);
+  }
+  const meta = card.querySelector(".template-list__meta");
+  if (meta) {
+    meta.textContent = formatTemplateRowCount(template);
+  }
+}
+
+function updateTemplateListEntry(template) {
+  if (!lightTemplatesContainer || !template) return;
+  const item = lightTemplatesContainer.querySelector(
+    `.template-list__item[data-template-id="${template.id}"]`,
+  );
+  if (!item) return;
+  const title = item.querySelector(".template-list__title");
+  if (title) {
+    title.textContent = formatLightTemplateTitle(template);
+  }
+  const meta = item.querySelector(".template-list__meta");
+  if (meta) {
+    meta.textContent = formatTemplateRowCount(template);
+  }
 }
 
 function createTemplateRowsTable(template) {
@@ -3083,7 +3358,8 @@ function handleTemplateNameInput(templateId, event) {
   if (!template) return;
   template.name = event.target.value;
   saveLightTemplates();
-  updateLightTemplateCardTitle(event.target.closest(".template-card"), template);
+  updateTemplateDetailHeading(template);
+  updateTemplateListEntry(template);
   const query = templatePickerSearch ? templatePickerSearch.value || "" : "";
   renderTemplatePickerResults(query);
 }
@@ -3119,6 +3395,9 @@ function removeLightTemplate(templateId) {
   const index = lightTemplates.findIndex((template) => template.id === templateId);
   if (index === -1) return;
   lightTemplates.splice(index, 1);
+  if (templateId === activeLightTemplateId) {
+    activeLightTemplateId = null;
+  }
   saveLightTemplates();
   renderLightTemplates();
   removeTemplateInstances(templateId);
@@ -3131,6 +3410,80 @@ function removeTemplateInstances(templateId) {
     renderActions();
     queuePreviewSync();
   }
+}
+
+function getTemplateInstanceInfo(instanceId) {
+  if (!instanceId) return null;
+  const indices = [];
+  let templateId = null;
+  let stepId = null;
+  let time = null;
+  actions.forEach((action, index) => {
+    if (action.templateInstanceId !== instanceId) return;
+    indices.push(index);
+    if (!templateId && action.templateId) {
+      templateId = action.templateId;
+    }
+    if (!stepId) {
+      stepId = getActionStepId(action);
+    }
+    if (!time && action.time) {
+      time = action.time;
+    }
+  });
+  if (!indices.length) {
+    return null;
+  }
+  return {
+    instanceId,
+    templateId,
+    stepId,
+    time: time || DEFAULT_ACTION.time,
+    indices,
+    firstIndex: indices[0],
+    lastIndex: indices[indices.length - 1],
+  };
+}
+
+function duplicateTemplateInstance(instanceId) {
+  if (!instanceId) return;
+  const info = getTemplateInstanceInfo(instanceId);
+  if (!info || !info.templateId) return;
+  const template = getLightTemplate(info.templateId);
+  if (!template) return;
+  const newInstanceId = generateTemplateInstanceId();
+  const newActions = createActionsFromTemplate(
+    template,
+    info.stepId,
+    info.time,
+    newInstanceId,
+  );
+  if (!newActions.length) return;
+  let insertionIndex = info.lastIndex + 1;
+  if (!Number.isInteger(insertionIndex)) {
+    insertionIndex = actions.length;
+  }
+  actions.splice(insertionIndex, 0, ...newActions);
+  renderActions();
+  const newIndex = actions.findIndex((action) => action.templateInstanceId === newInstanceId);
+  if (newIndex !== -1) {
+    setHighlightedAction(newIndex);
+  }
+  queuePreviewSync();
+}
+
+function removeTemplateInstance(instanceId) {
+  if (!instanceId) return;
+  const info = getTemplateInstanceInfo(instanceId);
+  if (!info) return;
+  for (let i = info.indices.length - 1; i >= 0; i -= 1) {
+    actions.splice(info.indices[i], 1);
+  }
+  renderActions();
+  if (info.stepId) {
+    setHighlightedStep(info.stepId);
+  }
+  queuePreviewSync();
 }
 
 function addRowToLightTemplate(templateId) {
