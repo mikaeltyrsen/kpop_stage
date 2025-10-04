@@ -1251,8 +1251,11 @@ function seekToIndex(index) {
   if (seconds === null) return;
   updateActiveActionHighlight(seconds);
   if (!videoEl || !videoEl.src) return;
+  const wasPaused = videoEl.paused;
   videoEl.currentTime = seconds;
-  playVideoSilently();
+  if (!wasPaused) {
+    playVideoSilently();
+  }
   queuePreviewSync();
 }
 

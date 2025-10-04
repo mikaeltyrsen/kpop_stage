@@ -16,7 +16,6 @@ import json
 import logging
 import math
 import os
-import random
 import threading
 import time
 from dataclasses import dataclass
@@ -586,7 +585,6 @@ class DMXShowManager:
         self,
         templates_dir: Path,
         output: DMXOutput,
-        rng: Optional[random.Random] = None,
     ) -> None:
         self.templates_dir = templates_dir
         self.templates_dir.mkdir(parents=True, exist_ok=True)
@@ -595,7 +593,6 @@ class DMXShowManager:
         self._lock = threading.Lock()
         self._has_active_show = False
         self._baseline_levels: List[int] = [0] * self.output.channel_count
-        self._random = rng or random.Random()
 
     def update_baseline_levels(self, levels: Iterable[int]) -> None:
         """Replace the stored baseline DMX levels used when starting shows."""
@@ -655,39 +652,7 @@ class DMXShowManager:
         if isinstance(template_value, str):
             identifiers.add(self._normalize_identifier(Path(template_value).stem))
 
-        if "soda_pop" in identifiers:
-            return self._build_soda_pop_show()
-
         return []
-
-    def _build_soda_pop_show(self) -> List[DMXAction]:
-        duration = 10.0
-        updates_per_channel = 9
-        fade_duration = 0.2
-        actions: List[DMXAction] = [
-            DMXAction(time_seconds=0.0, channel=1, value=255, fade=0.0),
-        ]
-
-        for channel in (2, 3, 4):
-            initial_value = self._random.randint(0, 255)
-            actions.append(
-                DMXAction(time_seconds=0.0, channel=channel, value=initial_value, fade=0.0)
-            )
-            update_times = sorted(
-                self._random.uniform(0.2, duration) for _ in range(updates_per_channel)
-            )
-            for timestamp in update_times:
-                value = self._random.randint(0, 255)
-                actions.append(
-                    DMXAction(
-                        time_seconds=timestamp,
-                        channel=channel,
-                        value=value,
-                        fade=fade_duration,
-                    )
-                )
-
-        return actions
 
     def start_show_for_video(self, video_entry: Dict[str, object]) -> None:
         try:
