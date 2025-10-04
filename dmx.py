@@ -16,6 +16,7 @@ import json
 import logging
 import math
 import os
+import random
 import threading
 import time
 from dataclasses import dataclass
@@ -576,7 +577,12 @@ class DMXShowRunner:
 class DMXShowManager:
     """Handles loading, saving, and running DMX shows for videos."""
 
-    def __init__(self, templates_dir: Path, output: DMXOutput) -> None:
+    def __init__(
+        self,
+        templates_dir: Path,
+        output: DMXOutput,
+        rng: Optional[random.Random] = None,
+    ) -> None:
         self.templates_dir = templates_dir
         self.templates_dir.mkdir(parents=True, exist_ok=True)
         self.output = output
@@ -584,6 +590,7 @@ class DMXShowManager:
         self._lock = threading.Lock()
         self._has_active_show = False
         self._baseline_levels: List[int] = [0] * self.output.channel_count
+        self._random = rng or random.Random()
 
     def update_baseline_levels(self, levels: Iterable[int]) -> None:
         """Replace the stored baseline DMX levels used when starting shows."""
@@ -627,12 +634,71 @@ class DMXShowManager:
             raise RuntimeError(f"Invalid DMX template: {exc}") from exc
         return actions
 
+    @staticmethod
+    def _normalize_identifier(raw: object) -> str:
+        if not isinstance(raw, str):
+            return ""
+        normalized = raw.strip().lower().replace("-", " ")
+        return "_".join(normalized.split())
+
+    def _custom_show_actions(self, video_entry: Dict[str, object]) -> List[DMXAction]:
+        identifiers = {
+            self._normalize_identifier(video_entry.get("id")),
+            self._normalize_identifier(video_entry.get("name")),
+        }
+        template_value = video_entry.get("dmx_template")
+        if isinstance(template_value, str):
+            identifiers.add(self._normalize_identifier(Path(template_value).stem))
+
+        if "soda_pop" in identifiers:
+            return self._build_soda_pop_show()
+
+        return []
+
+    def _build_soda_pop_show(self) -> List[DMXAction]:
+        duration = 10.0
+        updates_per_channel = 9
+        fade_duration = 0.2
+        actions: List[DMXAction] = [
+            DMXAction(time_seconds=0.0, channel=1, value=255, fade=0.0),
+        ]
+
+        for channel in (2, 3, 4):
+            initial_value = self._random.randint(0, 255)
+            actions.append(
+                DMXAction(time_seconds=0.0, channel=channel, value=initial_value, fade=0.0)
+            )
+            update_times = sorted(
+                self._random.uniform(0.2, duration) for _ in range(updates_per_channel)
+            )
+            for timestamp in update_times:
+                value = self._random.randint(0, 255)
+                actions.append(
+                    DMXAction(
+                        time_seconds=timestamp,
+                        channel=channel,
+                        value=value,
+                        fade=fade_duration,
+                    )
+                )
+
+        return actions
+
     def start_show_for_video(self, video_entry: Dict[str, object]) -> None:
         try:
             actions = self.load_show_for_video(video_entry)
         except RuntimeError:
             LOGGER.error("Skipping DMX show due to template error")
             return
+
+        custom_actions = self._custom_show_actions(video_entry)
+        if custom_actions:
+            LOGGER.info(
+                "Applying %s custom DMX actions for video '%s'",
+                len(custom_actions),
+                video_entry.get("name", video_entry.get("id")),
+            )
+            actions = actions + custom_actions
         self.runner.stop()
         baseline_levels = list(self._baseline_levels)
         self.output.set_levels(baseline_levels)
@@ -760,14 +826,15 @@ class DMXShowManager:
 def create_manager(templates_dir: Path, universe: int = 0) -> DMXShowManager:
     output = DMXOutput(universe=universe)
     manager = DMXShowManager(templates_dir, output)
-    try:
-        manager.update_baseline_levels(output.get_levels())
-    except Exception:
-        LOGGER.exception("Unable to capture DMX baseline levels during initialisation")
 
     startup_config = os.environ.get("DMX_STARTUP_LEVELS", DEFAULT_STARTUP_LEVELS)
     try:
         _apply_startup_levels(output, startup_config)
     except Exception:  # pragma: no cover - defensive
         LOGGER.exception("Unable to apply DMX startup levels during initialisation")
+
+    try:
+        manager.update_baseline_levels(output.get_levels())
+    except Exception:
+        LOGGER.exception("Unable to capture DMX baseline levels during initialisation")
     return manager
