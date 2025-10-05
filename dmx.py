@@ -39,8 +39,7 @@ DEFAULT_CHANNELS = 512
 DMX_FPS = 30.0
 DMX_BREAK_DURATION = float(os.environ.get("DMX_BREAK_DURATION", "0.00012"))
 DMX_MARK_AFTER_BREAK = float(os.environ.get("DMX_MARK_AFTER_BREAK", "0.000012"))
-# DEFAULT_STARTUP_LEVELS = "1=255,2=255,3=255"
-DEFAULT_STARTUP_LEVELS = ""
+DEFAULT_STARTUP_LEVELS = "1=255,2=255,3=255"
 
 def _clamp(value: int, low: int, high: int) -> int:
     return max(low, min(high, value))
@@ -684,7 +683,12 @@ class DMXShowManager:
                 video_entry.get("name"),
             )
 
-    def start_preview(self, raw_actions: Iterable[Dict[str, object]], start_time: float = 0.0) -> None:
+    def start_preview(
+        self,
+        raw_actions: Iterable[Dict[str, object]],
+        start_time: float = 0.0,
+        paused: bool = False,
+    ) -> None:
         try:
             offset = float(start_time)
         except (TypeError, ValueError) as exc:  # pragma: no cover - defensive
@@ -732,9 +736,10 @@ class DMXShowManager:
 
         self.runner.stop()
         self.output.set_levels(levels)
+        should_run = bool(adjusted) and not paused
         with self._lock:
-            self._has_active_show = bool(actions)
-        if adjusted:
+            self._has_active_show = bool(actions) and not paused
+        if should_run:
             self.runner.start(adjusted)
 
     def stop_show(self) -> None:
@@ -816,7 +821,14 @@ def create_manager(templates_dir: Path, universe: int = 0) -> DMXShowManager:
         LOGGER.exception("Unable to apply DMX startup levels during initialisation")
 
     try:
-        manager.update_baseline_levels(output.get_levels())
+        levels = output.get_levels()  # type: ignore[attr-defined]
+    except AttributeError:
+        levels = None
     except Exception:
         LOGGER.exception("Unable to capture DMX baseline levels during initialisation")
+    else:
+        try:
+            manager.update_baseline_levels(levels)
+        except Exception:
+            LOGGER.exception("Unable to capture DMX baseline levels during initialisation")
     return manager

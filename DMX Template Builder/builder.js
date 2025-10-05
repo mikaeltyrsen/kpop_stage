@@ -374,6 +374,7 @@ async function enablePreviewMode() {
   }
 
   const targetVideoId = currentVideo?.id || null;
+  const shouldResumeVideo = Boolean(videoEl && !videoEl.paused);
   previewActivationPromise = (async () => {
     try {
       await syncPreview({ force: true, showError: true });
@@ -381,7 +382,9 @@ async function enablePreviewMode() {
         return false;
       }
       previewMode = true;
-      playVideoSilently();
+      if (shouldResumeVideo) {
+        playVideoSilently();
+      }
       return true;
     } catch (error) {
       console.error(error);
@@ -515,6 +518,7 @@ async function sendPreview(preparedActions) {
   }
   const hasVideo = videoEl && Number.isFinite(videoEl.currentTime);
   const startTime = hasVideo ? Math.max(0, videoEl.currentTime) : 0;
+  const isPaused = videoEl ? Boolean(videoEl.paused) : true;
   const response = await fetchApi(`/dmx/preview`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -522,6 +526,7 @@ async function sendPreview(preparedActions) {
       video_id: currentVideo.id,
       actions: preparedActions,
       start_time: startTime,
+      paused: isPaused,
     }),
   });
   if (!response.ok) {
@@ -572,9 +577,7 @@ function handleVideoPlay() {
 function handleVideoPause() {
   if (!previewMode) return;
   if (suppressPreviewPause) return;
-  stopPreviewLights({ silent: true }).catch((error) => {
-    console.error(error);
-  });
+  queuePreviewSync();
 }
 
 function handleVideoSeeked() {
@@ -791,11 +794,9 @@ function renderActions(options = {}) {
   stepInfoById = new Map();
 
   if (!actions.length) {
-    const emptyRow = document.createElement("tr");
-    const cell = document.createElement("td");
-    cell.colSpan = 5;
-    cell.innerHTML = '<div class="empty-state">No steps yet. Use “Add Step” to begin.</div>';
-    emptyRow.append(cell);
+    const emptyRow = document.createElement("div");
+    emptyRow.className = "actions-grid__empty empty-state";
+    emptyRow.textContent = "No steps yet. Use “Add Step” to begin.";
     actionsBody.append(emptyRow);
     collapsedStepIds.clear();
     updateActiveActionHighlight(lastKnownTimelineSeconds);
@@ -903,13 +904,15 @@ function getGroupDisplayCount(group) {
 }
 
 function createGroupHeaderRow(group, collapsed, displayCount) {
-  const row = document.createElement("tr");
-  row.className = "action-group-header";
+  const row = document.createElement("div");
+  row.className = "actions-grid__row action-group-header";
+  row.setAttribute("role", "row");
   row.dataset.groupId = group.id;
   row.dataset.groupTime = group.time;
 
-  const cell = document.createElement("td");
-  cell.colSpan = 5;
+  const cell = document.createElement("div");
+  cell.className = "actions-grid__cell";
+  cell.dataset.column = "content";
 
   const content = document.createElement("div");
   content.className = "action-group-header__content";
@@ -997,8 +1000,10 @@ function createGroupHeaderRow(group, collapsed, displayCount) {
 
 function createTemplateInstanceRow(group, action, index, count) {
   const actionId = getActionLocalId(action);
-  const row = document.createElement("tr");
-  row.className = "action-group-item action-group-template action-group-item--template";
+  const row = document.createElement("div");
+  row.className =
+    "actions-grid__row action-group-item action-group-template action-group-item--template";
+  row.setAttribute("role", "row");
   row.dataset.groupId = group.id;
   row.dataset.groupTime = group.time;
   row.dataset.actionIndex = String(index);
@@ -1015,14 +1020,16 @@ function createTemplateInstanceRow(group, action, index, count) {
   row.addEventListener("dragleave", handleRowDragLeave);
   row.addEventListener("drop", handleRowDrop);
 
-  const handleCell = document.createElement("td");
+  const handleCell = document.createElement("div");
+  handleCell.className = "actions-grid__cell actions-grid__cell--handle";
   handleCell.dataset.column = "handle";
   const dragHandle = createDragHandle(row, index);
   handleCell.append(dragHandle);
   row.append(handleCell);
 
-  const cell = document.createElement("td");
-  cell.colSpan = 4;
+  const cell = document.createElement("div");
+  cell.className = "actions-grid__cell actions-grid__cell--template";
+  cell.dataset.column = "content";
 
   const content = document.createElement("div");
   content.className = "action-group-template__content";
@@ -1244,10 +1251,10 @@ function handleGroupHeaderDrop(event, stepId) {
 
 function getDragEventRow(target) {
   if (target instanceof HTMLElement) {
-    if (target.matches("tr.action-group-item")) {
+    if (target.matches(".action-group-item")) {
       return target;
     }
-    return target.closest("tr.action-group-item");
+    return target.closest(".action-group-item");
   }
   return null;
 }

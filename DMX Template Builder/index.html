@@ -87,7 +87,7 @@
           </section>
           <div class="video-hints">
             <p>
-              Select a row in the table to jump to that cue. The time input keeps the
+              Select a row in the timeline to jump to that cue. The time input keeps the
               video preview aligned with the cue you are editing.
             </p>
           </div>
@@ -96,20 +96,29 @@
         <section class="table-panel">
           <h2>Lighting Steps</h2>
           <div class="table-wrapper">
-            <table class="actions-table">
-              <thead>
-                <tr>
-                  <th scope="col" class="actions-table__drag-header">
-                    <span class="visually-hidden">Reorder</span>
-                  </th>
-                  <th scope="col">Channel</th>
-                  <th scope="col">Value</th>
-                  <th scope="col">Fade (s)</th>
-                  <th scope="col">Tools</th>
-                </tr>
-              </thead>
-              <tbody id="actions-body"></tbody>
-            </table>
+            <div class="actions-grid" role="grid" aria-label="Lighting steps timeline">
+              <div class="actions-grid__header" role="row">
+                <span
+                  class="actions-grid__cell actions-grid__cell--handle actions-grid__header-cell"
+                  role="columnheader"
+                >
+                  <span class="visually-hidden">Reorder</span>
+                </span>
+                <span class="actions-grid__cell actions-grid__header-cell" role="columnheader">
+                  Channel
+                </span>
+                <span class="actions-grid__cell actions-grid__header-cell" role="columnheader">
+                  Value
+                </span>
+                <span class="actions-grid__cell actions-grid__header-cell" role="columnheader">
+                  Fade (s)
+                </span>
+                <span class="actions-grid__cell actions-grid__header-cell" role="columnheader">
+                  Tools
+                </span>
+              </div>
+              <div id="actions-body" class="actions-grid__body" role="rowgroup"></div>
+            </div>
           </div>
         </section>
       </main>
@@ -173,13 +182,13 @@
     </section>
 
     <template id="action-row-template">
-      <tr>
-        <td data-column="handle"></td>
-        <td data-column="channel"></td>
-        <td data-column="value"></td>
-        <td data-column="fade"></td>
-        <td data-column="tools"></td>
-      </tr>
+      <div class="actions-grid__row action-group-item" role="row">
+        <div class="actions-grid__cell actions-grid__cell--handle" data-column="handle"></div>
+        <div class="actions-grid__cell" data-column="channel"></div>
+        <div class="actions-grid__cell" data-column="value"></div>
+        <div class="actions-grid__cell actions-grid__cell--fade" data-column="fade"></div>
+        <div class="actions-grid__cell actions-grid__cell--tools" data-column="tools"></div>
+      </div>
     </template>
 
     <div id="template-picker" class="template-picker" hidden aria-hidden="true">
