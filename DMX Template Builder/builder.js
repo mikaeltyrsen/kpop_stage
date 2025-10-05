@@ -451,7 +451,11 @@ async function syncPreview(options = {}) {
   }
   let prepared;
   try {
-    prepared = prepareActionsForSave();
+    if (shouldPreviewActiveTemplateOnly()) {
+      prepared = prepareTemplatePreviewActions(activeLightTemplateId);
+    } else {
+      prepared = prepareActionsForSave();
+    }
   } catch (error) {
     if (options.showError) {
       showStatus(error.message || "Unable to update preview.", "error");
@@ -466,6 +470,43 @@ async function syncPreview(options = {}) {
     }
     throw error;
   }
+}
+
+function shouldPreviewActiveTemplateOnly() {
+  return activeTab === "templates" && Boolean(activeLightTemplateId);
+}
+
+function prepareTemplatePreviewActions(templateId) {
+  if (!templateId) {
+    return [];
+  }
+  const template = getLightTemplate(templateId);
+  if (!template) {
+    return [];
+  }
+  const rows = Array.isArray(template.rows) ? template.rows : [];
+  if (!rows.length) {
+    return [];
+  }
+
+  const previewRows = rows.map((row) => {
+    const channelValue = Number.parseInt(row.channel, 10);
+    const valueValue = Number.parseInt(row.value, 10);
+    const fadeValue = Number.parseFloat(row.fade);
+
+    const channel = clamp(Number.isFinite(channelValue) ? channelValue : 1, 1, 512);
+    const value = clamp(Number.isFinite(valueValue) ? valueValue : 0, 0, 255);
+    const normalizedFade = Number.isFinite(fadeValue) ? Math.max(0, fadeValue) : 0;
+
+    return {
+      time: DEFAULT_ACTION.time,
+      channel,
+      value,
+      fade: Number(normalizedFade.toFixed(3)),
+    };
+  });
+
+  return sortActions(previewRows);
 }
 
 async function sendPreview(preparedActions) {
