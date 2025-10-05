@@ -775,14 +775,26 @@ class DMXShowManager:
         normalized: List[Dict[str, object]] = []
         for raw in actions:
             action = DMXAction.from_dict(raw)
-            normalized.append(
-                {
-                    "time": self.format_timecode(action.time_seconds),
-                    "channel": action.channel,
-                    "value": action.value,
-                    "fade": round(action.fade, 3),
-                }
-            )
+            entry: Dict[str, object] = {
+                "time": self.format_timecode(action.time_seconds),
+                "channel": action.channel,
+                "value": action.value,
+                "fade": round(action.fade, 3),
+            }
+
+            if isinstance(raw, dict):
+                for key in (
+                    "channelPresetId",
+                    "valuePresetId",
+                    "templateId",
+                    "templateInstanceId",
+                    "templateRowId",
+                ):
+                    value = raw.get(key)
+                    if isinstance(value, str) and value:
+                        entry[key] = value
+
+            normalized.append(entry)
 
         payload = {"actions": sorted(normalized, key=lambda item: parse_timecode(str(item["time"])))}
         template_path.parent.mkdir(parents=True, exist_ok=True)

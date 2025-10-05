@@ -1,0 +1,588 @@
+{
+  "presets": [
+    {
+      "id": "left-light-dimmer",
+      "name": "Left Light - Dimmer",
+      "channel": 1,
+      "values": [
+        { "id": "left-light-dimmer-off", "name": "Off", "value": 0 },
+        { "id": "left-light-dimmer-dimmed", "name": "Dimmed", "value": 63 },
+        { "id": "left-light-dimmer-normal", "name": "Normal", "value": 127 },
+        { "id": "left-light-dimmer-bright", "name": "Bright", "value": 192 },
+        { "id": "left-light-dimmer-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "left-light-red",
+      "name": "Left Light - Red",
+      "channel": 2,
+      "values": [
+        { "id": "left-light-red-off", "name": "Off", "value": 0 },
+        { "id": "left-light-red-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "left-light-green",
+      "name": "Left Light - Green",
+      "channel": 3,
+      "values": [
+        { "id": "left-light-green-off", "name": "Off", "value": 0 },
+        { "id": "left-light-green-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "left-light-blue",
+      "name": "Left Light - Blue",
+      "channel": 4,
+      "values": [
+        { "id": "left-light-blue-off", "name": "Off", "value": 0 },
+        { "id": "left-light-blue-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "left-light-white",
+      "name": "Left Light - White",
+      "channel": 5,
+      "values": [
+        { "id": "left-light-white-off", "name": "Off", "value": 0 },
+        { "id": "left-light-white-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "left-light-strobe",
+      "name": "Left Light - Strobe",
+      "channel": 6,
+      "values": [
+        { "id": "left-light-strobe-none", "name": "No Strobe", "value": 0 },
+        { "id": "left-light-strobe-super-slow", "name": "Super Slow", "value": 50 },
+        { "id": "left-light-strobe-slow", "name": "Slow", "value": 100 },
+        { "id": "left-light-strobe-medium", "name": "Medium", "value": 150 },
+        { "id": "left-light-strobe-fast", "name": "Fast", "value": 200 },
+        { "id": "left-light-strobe-super-fast", "name": "Super Fast", "value": 255 }
+      ]
+    },
+    {
+      "id": "left-light-effects",
+      "name": "Left Light - Effects",
+      "channel": 7,
+      "values": [
+        { "id": "left-light-effects-none", "name": "No Effect", "value": 0 },
+        { "id": "left-light-effects-different-colors", "name": "Different Colors", "value": 51 },
+        { "id": "left-light-effects-color-jump", "name": "Color Jump", "value": 101 },
+        { "id": "left-light-effects-color-gradient", "name": "Color Gradient", "value": 151 },
+        { "id": "left-light-effects-color-pulse", "name": "Color Pulse", "value": 201 },
+        { "id": "left-light-effects-sound-mode", "name": "Sound Mode", "value": 251 }
+      ]
+    },
+    {
+      "id": "left-light-effect-speed",
+      "name": "Left Light - Effect Speed",
+      "channel": 8,
+      "values": [
+        { "id": "left-light-effect-speed-none", "name": "None", "value": 0 },
+        { "id": "left-light-effect-speed-super-slow", "name": "Super Slow", "value": 50 },
+        { "id": "left-light-effect-speed-slow", "name": "Slow", "value": 100 },
+        { "id": "left-light-effect-speed-medium", "name": "Medium", "value": 150 },
+        { "id": "left-light-effect-speed-fast", "name": "Fast", "value": 200 },
+        { "id": "left-light-effect-speed-super-fast", "name": "Super Fast", "value": 255 }
+      ]
+    },
+    {
+      "id": "right-light-dimmer",
+      "name": "Right Light - Dimmer",
+      "channel": 10,
+      "values": [
+        { "id": "right-light-dimmer-off", "name": "Off", "value": 0 },
+        { "id": "right-light-dimmer-dimmed", "name": "Dimmed", "value": 63 },
+        { "id": "right-light-dimmer-normal", "name": "Normal", "value": 127 },
+        { "id": "right-light-dimmer-bright", "name": "Bright", "value": 192 },
+        { "id": "right-light-dimmer-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "right-light-red",
+      "name": "Right Light - Red",
+      "channel": 11,
+      "values": [
+        { "id": "right-light-red-off", "name": "Off", "value": 0 },
+        { "id": "right-light-red-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "right-light-green",
+      "name": "Right Light - Green",
+      "channel": 12,
+      "values": [
+        { "id": "right-light-green-off", "name": "Off", "value": 0 },
+        { "id": "right-light-green-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "right-light-blue",
+      "name": "Right Light - Blue",
+      "channel": 13,
+      "values": [
+        { "id": "right-light-blue-off", "name": "Off", "value": 0 },
+        { "id": "right-light-blue-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "right-light-white",
+      "name": "Right Light - White",
+      "channel": 14,
+      "values": [
+        { "id": "right-light-white-off", "name": "Off", "value": 0 },
+        { "id": "right-light-white-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "right-light-strobe",
+      "name": "Right Light - Strobe",
+      "channel": 15,
+      "values": [
+        { "id": "right-light-strobe-none", "name": "No Strobe", "value": 0 },
+        { "id": "right-light-strobe-super-slow", "name": "Super Slow", "value": 50 },
+        { "id": "right-light-strobe-slow", "name": "Slow", "value": 100 },
+        { "id": "right-light-strobe-medium", "name": "Medium", "value": 150 },
+        { "id": "right-light-strobe-fast", "name": "Fast", "value": 200 },
+        { "id": "right-light-strobe-super-fast", "name": "Super Fast", "value": 255 }
+      ]
+    },
+    {
+      "id": "right-light-effects",
+      "name": "Right Light - Effects",
+      "channel": 16,
+      "values": [
+        { "id": "right-light-effects-none", "name": "No Effect", "value": 0 },
+        { "id": "right-light-effects-different-colors", "name": "Different Colors", "value": 51 },
+        { "id": "right-light-effects-color-jump", "name": "Color Jump", "value": 101 },
+        { "id": "right-light-effects-color-gradient", "name": "Color Gradient", "value": 151 },
+        { "id": "right-light-effects-color-pulse", "name": "Color Pulse", "value": 201 },
+        { "id": "right-light-effects-sound-mode", "name": "Sound Mode", "value": 251 }
+      ]
+    },
+    {
+      "id": "right-light-effect-speed",
+      "name": "Right Light - Effect Speed",
+      "channel": 17,
+      "values": [
+        { "id": "right-light-effect-speed-none", "name": "None", "value": 0 },
+        { "id": "right-light-effect-speed-super-slow", "name": "Super Slow", "value": 50 },
+        { "id": "right-light-effect-speed-slow", "name": "Slow", "value": 100 },
+        { "id": "right-light-effect-speed-medium", "name": "Medium", "value": 150 },
+        { "id": "right-light-effect-speed-fast", "name": "Fast", "value": 200 },
+        { "id": "right-light-effect-speed-super-fast", "name": "Super Fast", "value": 255 }
+      ]
+    },
+    {
+      "id": "back-light-dimmer",
+      "name": "Back Light - Dimmer",
+      "channel": 20,
+      "values": [
+        { "id": "back-light-dimmer-off", "name": "Off", "value": 0 },
+        { "id": "back-light-dimmer-dimmed", "name": "Dimmed", "value": 63 },
+        { "id": "back-light-dimmer-normal", "name": "Normal", "value": 127 },
+        { "id": "back-light-dimmer-bright", "name": "Bright", "value": 192 },
+        { "id": "back-light-dimmer-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "back-light-red",
+      "name": "Back Light - Red",
+      "channel": 21,
+      "values": [
+        { "id": "back-light-red-off", "name": "Off", "value": 0 },
+        { "id": "back-light-red-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "back-light-green",
+      "name": "Back Light - Green",
+      "channel": 22,
+      "values": [
+        { "id": "back-light-green-off", "name": "Off", "value": 0 },
+        { "id": "back-light-green-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "back-light-blue",
+      "name": "Back Light - Blue",
+      "channel": 23,
+      "values": [
+        { "id": "back-light-blue-off", "name": "Off", "value": 0 },
+        { "id": "back-light-blue-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "back-light-white",
+      "name": "Back Light - White",
+      "channel": 24,
+      "values": [
+        { "id": "back-light-white-off", "name": "Off", "value": 0 },
+        { "id": "back-light-white-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "back-light-strobe",
+      "name": "Back Light - Strobe",
+      "channel": 25,
+      "values": [
+        { "id": "back-light-strobe-none", "name": "No Strobe", "value": 0 },
+        { "id": "back-light-strobe-super-slow", "name": "Super Slow", "value": 50 },
+        { "id": "back-light-strobe-slow", "name": "Slow", "value": 100 },
+        { "id": "back-light-strobe-medium", "name": "Medium", "value": 150 },
+        { "id": "back-light-strobe-fast", "name": "Fast", "value": 200 },
+        { "id": "back-light-strobe-super-fast", "name": "Super Fast", "value": 255 }
+      ]
+    },
+    {
+      "id": "back-light-effects",
+      "name": "Back Light - Effects",
+      "channel": 26,
+      "values": [
+        { "id": "back-light-effects-none", "name": "No Effect", "value": 0 },
+        { "id": "back-light-effects-different-colors", "name": "Different Colors", "value": 51 },
+        { "id": "back-light-effects-color-jump", "name": "Color Jump", "value": 101 },
+        { "id": "back-light-effects-color-gradient", "name": "Color Gradient", "value": 151 },
+        { "id": "back-light-effects-color-pulse", "name": "Color Pulse", "value": 201 },
+        { "id": "back-light-effects-sound-mode", "name": "Sound Mode", "value": 251 }
+      ]
+    },
+    {
+      "id": "back-light-effect-speed",
+      "name": "Back Light - Effect Speed",
+      "channel": 27,
+      "values": [
+        { "id": "back-light-effect-speed-none", "name": "None", "value": 0 },
+        { "id": "back-light-effect-speed-super-slow", "name": "Super Slow", "value": 50 },
+        { "id": "back-light-effect-speed-slow", "name": "Slow", "value": 100 },
+        { "id": "back-light-effect-speed-medium", "name": "Medium", "value": 150 },
+        { "id": "back-light-effect-speed-fast", "name": "Fast", "value": 200 },
+        { "id": "back-light-effect-speed-super-fast", "name": "Super Fast", "value": 255 }
+      ]
+    },
+    {
+      "id": "front-light-dimmer",
+      "name": "Front Light - Dimmer",
+      "channel": 30,
+      "values": [
+        { "id": "front-light-dimmer-off", "name": "Off", "value": 0 },
+        { "id": "front-light-dimmer-dimmed", "name": "Dimmed", "value": 63 },
+        { "id": "front-light-dimmer-normal", "name": "Normal", "value": 127 },
+        { "id": "front-light-dimmer-bright", "name": "Bright", "value": 192 },
+        { "id": "front-light-dimmer-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "front-light-red",
+      "name": "Front Light - Red",
+      "channel": 31,
+      "values": [
+        { "id": "front-light-red-off", "name": "Off", "value": 0 },
+        { "id": "front-light-red-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "front-light-green",
+      "name": "Front Light - Green",
+      "channel": 32,
+      "values": [
+        { "id": "front-light-green-off", "name": "Off", "value": 0 },
+        { "id": "front-light-green-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "front-light-blue",
+      "name": "Front Light - Blue",
+      "channel": 33,
+      "values": [
+        { "id": "front-light-blue-off", "name": "Off", "value": 0 },
+        { "id": "front-light-blue-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "front-light-white",
+      "name": "Front Light - White",
+      "channel": 34,
+      "values": [
+        { "id": "front-light-white-off", "name": "Off", "value": 0 },
+        { "id": "front-light-white-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "front-light-strobe",
+      "name": "Front Light - Strobe",
+      "channel": 35,
+      "values": [
+        { "id": "front-light-strobe-none", "name": "No Strobe", "value": 0 },
+        { "id": "front-light-strobe-super-slow", "name": "Super Slow", "value": 50 },
+        { "id": "front-light-strobe-slow", "name": "Slow", "value": 100 },
+        { "id": "front-light-strobe-medium", "name": "Medium", "value": 150 },
+        { "id": "front-light-strobe-fast", "name": "Fast", "value": 200 },
+        { "id": "front-light-strobe-super-fast", "name": "Super Fast", "value": 255 }
+      ]
+    },
+    {
+      "id": "front-light-effects",
+      "name": "Front Light - Effects",
+      "channel": 36,
+      "values": [
+        { "id": "front-light-effects-none", "name": "No Effect", "value": 0 },
+        { "id": "front-light-effects-different-colors", "name": "Different Colors", "value": 51 },
+        { "id": "front-light-effects-color-jump", "name": "Color Jump", "value": 101 },
+        { "id": "front-light-effects-color-gradient", "name": "Color Gradient", "value": 151 },
+        { "id": "front-light-effects-color-pulse", "name": "Color Pulse", "value": 201 },
+        { "id": "front-light-effects-sound-mode", "name": "Sound Mode", "value": 251 }
+      ]
+    },
+    {
+      "id": "front-light-effect-speed",
+      "name": "Front Light - Effect Speed",
+      "channel": 37,
+      "values": [
+        { "id": "front-light-effect-speed-none", "name": "None", "value": 0 },
+        { "id": "front-light-effect-speed-super-slow", "name": "Super Slow", "value": 50 },
+        { "id": "front-light-effect-speed-slow", "name": "Slow", "value": 100 },
+        { "id": "front-light-effect-speed-medium", "name": "Medium", "value": 150 },
+        { "id": "front-light-effect-speed-fast", "name": "Fast", "value": 200 },
+        { "id": "front-light-effect-speed-super-fast", "name": "Super Fast", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-rotation",
+      "name": "Mover Light - Rotation",
+      "channel": 40,
+      "values": [
+        { "id": "mover-light-rotation-0", "name": "0°", "value": 0 },
+        { "id": "mover-light-rotation-45", "name": "45°", "value": 23 },
+        { "id": "mover-light-rotation-90", "name": "90°", "value": 46 },
+        { "id": "mover-light-rotation-135", "name": "135°", "value": 69 },
+        { "id": "mover-light-rotation-180", "name": "180°", "value": 92 },
+        { "id": "mover-light-rotation-225", "name": "225°", "value": 115 },
+        { "id": "mover-light-rotation-270", "name": "270°", "value": 138 },
+        { "id": "mover-light-rotation-360", "name": "360°", "value": 161 },
+        { "id": "mover-light-rotation-405", "name": "405°", "value": 184 },
+        { "id": "mover-light-rotation-450", "name": "450°", "value": 207 },
+        { "id": "mover-light-rotation-495", "name": "495°", "value": 230 },
+        { "id": "mover-light-rotation-540", "name": "540°", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-rotation-speed",
+      "name": "Mover Light - Rotation Speed",
+      "channel": 41,
+      "values": [
+        { "id": "mover-light-rotation-speed-none", "name": "None", "value": 0 },
+        { "id": "mover-light-rotation-speed-super-slow", "name": "Super Slow", "value": 50 },
+        { "id": "mover-light-rotation-speed-slow", "name": "Slow", "value": 100 },
+        { "id": "mover-light-rotation-speed-medium", "name": "Medium", "value": 150 },
+        { "id": "mover-light-rotation-speed-fast", "name": "Fast", "value": 200 },
+        { "id": "mover-light-rotation-speed-super-fast", "name": "Super Fast", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-pattern-rotation",
+      "name": "Mover Light - Pattern Rotation",
+      "channel": 42,
+      "values": [
+        { "id": "mover-light-pattern-rotation-0", "name": "0°", "value": 0 },
+        { "id": "mover-light-pattern-rotation-45", "name": "45°", "value": 31 },
+        { "id": "mover-light-pattern-rotation-90", "name": "90°", "value": 62 },
+        { "id": "mover-light-pattern-rotation-135", "name": "135°", "value": 93 },
+        { "id": "mover-light-pattern-rotation-180", "name": "180°", "value": 127 },
+        { "id": "mover-light-pattern-rotation-rotate-slow", "name": "Rotate Slow", "value": 128 },
+        { "id": "mover-light-pattern-rotation-rotate-medium", "name": "Rotate Medium", "value": 159 },
+        { "id": "mover-light-pattern-rotation-rotate-fast", "name": "Rotate Fast", "value": 191 },
+        { "id": "mover-light-pattern-rotation-reverse-slow", "name": "Reverse Slow", "value": 192 },
+        { "id": "mover-light-pattern-rotation-reverse-medium", "name": "Reverse Medium", "value": 223 },
+        { "id": "mover-light-pattern-rotation-reverse-fast", "name": "Reverse Fast", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-beam1-rotation",
+      "name": "Mover Light - Beam 1 Rotation",
+      "channel": 43,
+      "values": [
+        { "id": "mover-light-beam-rotation-0", "name": "0°", "value": 0 },
+        { "id": "mover-light-beam-rotation-45", "name": "45°", "value": 63 },
+        { "id": "mover-light-beam-rotation-90", "name": "90°", "value": 127 },
+        { "id": "mover-light-beam-rotation-135", "name": "135°", "value": 192 },
+        { "id": "mover-light-beam-rotation-180", "name": "180°", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-beam2-rotation",
+      "name": "Mover Light - Beam 2 Rotation",
+      "channel": 44,
+      "values": [
+        { "id": "mover-light-beam2-rotation-0", "name": "0°", "value": 0 },
+        { "id": "mover-light-beam2-rotation-45", "name": "45°", "value": 63 },
+        { "id": "mover-light-beam2-rotation-90", "name": "90°", "value": 127 },
+        { "id": "mover-light-beam2-rotation-135", "name": "135°", "value": 192 },
+        { "id": "mover-light-beam2-rotation-180", "name": "180°", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-beam3-rotation",
+      "name": "Mover Light - Beam 3 Rotation",
+      "channel": 45,
+      "values": [
+        { "id": "mover-light-beam3-rotation-0", "name": "0°", "value": 0 },
+        { "id": "mover-light-beam3-rotation-45", "name": "45°", "value": 63 },
+        { "id": "mover-light-beam3-rotation-90", "name": "90°", "value": 127 },
+        { "id": "mover-light-beam3-rotation-135", "name": "135°", "value": 192 },
+        { "id": "mover-light-beam3-rotation-180", "name": "180°", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-beam4-rotation",
+      "name": "Mover Light - Beam 4 Rotation",
+      "channel": 46,
+      "values": [
+        { "id": "mover-light-beam4-rotation-0", "name": "0°", "value": 0 },
+        { "id": "mover-light-beam4-rotation-45", "name": "45°", "value": 63 },
+        { "id": "mover-light-beam4-rotation-90", "name": "90°", "value": 127 },
+        { "id": "mover-light-beam4-rotation-135", "name": "135°", "value": 192 },
+        { "id": "mover-light-beam4-rotation-180", "name": "180°", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-beam-brightness",
+      "name": "Mover Light - Beam Brightness",
+      "channel": 47,
+      "values": [
+        { "id": "mover-light-beam-brightness-off", "name": "Off", "value": 0 },
+        { "id": "mover-light-beam-brightness-dimmed", "name": "Dimmed", "value": 63 },
+        { "id": "mover-light-beam-brightness-normal", "name": "Normal", "value": 127 },
+        { "id": "mover-light-beam-brightness-bright", "name": "Bright", "value": 192 },
+        { "id": "mover-light-beam-brightness-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-strobe",
+      "name": "Mover Light - Strobe",
+      "channel": 48,
+      "values": [
+        { "id": "mover-light-strobe-none", "name": "No Strobe", "value": 0 },
+        { "id": "mover-light-strobe-super-slow", "name": "Super Slow", "value": 50 },
+        { "id": "mover-light-strobe-slow", "name": "Slow", "value": 100 },
+        { "id": "mover-light-strobe-medium", "name": "Medium", "value": 150 },
+        { "id": "mover-light-strobe-fast", "name": "Fast", "value": 200 },
+        { "id": "mover-light-strobe-super-fast", "name": "Super Fast", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-beam-red",
+      "name": "Mover Light - Beam Red",
+      "channel": 49,
+      "values": [
+        { "id": "mover-light-beam-red-off", "name": "Off", "value": 0 },
+        { "id": "mover-light-beam-red-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-beam-green",
+      "name": "Mover Light - Beam Green",
+      "channel": 50,
+      "values": [
+        { "id": "mover-light-beam-green-off", "name": "Off", "value": 0 },
+        { "id": "mover-light-beam-green-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-beam-blue",
+      "name": "Mover Light - Beam Blue",
+      "channel": 51,
+      "values": [
+        { "id": "mover-light-beam-blue-off", "name": "Off", "value": 0 },
+        { "id": "mover-light-beam-blue-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-beam-white",
+      "name": "Mover Light - Beam White",
+      "channel": 52,
+      "values": [
+        { "id": "mover-light-beam-white-off", "name": "Off", "value": 0 },
+        { "id": "mover-light-beam-white-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-laser-pattern",
+      "name": "Mover Light - Laser Pattern",
+      "channel": 53,
+      "values": []
+    },
+    {
+      "id": "mover-light-laser-red",
+      "name": "Mover Light - Laser Red",
+      "channel": 54,
+      "values": [
+        { "id": "mover-light-laser-red-off", "name": "Off", "value": 0 },
+        { "id": "mover-light-laser-red-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-laser-green",
+      "name": "Mover Light - Laser Green",
+      "channel": 55,
+      "values": [
+        { "id": "mover-light-laser-green-off", "name": "Off", "value": 0 },
+        { "id": "mover-light-laser-green-full", "name": "Full", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-white-flash",
+      "name": "Mover Light - White Flash",
+      "channel": 56,
+      "values": [
+        { "id": "mover-light-white-flash-none", "name": "No Flash", "value": 0 },
+        { "id": "mover-light-white-flash-super-slow", "name": "Super Slow", "value": 50 },
+        { "id": "mover-light-white-flash-slow", "name": "Slow", "value": 100 },
+        { "id": "mover-light-white-flash-medium", "name": "Medium", "value": 150 },
+        { "id": "mover-light-white-flash-fast", "name": "Fast", "value": 200 },
+        { "id": "mover-light-white-flash-super-fast", "name": "Super Fast", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-strip",
+      "name": "Mover Light - Light Strip",
+      "channel": 57,
+      "values": [
+        { "id": "mover-light-strip-off", "name": "Off", "value": 0 },
+        { "id": "mover-light-strip-red", "name": "Red", "value": 13 },
+        { "id": "mover-light-strip-green", "name": "Green", "value": 22 },
+        { "id": "mover-light-strip-blue", "name": "Blue", "value": 31 },
+        { "id": "mover-light-strip-yellow", "name": "Yellow", "value": 40 },
+        { "id": "mover-light-strip-purple", "name": "Purple", "value": 49 },
+        { "id": "mover-light-strip-cyan", "name": "Cyan", "value": 58 },
+        { "id": "mover-light-strip-white", "name": "White", "value": 67 },
+        { "id": "mover-light-strip-effects", "name": "Light Effects", "value": 76 }
+      ]
+    },
+    {
+      "id": "mover-light-strip-strobe",
+      "name": "Mover Light - Light Strip Strobe",
+      "channel": 58,
+      "values": [
+        { "id": "mover-light-strip-strobe-none", "name": "No Strobe", "value": 0 },
+        { "id": "mover-light-strip-strobe-super-slow", "name": "Super Slow", "value": 50 },
+        { "id": "mover-light-strip-strobe-slow", "name": "Slow", "value": 100 },
+        { "id": "mover-light-strip-strobe-medium", "name": "Medium", "value": 150 },
+        { "id": "mover-light-strip-strobe-fast", "name": "Fast", "value": 200 },
+        { "id": "mover-light-strip-strobe-super-fast", "name": "Super Fast", "value": 255 }
+      ]
+    },
+    {
+      "id": "mover-light-effects",
+      "name": "Mover Light - Effects",
+      "channel": 59,
+      "values": [
+        { "id": "mover-light-effects-none", "name": "No", "value": 0 },
+        { "id": "mover-light-effects-stochastic", "name": "Stochastic", "value": 51 },
+        { "id": "mover-light-effects-sound-mode", "name": "Sound Mode", "value": 151 },
+        { "id": "mover-light-effects-reset", "name": "Reset", "value": 251 }
+      ]
+    }
+  ]
+}

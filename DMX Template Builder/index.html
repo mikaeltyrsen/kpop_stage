@@ -12,34 +12,117 @@
         <h1>DMX Template Builder</h1>
         <p>Create and edit lighting cues that sync with your show videos.</p>
       </div>
-      <div class="builder-header__actions">
-        <button
-          id="open-channel-presets"
-          type="button"
-          class="secondary toggle-button"
-          aria-pressed="true"
-        >
-          Channel Presets
-        </button>
-      </div>
     </header>
 
-    <section class="builder-controls">
-      <label class="control-group" for="video-select">
-        <span class="control-label">Song</span>
-        <select id="video-select">
-          <option value="">Select a song…</option>
-        </select>
-      </label>
-      <button id="add-row" type="button" class="control-button" disabled>Add Step</button>
-      <button id="save-template" type="button" class="primary" disabled>Save Template</button>
-      <button id="export-template" type="button" class="secondary" disabled>Export JSON</button>
-      <span id="status-message" role="status" aria-live="polite"></span>
+    <nav class="builder-tabs" role="tablist">
+      <button
+        type="button"
+        class="builder-tab is-active"
+        role="tab"
+        aria-selected="true"
+        data-tab="timeline"
+      >
+        Timeline
+      </button>
+      <button
+        type="button"
+        class="builder-tab"
+        role="tab"
+        aria-selected="false"
+        data-tab="presets"
+      >
+        Channel Presets
+      </button>
+      <button
+        type="button"
+        class="builder-tab"
+        role="tab"
+        aria-selected="false"
+        data-tab="templates"
+      >
+        Light Templates
+      </button>
+    </nav>
+
+    <section id="timeline-panel" class="tab-panel" data-tab-panel="timeline">
+      <section class="builder-controls">
+        <label class="control-group" for="video-select">
+          <span class="control-label">Song</span>
+          <select id="video-select">
+            <option value="">Select a song…</option>
+          </select>
+        </label>
+        <button id="add-step" type="button" class="control-button" disabled>
+          Add Step
+        </button>
+        <button id="save-template" type="button" class="primary" disabled>
+          Save Template
+        </button>
+        <button id="export-template" type="button" class="secondary" disabled>
+          Export JSON
+        </button>
+        <span id="status-message" role="status" aria-live="polite"></span>
+      </section>
+
+      <section class="template-info" id="template-info" hidden></section>
+
+      <div id="timeline-empty-state" class="timeline-empty" hidden>
+        <p>Select a song to start building a timeline.</p>
+      </div>
+
+      <main class="builder-layout" hidden aria-hidden="true">
+        <section class="preview-panel">
+          <h2>Video Preview</h2>
+          <video id="preview-video" controls preload="metadata"></video>
+          <section
+            id="channel-status"
+            class="channel-status"
+            aria-live="polite"
+            aria-label="Active channels"
+          >
+            <h3 class="channel-status__title">Active Channels</h3>
+            <div id="channel-status-list" class="channel-status__content">
+              <p class="channel-status__empty">All channels at blackout.</p>
+            </div>
+          </section>
+          <div class="video-hints">
+            <p>
+              Select a row in the table to jump to that cue. The time input keeps the
+              video preview aligned with the cue you are editing.
+            </p>
+          </div>
+        </section>
+
+        <section class="table-panel">
+          <h2>Lighting Steps</h2>
+          <div class="table-wrapper">
+            <table class="actions-table">
+              <thead>
+                <tr>
+                  <th scope="col" class="actions-table__drag-header">
+                    <span class="visually-hidden">Reorder</span>
+                  </th>
+                  <th scope="col">Channel</th>
+                  <th scope="col">Value</th>
+                  <th scope="col">Fade (s)</th>
+                  <th scope="col">Tools</th>
+                </tr>
+              </thead>
+              <tbody id="actions-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
     </section>
 
-    <section class="template-info" id="template-info" hidden></section>
-
-    <section class="preset-settings" aria-labelledby="channel-presets-heading">
+    <section
+      id="presets-panel"
+      class="preset-settings tab-panel"
+      data-tab-panel="presets"
+      aria-labelledby="channel-presets-heading"
+      hidden
+      aria-hidden="true"
+    >
       <header class="preset-settings__header">
         <div>
           <h2 id="channel-presets-heading">Channel Presets</h2>
@@ -58,51 +141,40 @@
       <div id="channel-presets" class="preset-settings__list" aria-live="polite"></div>
     </section>
 
-    <main class="builder-layout">
-      <section class="preview-panel">
-        <h2>Video Preview</h2>
-        <video id="preview-video" controls preload="metadata"></video>
-        <section
-          id="channel-status"
-          class="channel-status"
-          aria-live="polite"
-          aria-label="Active channels"
-        >
-          <h3 class="channel-status__title">Active Channels</h3>
-          <div id="channel-status-list" class="channel-status__content">
-            <p class="channel-status__empty">All channels at blackout.</p>
-          </div>
-        </section>
-        <div class="video-hints">
+    <section
+      id="templates-panel"
+      class="template-library tab-panel"
+      data-tab-panel="templates"
+      hidden
+      aria-hidden="true"
+    >
+      <header class="template-library__header">
+        <div>
+          <h2>Light Templates</h2>
           <p>
-            Select a row in the table to jump to that cue. The time input keeps the
-            video preview aligned with the cue you are editing.
+            Assemble reusable channel combinations that you can drop into any
+            step. Templates don’t include a timestamp so they work anywhere in
+            your timeline.
           </p>
         </div>
-      </section>
-
-      <section class="table-panel">
-        <h2>Lighting Steps</h2>
-        <div class="table-wrapper">
-          <table class="actions-table">
-            <thead>
-              <tr>
-                <th scope="col">Time (HH:MM:SS)</th>
-                <th scope="col">Channel</th>
-                <th scope="col">Value</th>
-                <th scope="col">Fade (s)</th>
-                <th scope="col">Tools</th>
-              </tr>
-            </thead>
-            <tbody id="actions-body"></tbody>
-          </table>
+        <div class="template-library__actions">
+          <button id="add-light-template" type="button" class="primary">
+            New Template
+          </button>
         </div>
-      </section>
-    </main>
+      </header>
+      <div class="template-library__split">
+        <aside class="template-library__sidebar" aria-live="polite">
+          <h3 class="visually-hidden">Template list</h3>
+          <ul id="light-templates" class="template-list" role="list"></ul>
+        </aside>
+        <section id="template-detail" class="template-detail" aria-live="polite"></section>
+      </div>
+    </section>
 
     <template id="action-row-template">
       <tr>
-        <td data-column="time"></td>
+        <td data-column="handle"></td>
         <td data-column="channel"></td>
         <td data-column="value"></td>
         <td data-column="fade"></td>
@@ -110,6 +182,41 @@
       </tr>
     </template>
 
+    <div id="template-picker" class="template-picker" hidden aria-hidden="true">
+      <div class="template-picker__backdrop" data-template-picker-close></div>
+      <div class="template-picker__dialog" role="dialog" aria-modal="true" aria-labelledby="template-picker-title">
+        <header class="template-picker__header">
+          <h2 id="template-picker-title">Add Template to Step</h2>
+          <button type="button" class="template-picker__close" data-template-picker-close>
+            <span aria-hidden="true">×</span>
+            <span class="visually-hidden">Close</span>
+          </button>
+        </header>
+        <div class="template-picker__body">
+          <label class="template-picker__search">
+            <span class="visually-hidden">Search templates</span>
+            <input
+              type="search"
+              id="template-picker-search"
+              placeholder="Search templates…"
+              autocomplete="off"
+            />
+          </label>
+          <ul id="template-picker-results" class="template-picker__results" role="listbox" aria-live="polite"></ul>
+        </div>
+      </div>
+    </div>
+
+    <template id="template-row-template">
+      <tr>
+        <td data-template-column="name"></td>
+        <td data-template-column="channel"></td>
+        <td data-template-column="value"></td>
+        <td data-template-column="fade"></td>
+        <td data-template-column="tools"></td>
+      </tr>
+    </template>
+  
     <script src="builder.js" type="module"></script>
   </body>
 </html>

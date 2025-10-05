@@ -30,11 +30,13 @@ MEDIA_DIR = BASE_DIR / "media"
 DMX_TEMPLATE_DIR = BASE_DIR / "dmx_templates"
 DMX_BUILDER_DIR = BASE_DIR / "DMX Template Builder"
 CHANNEL_PRESETS_FILE = BASE_DIR / "channel_presets.json"
+LIGHT_TEMPLATES_FILE = BASE_DIR / "light_templates.json"
 
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 (MEDIA_DIR / "videos").mkdir(parents=True, exist_ok=True)
 DMX_TEMPLATE_DIR.mkdir(parents=True, exist_ok=True)
 DMX_BUILDER_DIR.mkdir(parents=True, exist_ok=True)
+LIGHT_TEMPLATES_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 LOGGER = logging.getLogger("kpop_stage")
@@ -123,6 +125,116 @@ def save_channel_presets_to_disk(presets: Iterable[Dict[str, Any]]) -> None:
             json.dump({"presets": sanitized}, fh, indent=2)
     except OSError:
         LOGGER.exception("Unable to write channel presets file")
+        raise
+
+
+def _generate_template_id(prefix: str) -> str:
+    return f"{prefix}_{uuid.uuid4().hex}"
+
+
+def sanitize_template_row(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    if not isinstance(raw, dict):
+        return None
+
+    try:
+        channel_value = int(raw.get("channel", 1))
+    except (TypeError, ValueError):
+        channel_value = 1
+    channel = _clamp(channel_value, 1, 512)
+
+    try:
+        value_value = int(raw.get("value", 0))
+    except (TypeError, ValueError):
+        value_value = 0
+    value = _clamp(value_value, 0, 255)
+
+    try:
+        fade_value = float(raw.get("fade", 0))
+    except (TypeError, ValueError):
+        fade_value = 0.0
+    fade = max(0.0, fade_value)
+
+    row_id = raw.get("id")
+    if not isinstance(row_id, str) or not row_id:
+        row_id = _generate_template_id("row")
+
+    channel_preset_id = raw.get("channelPresetId")
+    if not isinstance(channel_preset_id, str) or not channel_preset_id:
+        channel_preset_id = None
+
+    value_preset_id = raw.get("valuePresetId")
+    if not isinstance(value_preset_id, str) or not value_preset_id:
+        value_preset_id = None
+
+    return {
+        "id": row_id,
+        "channel": channel,
+        "value": value,
+        "fade": fade,
+        "channelPresetId": channel_preset_id,
+        "valuePresetId": value_preset_id,
+    }
+
+
+def sanitize_light_template(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    if not isinstance(raw, dict):
+        return None
+
+    template_id = raw.get("id")
+    if not isinstance(template_id, str) or not template_id:
+        template_id = _generate_template_id("template")
+
+    name = raw.get("name") if isinstance(raw.get("name"), str) else ""
+
+    rows_raw = raw.get("rows")
+    if isinstance(rows_raw, list):
+        rows_iter = (sanitize_template_row(entry) for entry in rows_raw)
+        rows = [row for row in rows_iter if row]
+    else:
+        rows = []
+
+    return {"id": template_id, "name": name, "rows": rows}
+
+
+def load_light_templates_from_disk() -> List[Dict[str, Any]]:
+    if not LIGHT_TEMPLATES_FILE.exists():
+        return []
+    try:
+        with LIGHT_TEMPLATES_FILE.open("r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, json.JSONDecodeError):
+        LOGGER.exception("Unable to read light templates file")
+        return []
+
+    if isinstance(data, dict):
+        raw_templates = data.get("templates", [])
+    else:
+        raw_templates = data
+
+    if not isinstance(raw_templates, list):
+        LOGGER.warning("Light templates file did not contain a list of templates")
+        return []
+
+    sanitized: List[Dict[str, Any]] = []
+    for entry in raw_templates:
+        template = sanitize_light_template(entry)
+        if template:
+            sanitized.append(template)
+    return sanitized
+
+
+def save_light_templates_to_disk(templates: Iterable[Dict[str, Any]]) -> None:
+    sanitized: List[Dict[str, Any]] = []
+    for entry in templates:
+        template = sanitize_light_template(entry)
+        if template:
+            sanitized.append(template)
+
+    try:
+        with LIGHT_TEMPLATES_FILE.open("w", encoding="utf-8") as fh:
+            json.dump({"templates": sanitized}, fh, indent=2)
+    except OSError:
+        LOGGER.exception("Unable to write light templates file")
         raise
 
 
@@ -612,6 +724,35 @@ def api_put_channel_presets() -> Any:
     return jsonify({"presets": presets})
 
 
+@app.route("/api/light-templates", methods=["GET"])
+def api_get_light_templates() -> Any:
+    templates = load_light_templates_from_disk()
+    return jsonify({"templates": templates})
+
+
+@app.route("/api/light-templates", methods=["PUT"])
+def api_put_light_templates() -> Any:
+    data = request.get_json(silent=True)  # type: ignore[no-untyped-call]
+    if data is None:
+        return jsonify({"error": "Request body must be JSON"}), 400
+
+    if isinstance(data, list):
+        raw_templates = data
+    else:
+        raw_templates = data.get("templates")
+
+    if not isinstance(raw_templates, list):
+        return jsonify({"error": "Request must include a list of templates"}), 400
+
+    try:
+        save_light_templates_to_disk(raw_templates)
+    except OSError:
+        return jsonify({"error": "Unable to save light templates"}), 500
+
+    templates = load_light_templates_from_disk()
+    return jsonify({"templates": templates})
+
+
 @app.route("/api/videos")
 def api_videos() -> Any:
     display_keys = {"id", "name", "poster", "description", "dmx_template", "file"}
@@ -748,11 +889,26 @@ def api_dmx_template(video_id: str) -> Any:
         except RuntimeError as exc:
             return jsonify({"error": str(exc)}), 500
 
+        stored_actions: List[Dict[str, Any]] = []
+        if template_path.exists():
+            try:
+                with template_path.open("r", encoding="utf-8") as fh:
+                    payload = json.load(fh)
+            except (OSError, json.JSONDecodeError):
+                LOGGER.exception("Unable to read DMX template %s", template_path)
+            else:
+                raw_actions = payload.get("actions") if isinstance(payload, dict) else None
+                if isinstance(raw_actions, list):
+                    stored_actions = raw_actions
+
         try:
             relative_path = template_path.relative_to(BASE_DIR)
             template_str = str(relative_path)
         except ValueError:
             template_str = str(template_path)
+
+        if not stored_actions:
+            stored_actions = dmx_manager.serialize_actions(actions)
 
         response = {
             "video": {
@@ -765,7 +921,7 @@ def api_dmx_template(video_id: str) -> Any:
                 else None,
             },
             "template_exists": template_path.exists(),
-            "actions": dmx_manager.serialize_actions(actions),
+            "actions": stored_actions,
         }
         return jsonify(response)
 
