@@ -16,7 +16,7 @@
       "dmx_template": "idol_dmx.json"
     },
     {
-      "id": "02",
+      "id": "03",
       "name": "This Is What It Sounds Like",
       "file": "videos/sounds_like.mp4",
       "poster": "/static/posters/sounds_like.jpg",
