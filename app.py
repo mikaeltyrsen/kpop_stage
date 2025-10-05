@@ -953,9 +953,11 @@ def api_dmx_preview() -> Any:
         return jsonify({"error": "Missing 'actions' list in request body"}), 400
 
     start_time = data.get("start_time", 0.0)
+    paused_raw = data.get("paused", False)
+    paused = bool(paused_raw) if isinstance(paused_raw, bool) else False
 
     try:
-        dmx_manager.start_preview(actions_payload, start_time=start_time)
+        dmx_manager.start_preview(actions_payload, start_time=start_time, paused=paused)
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
     except Exception:  # pragma: no cover - defensive logging

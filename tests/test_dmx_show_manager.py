@@ -145,6 +145,27 @@ def test_preview_applies_zero_fade_action_at_start_time(tmp_path: Path) -> None:
     assert runner.started_actions == []
 
 
+def test_preview_paused_stops_runner(tmp_path: Path) -> None:
+    output = DummyOutput(channel_count=3)
+    manager = create_manager(tmp_path, output)
+    manager.update_baseline_levels([10, 20, 30])
+
+    raw_actions = [
+        {"time": "00:00:00", "channel": 1, "value": 200, "fade": 2},
+        {"time": "00:00:03", "channel": 2, "value": 150, "fade": 0},
+    ]
+
+    manager.start_preview(raw_actions, start_time=1.0, paused=True)
+
+    assert output.level_history
+    latest_levels = output.level_history[-1]
+    # Channel 1 should reflect fade progress, channel 2 stays at baseline.
+    assert latest_levels == [105, 20, 30]
+
+    runner: DummyRunner = manager.runner  # type: ignore[assignment]
+    assert runner.started_actions == []
+
+
 def test_dmx_output_continuous_refresh(monkeypatch: pytest.MonkeyPatch) -> None:
     frames: List[bytes] = []
 
