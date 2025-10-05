@@ -14,6 +14,13 @@
       "file": "videos/idol.mp4",
       "poster": "/static/posters/idol.jpg",
       "dmx_template": "idol_dmx.json"
+    },
+    {
+      "id": "02",
+      "name": "This Is What It Sounds Like",
+      "file": "videos/sounds_like.mp4",
+      "poster": "/static/posters/sounds_like.jpg",
+      "dmx_template": "sounds_like_dmx.json"
     }
   ]
 }
