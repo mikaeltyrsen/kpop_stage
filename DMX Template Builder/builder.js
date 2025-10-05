@@ -965,20 +965,23 @@ function createTemplateInstanceRow(group, action, index, count) {
   if (action.templateInstanceId) {
     row.dataset.templateInstanceId = action.templateInstanceId;
   }
-  row.draggable = true;
 
   row.addEventListener("focusin", () => {
     setHighlightedAction(index);
     seekToIndex(index);
   });
-  row.addEventListener("dragstart", handleRowDragStart);
-  row.addEventListener("dragend", handleRowDragEnd);
   row.addEventListener("dragover", handleRowDragOver);
   row.addEventListener("dragleave", handleRowDragLeave);
   row.addEventListener("drop", handleRowDrop);
 
+  const handleCell = document.createElement("td");
+  handleCell.dataset.column = "handle";
+  const dragHandle = createDragHandle(row, index);
+  handleCell.append(dragHandle);
+  row.append(handleCell);
+
   const cell = document.createElement("td");
-  cell.colSpan = 5;
+  cell.colSpan = 4;
 
   const content = document.createElement("div");
   content.className = "action-group-template__content";
@@ -1052,17 +1055,17 @@ function createActionRow(action, index, group) {
     row.dataset.templateRowId = action.templateRowId || "";
     row.classList.add("action-group-item--template");
   }
-  row.draggable = true;
 
   row.addEventListener("focusin", () => {
     setHighlightedAction(index);
     seekToIndex(index);
   });
-  row.addEventListener("dragstart", handleRowDragStart);
-  row.addEventListener("dragend", handleRowDragEnd);
   row.addEventListener("dragover", handleRowDragOver);
   row.addEventListener("dragleave", handleRowDragLeave);
   row.addEventListener("drop", handleRowDrop);
+
+  const dragHandle = createDragHandle(row, index);
+  appendToColumn(row, "handle", dragHandle);
 
   const channelField = createChannelField(action, index, actionId);
   appendToColumn(row, "channel", channelField);
@@ -1106,6 +1109,27 @@ function createActionRow(action, index, group) {
   }
 
   return row;
+}
+
+function createDragHandle(row, index) {
+  const handle = document.createElement("button");
+  handle.type = "button";
+  handle.className = "action-row__drag-handle";
+  handle.title = "Drag to reorder";
+  handle.setAttribute("aria-label", "Drag to reorder");
+  handle.draggable = true;
+
+  const icon = document.createElement("span");
+  icon.className = "action-row__drag-icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "⋮⋮";
+  handle.append(icon);
+
+  handle.addEventListener("dragstart", handleRowDragStart);
+  handle.addEventListener("dragend", handleRowDragEnd);
+  handle.addEventListener("focus", () => setHighlightedAction(index));
+
+  return handle;
 }
 
 function toggleGroupCollapsed(stepId) {
@@ -1177,9 +1201,19 @@ function handleGroupHeaderDrop(event, stepId) {
   }
 }
 
+function getDragEventRow(target) {
+  if (target instanceof HTMLElement) {
+    if (target.matches("tr.action-group-item")) {
+      return target;
+    }
+    return target.closest("tr.action-group-item");
+  }
+  return null;
+}
+
 function handleRowDragStart(event) {
-  const row = event.currentTarget;
-  if (!(row instanceof HTMLElement)) return;
+  const row = getDragEventRow(event.currentTarget);
+  if (!row) return;
   const templateInstanceId = row.dataset.templateInstanceId;
   const actionId = row.dataset.actionId;
   if (templateInstanceId) {
@@ -1197,11 +1231,15 @@ function handleRowDragStart(event) {
   }
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = "move";
+    const rect = row.getBoundingClientRect();
+    const offsetX = event.clientX - rect.left;
+    const offsetY = event.clientY - rect.top;
     try {
       event.dataTransfer.setData(
         "text/plain",
         templateInstanceId ? templateInstanceId : actionId,
       );
+      event.dataTransfer.setDragImage(row, offsetX, offsetY);
     } catch (error) {
       // Ignore data transfer errors from unsupported browsers.
     }
@@ -1209,7 +1247,7 @@ function handleRowDragStart(event) {
 }
 
 function handleRowDragEnd(event) {
-  const row = event.currentTarget;
+  const row = getDragEventRow(event.currentTarget);
   if (row instanceof HTMLElement) {
     row.classList.remove("is-dragging");
   }

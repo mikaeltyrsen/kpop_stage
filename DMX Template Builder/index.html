@@ -99,7 +99,9 @@
             <table class="actions-table">
               <thead>
                 <tr>
-                  <th scope="col">Time (HH:MM:SS)</th>
+                  <th scope="col" class="actions-table__drag-header">
+                    <span class="visually-hidden">Reorder</span>
+                  </th>
                   <th scope="col">Channel</th>
                   <th scope="col">Value</th>
                   <th scope="col">Fade (s)</th>
@@ -172,7 +174,7 @@
 
     <template id="action-row-template">
       <tr>
-        <td data-column="time"></td>
+        <td data-column="handle"></td>
         <td data-column="channel"></td>
         <td data-column="value"></td>
         <td data-column="fade"></td>
