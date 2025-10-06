@@ -28,6 +28,9 @@ const templatePickerCloseElements = Array.from(
   document.querySelectorAll("[data-template-picker-close]"),
 );
 const templateRowTemplate = document.getElementById("template-row-template");
+const systemUpdateButton = document.getElementById("system-update");
+const systemRestartButton = document.getElementById("system-restart");
+const systemShutdownButton = document.getElementById("system-shutdown");
 
 let videos = [];
 let currentVideo = null;
@@ -192,6 +195,7 @@ init();
 
 async function init() {
   initTabs();
+  initSystemControls();
   try {
     await initChannelPresetsUI();
   } catch (error) {
@@ -250,6 +254,91 @@ function updateTabSelection() {
     panel.hidden = !isActive;
     panel.setAttribute("aria-hidden", isActive ? "false" : "true");
   });
+}
+
+function initSystemControls() {
+  const configs = [
+    {
+      button: systemUpdateButton,
+      endpoint: "/system/update",
+      confirmMessage: "Pull the latest updates and restart now?",
+      pendingMessage: "Updating application…",
+      successMessage: "Update applied. The app will restart shortly.",
+      errorMessage: "Unable to update the application.",
+      disableOnSuccess: true,
+    },
+    {
+      button: systemRestartButton,
+      endpoint: "/system/restart",
+      confirmMessage: "Restart the Raspberry Pi now?",
+      pendingMessage: "Sending restart command…",
+      successMessage: "Restart scheduled. The Raspberry Pi will reboot shortly.",
+      errorMessage: "Unable to restart the Raspberry Pi.",
+      disableOnSuccess: true,
+    },
+    {
+      button: systemShutdownButton,
+      endpoint: "/system/shutdown",
+      confirmMessage: "Shut down the Raspberry Pi now?",
+      pendingMessage: "Sending shutdown command…",
+      successMessage: "Shutdown scheduled. The Raspberry Pi will power off shortly.",
+      errorMessage: "Unable to shut down the Raspberry Pi.",
+      disableOnSuccess: true,
+    },
+  ];
+
+  configs.forEach((config) => {
+    const { button } = config;
+    if (!(button instanceof HTMLButtonElement)) {
+      return;
+    }
+    button.addEventListener("click", () => {
+      requestSystemAction(button, config);
+    });
+  });
+}
+
+async function requestSystemAction(button, options = {}) {
+  if (!options.endpoint) {
+    return;
+  }
+  if (options.confirmMessage && !window.confirm(options.confirmMessage)) {
+    return;
+  }
+
+  if (button instanceof HTMLButtonElement) {
+    button.disabled = true;
+  }
+
+  if (options.pendingMessage) {
+    showStatus(options.pendingMessage, "info");
+  }
+
+  try {
+    const response = await fetchApi(options.endpoint, { method: "POST" });
+    let payload = {};
+    try {
+      payload = await response.json();
+    } catch (error) {
+      payload = {};
+    }
+    if (!response.ok) {
+      const message = payload.error || options.errorMessage || "Unable to perform action.";
+      throw new Error(message);
+    }
+    const message = payload.message || options.successMessage || "Action scheduled.";
+    showStatus(message, "success");
+    if (button instanceof HTMLButtonElement && !options.disableOnSuccess) {
+      button.disabled = false;
+    }
+  } catch (error) {
+    console.error(error);
+    const fallback = error?.message || options.errorMessage || "Unable to perform action.";
+    showStatus(fallback, "error");
+    if (button instanceof HTMLButtonElement) {
+      button.disabled = false;
+    }
+  }
 }
 
 function setActiveTab(tab) {
@@ -2270,6 +2359,9 @@ function createValueField(action, index, actionId) {
     handleValueNumberChange(event, index);
     slider.value = event.target.value;
   });
+  input.addEventListener("input", (event) => {
+    handleValueNumberInput(event, index, slider);
+  });
 
   slider.addEventListener("input", () => {
     if (input.disabled) {
@@ -2277,6 +2369,8 @@ function createValueField(action, index, actionId) {
       return;
     }
     input.value = slider.value;
+    const syntheticEvent = new Event("input", { bubbles: true });
+    input.dispatchEvent(syntheticEvent);
   });
 
   slider.addEventListener("change", () => {
@@ -2399,6 +2493,41 @@ function handleNumberChange(event, index, key, min, max) {
   event.target.value = clamped;
   event.target.classList.remove("invalid");
   event.target.setCustomValidity("");
+  queuePreviewSync();
+  updateActiveActionHighlight(lastKnownTimelineSeconds);
+}
+
+function handleValueNumberInput(event, index, slider) {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement)) {
+    return;
+  }
+  if (target.disabled) {
+    return;
+  }
+  const action = actions[index];
+  if (!action) {
+    return;
+  }
+  const raw = target.value;
+  if (raw === "" || raw === "-" || raw === "+") {
+    return;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  if (Number.isNaN(parsed)) {
+    return;
+  }
+  const clamped = clamp(parsed, 0, 255);
+  if (clamped !== parsed) {
+    target.value = String(clamped);
+  }
+  action.valuePresetId = null;
+  action.value = clamped;
+  target.classList.remove("invalid");
+  target.setCustomValidity("");
+  if (slider instanceof HTMLInputElement) {
+    slider.value = String(clamped);
+  }
   queuePreviewSync();
   updateActiveActionHighlight(lastKnownTimelineSeconds);
 }
@@ -4521,10 +4650,28 @@ function syncTemplateInstances(templateId, options = {}) {
   }
 }
 
+function buildTemplateTimeline(template) {
+  const rows = Array.isArray(template?.rows) ? template.rows : [];
+  const entries = [];
+  let offset = 0;
+  rows.forEach((row) => {
+    if (!row) return;
+    if (row.type === TEMPLATE_ROW_TYPES.DELAY) {
+      const durationValue = Number.parseFloat(row.duration);
+      const normalized = Number.isFinite(durationValue) ? Math.max(0, durationValue) : 0;
+      if (normalized > 0) {
+        offset = Number((offset + normalized).toFixed(6));
+      }
+      return;
+    }
+    entries.push({ row, offset });
+  });
+  return { entries, totalDuration: offset };
+}
+
 function createActionsFromTemplate(template, stepId, time, instanceId, options = {}) {
-  const rows = Array.isArray(template.rows) ? template.rows : [];
-  const seconds = parseTimeString(time) ?? parseTimeString(DEFAULT_ACTION.time) ?? 0;
-  const timecode = secondsToTimecode(seconds);
+  const { entries } = buildTemplateTimeline(template);
+  const baseSeconds = parseTimeString(time) ?? parseTimeString(DEFAULT_ACTION.time) ?? 0;
   const hasLoopSettings = Object.prototype.hasOwnProperty.call(options, "loopSettings");
   const loopSettings = hasLoopSettings
     ? options.loopSettings
@@ -4533,10 +4680,9 @@ function createActionsFromTemplate(template, stepId, time, instanceId, options =
     : null;
 
   const created = [];
-  rows.forEach((row) => {
-    if (row.type === TEMPLATE_ROW_TYPES.DELAY) {
-      return;
-    }
+  entries.forEach(({ row, offset }) => {
+    const absoluteSeconds = baseSeconds + offset;
+    const timecode = secondsToTimecode(absoluteSeconds);
     const action = {
       ...DEFAULT_ACTION,
       time: timecode,

@@ -100,6 +100,17 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.system-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.system-actions button {
+  white-space: nowrap;
+}
+
 .control-group {
   display: flex;
   flex-direction: column;
