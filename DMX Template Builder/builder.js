@@ -98,6 +98,7 @@ const TEMPLATE_LOOP_DEFAULTS = Object.freeze({
   count: 1,
   infinite: false,
   mode: "forward",
+  duration: 0,
 });
 
 const ICON_SVGS = {
@@ -153,6 +154,10 @@ function normalizeTemplateLoop(raw) {
   if (Number.isFinite(countValue)) {
     normalized.count = clamp(countValue, 1, 9999);
   }
+  const durationValue = Number.parseFloat(raw.duration);
+  if (Number.isFinite(durationValue)) {
+    normalized.duration = Math.max(0, Number(durationValue.toFixed(6)));
+  }
   const modeValue = typeof raw.mode === "string" ? raw.mode.toLowerCase() : "";
   if (modeValue === "pingpong" || modeValue === "ping-pong") {
     normalized.mode = "pingpong";
@@ -188,6 +193,9 @@ function cloneTemplateLoopSettings(loop) {
 function shouldSerializeTemplateLoop(loop) {
   if (!loop) return false;
   const normalized = normalizeTemplateLoop(loop);
+  if (normalized.duration <= 0) {
+    return false;
+  }
   return Boolean(normalized.enabled || normalized.infinite);
 }
 
@@ -884,7 +892,7 @@ async function loadTemplate(videoId) {
     const videoUrl = data.video?.video_url || currentVideo?.video_url || "";
 
     updateTemplateInfo(templatePath, data.template_exists);
-    setVideoSource(videoUrl);
+    await setVideoSource(videoUrl);
     setControlsEnabled(true);
     renderActions();
     enablePreviewMode();
@@ -1197,13 +1205,21 @@ function createGroupHeaderRow(group, collapsed, displayCount) {
   return row;
 }
 
-function createTemplateLoopControls(instanceId, groupId, loop) {
+function createTemplateLoopControls(instanceId, groupId, loop, options = {}) {
   const normalized = normalizeTemplateLoop(loop);
   const container = document.createElement("div");
   container.className = "template-loop-controls";
   container.dataset.role = "template-loop-controls";
   if (instanceId) {
     container.dataset.templateInstanceId = instanceId;
+  }
+  const allowLoop = options.allowLoop !== false;
+  container.dataset.loopAllowed = allowLoop ? "true" : "false";
+  const durationValue = Number.isFinite(options.duration)
+    ? Math.max(0, Number(options.duration.toFixed(6)))
+    : normalized.duration;
+  if (Number.isFinite(durationValue)) {
+    container.dataset.loopDuration = String(durationValue);
   }
 
   const toggleLabel = document.createElement("label");
@@ -1290,24 +1306,39 @@ function createTemplateLoopControls(instanceId, groupId, loop) {
 function updateTemplateLoopControlsState(container, loop) {
   if (!container) return;
   const normalized = normalizeTemplateLoop(loop);
+  const allowLoop = container.dataset.loopAllowed !== "false";
+  const storedDuration = Number.parseFloat(container.dataset.loopDuration || "");
+  if (Number.isFinite(storedDuration) && storedDuration > 0) {
+    normalized.duration = storedDuration;
+  }
+  const loopsAvailable = allowLoop && normalized.duration > 0;
+  const enabled = loopsAvailable && normalized.enabled;
+  const infinite = loopsAvailable && normalized.infinite;
   const toggle = container.querySelector('[data-field="template-loop-enabled"]');
   const countInput = container.querySelector('[data-field="template-loop-count"]');
   const infiniteInput = container.querySelector('[data-field="template-loop-infinite"]');
   const modeSelect = container.querySelector('[data-field="template-loop-mode"]');
   if (toggle instanceof HTMLInputElement) {
-    toggle.checked = normalized.enabled;
+    toggle.checked = enabled;
+    toggle.disabled = !loopsAvailable;
+    toggle.title = loopsAvailable ? "" : "Add a delay to enable looping";
   }
   if (countInput instanceof HTMLInputElement) {
     countInput.value = String(normalized.count);
-    countInput.disabled = !normalized.enabled || normalized.infinite;
+    countInput.disabled = !enabled || infinite;
   }
   if (infiniteInput instanceof HTMLInputElement) {
-    infiniteInput.checked = normalized.infinite;
-    infiniteInput.disabled = !normalized.enabled;
+    infiniteInput.checked = infinite;
+    infiniteInput.disabled = !enabled;
   }
   if (modeSelect instanceof HTMLSelectElement) {
     modeSelect.value = normalized.mode;
-    modeSelect.disabled = !normalized.enabled;
+    modeSelect.disabled = !enabled;
+  }
+  if (!loopsAvailable) {
+    container.classList.add("template-loop-controls--disabled");
+  } else {
+    container.classList.remove("template-loop-controls--disabled");
   }
 }
 
@@ -1324,6 +1355,9 @@ function updateTemplateLoopDisplays(instanceId, loop) {
     }
     const controls = row.querySelector('[data-role="template-loop-controls"]');
     if (controls instanceof HTMLElement) {
+      if (Number.isFinite(normalized.duration)) {
+        controls.dataset.loopDuration = String(normalized.duration);
+      }
       updateTemplateLoopControlsState(controls, normalized);
     }
   });
@@ -1338,6 +1372,8 @@ function updateTemplateInstanceLoop(instanceId, updater) {
   const nextState = updater({ ...current });
   const normalized = normalizeTemplateLoop(nextState);
   const template = info.templateId ? getLightTemplate(info.templateId) : null;
+  const timeline = template ? buildTemplateTimeline(template) : null;
+  const totalDuration = timeline ? Number(timeline.totalDuration || 0) : 0;
   if (template) {
     const channels = collectTemplateChannels(template);
     if (channels.length) {
@@ -1347,6 +1383,13 @@ function updateTemplateInstanceLoop(instanceId, updater) {
     }
   } else {
     delete normalized.channels;
+  }
+  if (totalDuration > 0) {
+    normalized.duration = Number(totalDuration.toFixed(6));
+  } else {
+    normalized.duration = 0;
+    normalized.enabled = false;
+    normalized.infinite = false;
   }
   info.indices.forEach((actionIndex) => {
     if (!actions[actionIndex]) return;
@@ -1460,6 +1503,14 @@ function createTemplateInstanceRow(group, action, index, count) {
   loopSummary.className = "action-group-template__loop-summary";
   loopSummary.dataset.role = "template-loop-summary";
   const loop = normalizeTemplateLoop(action.templateLoop);
+  const template = action.templateId ? getLightTemplate(action.templateId) : null;
+  const timeline = template ? buildTemplateTimeline(template) : null;
+  const totalDuration = timeline ? Number(timeline.totalDuration || 0) : 0;
+  if (totalDuration > 0) {
+    loop.duration = Number(totalDuration.toFixed(6));
+  } else {
+    loop.duration = 0;
+  }
   loopSummary.textContent = formatTemplateLoopSummary(loop);
 
   details.append(title, countEl, loopSummary);
@@ -1501,6 +1552,10 @@ function createTemplateInstanceRow(group, action, index, count) {
     action.templateInstanceId || "",
     group.id,
     loop,
+    {
+      allowLoop: totalDuration > 0,
+      duration: totalDuration,
+    },
   );
 
   content.append(details, loopControls, tools);
@@ -2714,17 +2769,86 @@ function resetVideoPreview() {
   updateActiveActionHighlight(0);
 }
 
-function setVideoSource(url) {
+function formatVideoUrlForAssignment(urlObject) {
+  if (!urlObject) return "";
+  if (urlObject.origin === window.location.origin) {
+    return `${urlObject.pathname}${urlObject.search}${urlObject.hash}` || urlObject.href;
+  }
+  return urlObject.href;
+}
+
+function buildProxyVideoUrl(url) {
+  try {
+    const original = new URL(url, window.location.href);
+    const proxy = new URL(original.href);
+    const pathname = original.pathname;
+    const lastSlash = pathname.lastIndexOf("/");
+    const lastDot = pathname.lastIndexOf(".");
+    const hasExtension = lastDot > lastSlash;
+    const proxyPath = hasExtension
+      ? `${pathname.slice(0, lastDot)}_proxy${pathname.slice(lastDot)}`
+      : `${pathname}_proxy`;
+    proxy.pathname = proxyPath;
+    return { original, proxy };
+  } catch (error) {
+    console.warn("Unable to parse video URL", error);
+    return { original: null, proxy: null };
+  }
+}
+
+async function checkVideoUrlExists(absoluteUrl) {
+  try {
+    const response = await fetch(absoluteUrl, { method: "HEAD" });
+    return response.ok;
+  } catch (error) {
+    console.warn("Unable to verify video proxy", error);
+    return false;
+  }
+}
+
+async function resolveVideoSourceUrl(url) {
+  if (!url) {
+    return null;
+  }
+  const { original, proxy } = buildProxyVideoUrl(url);
+  if (proxy && (await checkVideoUrlExists(proxy.href))) {
+    return proxy;
+  }
+  if (original) {
+    return original;
+  }
+  return null;
+}
+
+async function setVideoSource(url) {
   if (!url) {
     resetVideoPreview();
     return;
   }
-  const absolute = new URL(url, window.location.href).href;
-  if (videoEl && videoEl.src !== absolute) {
-    videoEl.src = url;
-    videoEl.load();
-    lastKnownTimelineSeconds = 0;
-    updateActiveActionHighlight(0);
+
+  const resolvedUrl = await resolveVideoSourceUrl(url);
+  if (resolvedUrl) {
+    const absolute = resolvedUrl.href;
+    if (videoEl && videoEl.src !== absolute) {
+      videoEl.src = formatVideoUrlForAssignment(resolvedUrl);
+      videoEl.load();
+      lastKnownTimelineSeconds = 0;
+      updateActiveActionHighlight(0);
+    }
+    return;
+  }
+
+  try {
+    const fallbackAbsolute = new URL(url, window.location.href).href;
+    if (videoEl && videoEl.src !== fallbackAbsolute) {
+      videoEl.src = url;
+      videoEl.load();
+      lastKnownTimelineSeconds = 0;
+      updateActiveActionHighlight(0);
+    }
+  } catch (error) {
+    console.warn("Unable to set video source", error);
+    resetVideoPreview();
   }
 }
 
@@ -3755,6 +3879,9 @@ function formatTemplateRowCount(template) {
 
 function formatTemplateLoopSummary(loop) {
   const normalized = normalizeTemplateLoop(loop);
+  if (normalized.duration <= 0) {
+    return "Loop: Delay required";
+  }
   if (!normalized.enabled && !normalized.infinite) {
     return "Loop: Off";
   }
@@ -4670,7 +4797,7 @@ function buildTemplateTimeline(template) {
 }
 
 function createActionsFromTemplate(template, stepId, time, instanceId, options = {}) {
-  const { entries } = buildTemplateTimeline(template);
+  const { entries, totalDuration } = buildTemplateTimeline(template);
   const baseSeconds = parseTimeString(time) ?? parseTimeString(DEFAULT_ACTION.time) ?? 0;
   const hasLoopSettings = Object.prototype.hasOwnProperty.call(options, "loopSettings");
   const loopSettings = hasLoopSettings
@@ -4678,6 +4805,9 @@ function createActionsFromTemplate(template, stepId, time, instanceId, options =
       ? normalizeTemplateLoop(options.loopSettings)
       : null
     : null;
+  const durationValue = Number.isFinite(totalDuration)
+    ? Math.max(0, Number(totalDuration.toFixed(6)))
+    : 0;
 
   const created = [];
   entries.forEach(({ row, offset }) => {
@@ -4698,7 +4828,15 @@ function createActionsFromTemplate(template, stepId, time, instanceId, options =
       templateRowId: row.id,
     };
     if (loopSettings) {
-      action.templateLoop = { ...loopSettings };
+      const mergedLoop = { ...loopSettings };
+      if (durationValue > 0) {
+        mergedLoop.duration = durationValue;
+      } else {
+        mergedLoop.duration = 0;
+        mergedLoop.enabled = false;
+        mergedLoop.infinite = false;
+      }
+      action.templateLoop = mergedLoop;
     } else if (hasLoopSettings) {
       action.templateLoop = null;
     }

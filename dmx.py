@@ -255,6 +255,79 @@ class DMXAction:
         return cls(time_seconds=time_seconds, channel=channel, value=value, fade=fade)
 
 
+@dataclass
+class TemplateLoopSettings:
+    enabled: bool
+    count: int
+    infinite: bool
+    mode: str
+    duration: float
+    channels: List[int]
+
+    def is_active(self) -> bool:
+        return self.duration > 0 and (self.enabled or self.infinite)
+
+
+def _normalize_template_loop_settings(raw: object) -> Optional[TemplateLoopSettings]:
+    if not isinstance(raw, dict):
+        return None
+
+    enabled = bool(raw.get("enabled"))
+    infinite = bool(raw.get("infinite"))
+
+    try:
+        count_value = int(raw.get("count", 1))
+    except (TypeError, ValueError):
+        count_value = 1
+    count = max(1, min(9999, count_value))
+
+    try:
+        duration_value = float(raw.get("duration", 0.0))
+    except (TypeError, ValueError):
+        duration_value = 0.0
+    duration = max(0.0, round(duration_value, 6))
+
+    mode_raw = str(raw.get("mode", "forward")).strip().lower()
+    if mode_raw in {"pingpong", "ping-pong"}:
+        mode = "pingpong"
+    else:
+        mode = "forward"
+
+    channels: List[int] = []
+    raw_channels = raw.get("channels")
+    if isinstance(raw_channels, list):
+        for entry in raw_channels:
+            try:
+                channel_value = int(entry)
+            except (TypeError, ValueError):
+                continue
+            if 1 <= channel_value <= DEFAULT_CHANNELS:
+                channels.append(channel_value)
+    unique_channels = sorted({value for value in channels})
+
+    return TemplateLoopSettings(
+        enabled=enabled,
+        count=count,
+        infinite=infinite,
+        mode=mode,
+        duration=duration,
+        channels=unique_channels,
+    )
+
+
+def _serialize_template_loop_settings(loop: TemplateLoopSettings) -> Dict[str, object]:
+    payload: Dict[str, object] = {
+        "enabled": bool(loop.enabled),
+        "count": int(loop.count),
+        "infinite": bool(loop.infinite),
+        "mode": "pingpong" if loop.mode == "pingpong" else "forward",
+        "duration": round(loop.duration, 6),
+    }
+    if loop.channels:
+        payload["channels"] = list(loop.channels)
+    return payload
+
+
 class DMXOutput:
     """Continuously pushes the latest DMX universe state to the hardware."""
 
@@ -613,16 +686,127 @@ class DMXShowManager:
             path = self.templates_dir / path
         return path
 
+    def _expand_actions_with_loops(
+        self, raw_actions: Iterable[Dict[str, object]]
+    ) -> List[DMXAction]:
+        parsed_entries: List[Dict[str, Any]] = []
+        instances: Dict[str, Dict[str, Any]] = {}
+        channel_times: Dict[int, List[tuple[float, Optional[str]]]] = {}
+
+        for raw in raw_actions:
+            if not isinstance(raw, dict):
+                raise ValueError("DMX actions must be objects with time, channel, and value")
+            action = DMXAction.from_dict(raw)
+            instance_raw = raw.get("templateInstanceId")
+            instance_id = instance_raw if isinstance(instance_raw, str) and instance_raw else None
+            loop_settings = _normalize_template_loop_settings(raw.get("templateLoop"))
+            entry = {
+                "action": action,
+                "instance_id": instance_id,
+                "loop": loop_settings,
+            }
+            parsed_entries.append(entry)
+            channel_times.setdefault(action.channel, []).append((action.time_seconds, instance_id))
+            if instance_id:
+                info = instances.setdefault(instance_id, {"entries": [], "loop": None})
+                info["entries"].append(entry)
+                if loop_settings and loop_settings.is_active():
+                    info["loop"] = loop_settings
+
+        for times in channel_times.values():
+            times.sort(key=lambda item: item[0])
+
+        expanded: List[DMXAction] = [entry["action"] for entry in parsed_entries]
+        epsilon = 1e-6
+
+        for instance_id, info in instances.items():
+            loop_settings = info.get("loop")
+            entries = info.get("entries", [])
+            if not loop_settings or not loop_settings.is_active() or not entries:
+                continue
+
+            duration = loop_settings.duration
+            if duration <= 0:
+                continue
+
+            ordered_entries = sorted(entries, key=lambda item: item["action"].time_seconds)
+            base_start = ordered_entries[0]["action"].time_seconds
+            relative_offsets = [
+                (item["action"].time_seconds - base_start, item["action"])
+                for item in ordered_entries
+            ]
+
+            channels = list(loop_settings.channels)
+            if not channels:
+                channels = sorted({item["action"].channel for item in ordered_entries})
+            if not channels:
+                continue
+
+            conflict_time: Optional[float] = None
+            for channel in channels:
+                for time_value, owner in channel_times.get(channel, []):
+                    if time_value <= base_start + epsilon:
+                        continue
+                    if owner == instance_id:
+                        continue
+                    if conflict_time is None or time_value < conflict_time:
+                        conflict_time = time_value
+                    break
+
+            available_iterations: Optional[int]
+            if conflict_time is not None:
+                available_time = max(0.0, conflict_time - base_start)
+                available_iterations = max(1, int(math.floor((available_time + epsilon) / duration)))
+            else:
+                available_iterations = None
+
+            if loop_settings.infinite:
+                if available_iterations is None:
+                    total_iterations = 1
+                else:
+                    total_iterations = available_iterations
+            else:
+                requested = max(1, loop_settings.count)
+                if available_iterations is None:
+                    total_iterations = requested
+                else:
+                    total_iterations = min(requested, available_iterations)
+
+            if total_iterations <= 1:
+                continue
+
+            for iteration in range(1, total_iterations):
+                iteration_start = base_start + duration * iteration
+                if conflict_time is not None and iteration_start >= conflict_time - epsilon:
+                    break
+                stop_iteration = False
+                for offset, base_action in relative_offsets:
+                    new_time = iteration_start + offset
+                    if conflict_time is not None and new_time >= conflict_time - epsilon:
+                        stop_iteration = True
+                        break
+                    duplicate = DMXAction(
+                        time_seconds=new_time,
+                        channel=base_action.channel,
+                        value=base_action.value,
+                        fade=base_action.fade,
+                    )
+                    expanded.append(duplicate)
+                if stop_iteration:
+                    break
+
+        expanded.sort(key=lambda action: action.time_seconds)
+        return expanded
+
     def load_actions(self, template_path: Path) -> List[DMXAction]:
         if not template_path.exists():
             return []
         with template_path.open("r", encoding="utf-8") as fh:
             payload = json.load(fh)
         actions_data = payload.get("actions", [])
-        actions: List[DMXAction] = []
-        for entry in actions_data:
-            actions.append(DMXAction.from_dict(entry))
-        return actions
+        if not isinstance(actions_data, list):
+            raise ValueError("Template actions must be provided as a list")
+        return self._expand_actions_with_loops(actions_data)
 
     def load_show_for_video(self, video_entry: Dict[str, object]) -> List[DMXAction]:
         path = self.template_path_for_video(video_entry)
@@ -694,7 +878,7 @@ class DMXShowManager:
         except (TypeError, ValueError) as exc:  # pragma: no cover - defensive
             raise ValueError("start_time must be a number") from exc
         offset = max(0.0, offset)
-        actions = [DMXAction.from_dict(entry) for entry in raw_actions]
+        actions = self._expand_actions_with_loops(raw_actions)
         ordered = sorted(actions, key=lambda action: action.time_seconds)
 
         baseline_levels = list(self._baseline_levels)
@@ -798,6 +982,10 @@ class DMXShowManager:
                     value = raw.get(key)
                     if isinstance(value, str) and value:
                         entry[key] = value
+
+                loop_settings = _normalize_template_loop_settings(raw.get("templateLoop"))
+                if loop_settings and loop_settings.is_active():
+                    entry["templateLoop"] = _serialize_template_loop_settings(loop_settings)
 
             normalized.append(entry)
 
