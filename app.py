@@ -6,11 +6,12 @@ import shutil
 import signal
 import socket
 import subprocess
+import sys
 import threading
 import time
 import uuid
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 from flask import (
     Flask,
@@ -40,6 +41,113 @@ LIGHT_TEMPLATES_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 LOGGER = logging.getLogger("kpop_stage")
+
+SYSTEM_ACTION_LOCK = threading.Lock()
+DISABLE_SELF_RESTART = os.environ.get("DISABLE_SELF_RESTART", "").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+
+
+def _format_command(command: Iterable[str]) -> str:
+    return " ".join(shlex.quote(str(part)) for part in command)
+
+
+def schedule_application_restart(delay: float = 1.0) -> None:
+    if DISABLE_SELF_RESTART:
+        LOGGER.info("Self-restart requested but DISABLE_SELF_RESTART is set; skipping restart.")
+        return
+
+    def _restart() -> None:
+        time.sleep(max(0.0, delay))
+        python = sys.executable or shutil.which("python3") or shutil.which("python")
+        if not python:
+            LOGGER.error("Unable to determine Python executable for restart.")
+            return
+        args = [python, *sys.argv]
+        LOGGER.info("Restarting application: %s", _format_command(args))
+        try:
+            os.execv(python, args)
+        except Exception:  # pragma: no cover - restart failure should be rare
+            LOGGER.exception("Unable to restart application")
+
+    threading.Thread(target=_restart, daemon=True).start()
+
+
+def perform_git_update() -> Tuple[bool, str]:
+    git_executable = shutil.which("git")
+    if not git_executable:
+        return False, "Git executable not found."
+
+    command = [git_executable, "pull", "--ff-only"]
+    LOGGER.info("Running git update: %s", _format_command(command))
+    try:
+        result = subprocess.run(
+            command,
+            cwd=str(BASE_DIR),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        output = "".join(filter(None, [exc.stdout, exc.stderr])).strip()
+        message = output or "Git pull failed."
+        LOGGER.error("Git update failed: %s", message)
+        return False, message
+
+    output_lines = [result.stdout.strip(), result.stderr.strip()]
+    summary = "\n".join(line for line in output_lines if line)
+    if summary:
+        LOGGER.info("Git update completed: %s", summary.replace("\n", " "))
+    else:
+        LOGGER.info("Git update completed: repository already up to date.")
+    return True, summary
+
+
+def build_power_command(mode: str) -> Optional[List[str]]:
+    shutdown_binary = shutil.which("shutdown")
+    if not shutdown_binary:
+        return None
+
+    command: List[str] = [shutdown_binary]
+    if mode == "restart":
+        command.extend(["-r", "now"])
+    else:
+        command.extend(["-h", "now"])
+
+    needs_privilege = True
+    try:
+        needs_privilege = os.geteuid() != 0  # type: ignore[attr-defined]
+    except AttributeError:
+        needs_privilege = True
+
+    if needs_privilege:
+        sudo_binary = shutil.which("sudo")
+        if sudo_binary:
+            command.insert(0, sudo_binary)
+
+    return command
+
+
+def schedule_power_command(mode: str, delay: float = 1.0) -> Tuple[bool, str]:
+    command = build_power_command(mode)
+    if not command:
+        return False, "Shutdown command is not available on this system."
+
+    LOGGER.info("Scheduling %s command: %s", mode, _format_command(command))
+
+    def _worker() -> None:
+        time.sleep(max(0.0, delay))
+        try:
+            subprocess.Popen(command)
+        except Exception:  # pragma: no cover - depends on system configuration
+            LOGGER.exception("Unable to execute %s command", mode)
+
+    threading.Thread(target=_worker, daemon=True).start()
+    return True, ""
 
 
 def _generate_channel_preset_id(prefix: str) -> str:
@@ -751,6 +859,51 @@ def api_put_light_templates() -> Any:
 
     templates = load_light_templates_from_disk()
     return jsonify({"templates": templates})
+
+
+@app.route("/api/system/update", methods=["POST"])
+def api_system_update() -> Any:
+    with SYSTEM_ACTION_LOCK:
+        success, details = perform_git_update()
+        if not success:
+            return jsonify({"error": details or "Unable to update the application."}), 500
+        schedule_application_restart(delay=1.0)
+
+    response: Dict[str, Any] = {
+        "status": "scheduled",
+        "message": "Update applied. Restarting application.",
+    }
+    if details:
+        response["details"] = details
+    return jsonify(response)
+
+
+@app.route("/api/system/restart", methods=["POST"])
+def api_system_restart() -> Any:
+    success, error_message = schedule_power_command("restart", delay=1.0)
+    if not success:
+        LOGGER.error("System restart request failed: %s", error_message)
+        return jsonify({"error": error_message or "Unable to restart the system."}), 500
+    return jsonify(
+        {
+            "status": "scheduled",
+            "message": "Restart command sent. The Raspberry Pi will reboot shortly.",
+        }
+    )
+
+
+@app.route("/api/system/shutdown", methods=["POST"])
+def api_system_shutdown() -> Any:
+    success, error_message = schedule_power_command("shutdown", delay=1.0)
+    if not success:
+        LOGGER.error("System shutdown request failed: %s", error_message)
+        return jsonify({"error": error_message or "Unable to shut down the system."}), 500
+    return jsonify(
+        {
+            "status": "scheduled",
+            "message": "Shutdown command sent. The Raspberry Pi will power off shortly.",
+        }
+    )
 
 
 @app.route("/api/videos")
