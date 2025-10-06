@@ -81,7 +81,111 @@ const DEFAULT_ACTION = Object.freeze({
   templateId: null,
   templateInstanceId: null,
   templateRowId: null,
+  templateLoop: null,
 });
+
+const TEMPLATE_ROW_TYPES = Object.freeze({
+  ACTION: "action",
+  DELAY: "delay",
+});
+
+const TEMPLATE_LOOP_DEFAULTS = Object.freeze({
+  enabled: false,
+  count: 1,
+  infinite: false,
+  mode: "forward",
+});
+
+const ICON_SVGS = {
+  delete: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z"/></svg>`,
+  duplicate: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M352 512L128 512L128 288L176 288L176 224L128 224C92.7 224 64 252.7 64 288L64 512C64 547.3 92.7 576 128 576L352 576C387.3 576 416 547.3 416 512L416 464L352 464L352 512zM288 416L512 416C547.3 416 576 387.3 576 352L576 128C576 92.7 547.3 64 512 64L288 64C252.7 64 224 92.7 224 128L224 352C224 387.3 252.7 416 288 416z"/></svg>`,
+  go: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M187.2 100.9C174.8 94.1 159.8 94.4 147.6 101.6C135.4 108.8 128 121.9 128 136L128 504C128 518.1 135.5 531.2 147.6 538.4C159.7 545.6 174.8 545.9 187.2 539.1L523.2 355.1C536 348.1 544 334.6 544 320C544 305.4 536 291.9 523.2 284.9L187.2 100.9z"/></svg>`,
+  edit: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M535.6 85.7C513.7 63.8 478.3 63.8 456.4 85.7L432 110.1L529.9 208L554.3 183.6C576.2 161.7 576.2 126.3 554.3 104.4L535.6 85.7zM236.4 305.7C230.3 311.8 225.6 319.3 222.9 327.6L193.3 416.4C190.4 425 192.7 434.5 199.1 441C205.5 447.5 215 449.7 223.7 446.8L312.5 417.2C320.7 414.5 328.2 409.8 334.4 403.7L496 241.9L398.1 144L236.4 305.7zM160 128C107 128 64 171 64 224L64 480C64 533 107 576 160 576L416 576C469 576 512 533 512 480L512 384C512 366.3 497.7 352 480 352C462.3 352 448 366.3 448 384L448 480C448 497.7 433.7 512 416 512L160 512C142.3 512 128 497.7 128 480L128 224C128 206.3 142.3 192 160 192L256 192C273.7 192 288 177.7 288 160C288 142.3 273.7 128 256 128L160 128z"/></svg>`,
+};
+
+function createIconElement(type) {
+  const svg = ICON_SVGS[type];
+  if (!svg) {
+    return null;
+  }
+  const wrapper = document.createElement("span");
+  wrapper.className = `icon icon--${type}`;
+  wrapper.setAttribute("aria-hidden", "true");
+  wrapper.innerHTML = svg.trim();
+  return wrapper;
+}
+
+function applyIconButton(button, type, label) {
+  if (!button) return;
+  const icon = createIconElement(type);
+  if (!icon) return;
+  button.classList.add("icon-button");
+  if (label) {
+    button.setAttribute("aria-label", label);
+    button.title = label;
+  }
+  button.textContent = "";
+  button.append(icon);
+  if (label) {
+    const srText = document.createElement("span");
+    srText.className = "visually-hidden";
+    srText.textContent = label;
+    button.append(srText);
+  }
+}
+
+function normalizeTemplateLoop(raw) {
+  const normalized = { ...TEMPLATE_LOOP_DEFAULTS };
+  if (!raw || typeof raw !== "object") {
+    return normalized;
+  }
+  if (raw.enabled === true) {
+    normalized.enabled = true;
+  }
+  if (raw.infinite === true) {
+    normalized.infinite = true;
+  }
+  const countValue = Number.parseInt(raw.count, 10);
+  if (Number.isFinite(countValue)) {
+    normalized.count = clamp(countValue, 1, 9999);
+  }
+  const modeValue = typeof raw.mode === "string" ? raw.mode.toLowerCase() : "";
+  if (modeValue === "pingpong" || modeValue === "ping-pong") {
+    normalized.mode = "pingpong";
+  }
+  if (Array.isArray(raw.channels)) {
+    const unique = new Set();
+    raw.channels.forEach((value) => {
+      const numeric = Number.parseInt(value, 10);
+      if (Number.isFinite(numeric)) {
+        unique.add(clamp(numeric, 1, 512));
+      }
+    });
+    if (unique.size) {
+      normalized.channels = Array.from(unique).sort((a, b) => a - b);
+    }
+  }
+  return normalized;
+}
+
+function sanitizeTemplateLoop(raw) {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  return normalizeTemplateLoop(raw);
+}
+
+function cloneTemplateLoopSettings(loop) {
+  if (!loop) return null;
+  const normalized = normalizeTemplateLoop(loop);
+  return { ...normalized };
+}
+
+function shouldSerializeTemplateLoop(loop) {
+  if (!loop) return false;
+  const normalized = normalizeTemplateLoop(loop);
+  return Boolean(normalized.enabled || normalized.infinite);
+}
 
 init();
 
@@ -669,6 +773,11 @@ async function loadTemplate(videoId) {
     stepInfoById.clear();
     draggingActionId = null;
     actions = (data.actions || []).map((action) => ({ ...DEFAULT_ACTION, ...action }));
+    actions.forEach((action) => {
+      if (action.templateLoop) {
+        action.templateLoop = normalizeTemplateLoop(action.templateLoop);
+      }
+    });
     actions.forEach(ensureActionLocalId);
     seedTemplateInstanceCounter(actions);
     assignStepIdsForActions(actions);
@@ -998,6 +1107,212 @@ function createGroupHeaderRow(group, collapsed, displayCount) {
   return row;
 }
 
+function createTemplateLoopControls(instanceId, groupId, loop) {
+  const normalized = normalizeTemplateLoop(loop);
+  const container = document.createElement("div");
+  container.className = "template-loop-controls";
+  container.dataset.role = "template-loop-controls";
+  if (instanceId) {
+    container.dataset.templateInstanceId = instanceId;
+  }
+
+  const toggleLabel = document.createElement("label");
+  toggleLabel.className = "template-loop__toggle";
+
+  const toggleInput = document.createElement("input");
+  toggleInput.type = "checkbox";
+  toggleInput.checked = normalized.enabled;
+  toggleInput.dataset.templateInstanceId = instanceId || "";
+  toggleInput.dataset.groupId = groupId;
+  toggleInput.dataset.field = "template-loop-enabled";
+  toggleInput.addEventListener("change", handleTemplateLoopToggle);
+
+  const toggleText = document.createElement("span");
+  toggleText.textContent = "Loop";
+
+  toggleLabel.append(toggleInput, toggleText);
+
+  const options = document.createElement("div");
+  options.className = "template-loop__options";
+
+  const countLabel = document.createElement("label");
+  countLabel.className = "template-loop__count-label";
+
+  const countText = document.createElement("span");
+  countText.textContent = "Times";
+
+  const countInput = createInput({ type: "number", value: normalized.count, min: 1, step: 1 });
+  countInput.classList.add("template-loop__count");
+  countInput.dataset.templateInstanceId = instanceId || "";
+  countInput.dataset.groupId = groupId;
+  countInput.dataset.field = "template-loop-count";
+  countInput.addEventListener("change", handleTemplateLoopCountChange);
+
+  countLabel.append(countText, countInput);
+
+  const infiniteLabel = document.createElement("label");
+  infiniteLabel.className = "template-loop__infinite";
+
+  const infiniteInput = document.createElement("input");
+  infiniteInput.type = "checkbox";
+  infiniteInput.checked = normalized.infinite;
+  infiniteInput.dataset.templateInstanceId = instanceId || "";
+  infiniteInput.dataset.groupId = groupId;
+  infiniteInput.dataset.field = "template-loop-infinite";
+  infiniteInput.addEventListener("change", handleTemplateLoopInfiniteChange);
+
+  const infiniteText = document.createElement("span");
+  infiniteText.textContent = "Infinite";
+
+  infiniteLabel.append(infiniteInput, infiniteText);
+
+  const modeLabel = document.createElement("label");
+  modeLabel.className = "template-loop__mode";
+
+  const modeText = document.createElement("span");
+  modeText.textContent = "Mode";
+
+  const modeSelect = document.createElement("select");
+  modeSelect.dataset.templateInstanceId = instanceId || "";
+  modeSelect.dataset.groupId = groupId;
+  modeSelect.dataset.field = "template-loop-mode";
+  [
+    { value: "forward", label: "Forward" },
+    { value: "pingpong", label: "Ping-pong" },
+  ].forEach((optionData) => {
+    const option = document.createElement("option");
+    option.value = optionData.value;
+    option.textContent = optionData.label;
+    modeSelect.append(option);
+  });
+  modeSelect.value = normalized.mode;
+  modeSelect.addEventListener("change", handleTemplateLoopModeChange);
+
+  modeLabel.append(modeText, modeSelect);
+
+  options.append(countLabel, infiniteLabel, modeLabel);
+
+  container.append(toggleLabel, options);
+  updateTemplateLoopControlsState(container, normalized);
+  return container;
+}
+
+function updateTemplateLoopControlsState(container, loop) {
+  if (!container) return;
+  const normalized = normalizeTemplateLoop(loop);
+  const toggle = container.querySelector('[data-field="template-loop-enabled"]');
+  const countInput = container.querySelector('[data-field="template-loop-count"]');
+  const infiniteInput = container.querySelector('[data-field="template-loop-infinite"]');
+  const modeSelect = container.querySelector('[data-field="template-loop-mode"]');
+  if (toggle instanceof HTMLInputElement) {
+    toggle.checked = normalized.enabled;
+  }
+  if (countInput instanceof HTMLInputElement) {
+    countInput.value = String(normalized.count);
+    countInput.disabled = !normalized.enabled || normalized.infinite;
+  }
+  if (infiniteInput instanceof HTMLInputElement) {
+    infiniteInput.checked = normalized.infinite;
+    infiniteInput.disabled = !normalized.enabled;
+  }
+  if (modeSelect instanceof HTMLSelectElement) {
+    modeSelect.value = normalized.mode;
+    modeSelect.disabled = !normalized.enabled;
+  }
+}
+
+function updateTemplateLoopDisplays(instanceId, loop) {
+  if (!instanceId || !actionsBody) return;
+  const normalized = normalizeTemplateLoop(loop);
+  const rows = actionsBody.querySelectorAll(
+    `.action-group-template[data-template-instance-id="${instanceId}"]`,
+  );
+  rows.forEach((row) => {
+    const summary = row.querySelector('[data-role="template-loop-summary"]');
+    if (summary) {
+      summary.textContent = formatTemplateLoopSummary(normalized);
+    }
+    const controls = row.querySelector('[data-role="template-loop-controls"]');
+    if (controls instanceof HTMLElement) {
+      updateTemplateLoopControlsState(controls, normalized);
+    }
+  });
+}
+
+function updateTemplateInstanceLoop(instanceId, updater) {
+  if (!instanceId || typeof updater !== "function") return;
+  const info = getTemplateInstanceInfo(instanceId);
+  if (!info || !Array.isArray(info.indices) || !info.indices.length) return;
+  const firstAction = actions[info.indices[0]];
+  const current = normalizeTemplateLoop(firstAction?.templateLoop);
+  const nextState = updater({ ...current });
+  const normalized = normalizeTemplateLoop(nextState);
+  const template = info.templateId ? getLightTemplate(info.templateId) : null;
+  if (template) {
+    const channels = collectTemplateChannels(template);
+    if (channels.length) {
+      normalized.channels = channels;
+    } else {
+      delete normalized.channels;
+    }
+  } else {
+    delete normalized.channels;
+  }
+  info.indices.forEach((actionIndex) => {
+    if (!actions[actionIndex]) return;
+    actions[actionIndex].templateLoop = { ...normalized };
+  });
+  updateTemplateLoopDisplays(instanceId, normalized);
+  queuePreviewSync();
+}
+
+function handleTemplateLoopToggle(event) {
+  const { templateInstanceId } = event.target.dataset || {};
+  if (!templateInstanceId) return;
+  const enabled = event.target.checked;
+  updateTemplateInstanceLoop(templateInstanceId, (loop) => {
+    loop.enabled = enabled;
+    if (!enabled) {
+      loop.infinite = false;
+    }
+    return loop;
+  });
+}
+
+function handleTemplateLoopCountChange(event) {
+  const { templateInstanceId } = event.target.dataset || {};
+  if (!templateInstanceId) return;
+  const rawValue = Number.parseInt(event.target.value, 10);
+  updateTemplateInstanceLoop(templateInstanceId, (loop) => {
+    const sanitized = Number.isFinite(rawValue) ? clamp(rawValue, 1, 9999) : 1;
+    loop.count = sanitized;
+    return loop;
+  });
+}
+
+function handleTemplateLoopInfiniteChange(event) {
+  const { templateInstanceId } = event.target.dataset || {};
+  if (!templateInstanceId) return;
+  const infinite = event.target.checked;
+  updateTemplateInstanceLoop(templateInstanceId, (loop) => {
+    loop.infinite = infinite;
+    if (infinite && !loop.enabled) {
+      loop.enabled = true;
+    }
+    return loop;
+  });
+}
+
+function handleTemplateLoopModeChange(event) {
+  const { templateInstanceId } = event.target.dataset || {};
+  if (!templateInstanceId) return;
+  const value = (event.target.value || "").toLowerCase();
+  updateTemplateInstanceLoop(templateInstanceId, (loop) => {
+    loop.mode = value === "pingpong" || value === "ping-pong" ? "pingpong" : "forward";
+    return loop;
+  });
+}
+
 function createTemplateInstanceRow(group, action, index, count) {
   const actionId = getActionLocalId(action);
   const row = document.createElement("div");
@@ -1044,46 +1359,61 @@ function createTemplateInstanceRow(group, action, index, count) {
 
   const countEl = document.createElement("span");
   countEl.className = "action-group-template__count";
-  const total = Number.isFinite(count) ? count : group.items.length;
-  countEl.textContent = `${total} row${total === 1 ? "" : "s"}`;
+  if (template) {
+    countEl.textContent = formatTemplateRowCount(template);
+  } else {
+    const total = Number.isFinite(count) ? count : group.items.length;
+    countEl.textContent = `${total} row${total === 1 ? "" : "s"}`;
+  }
 
-  details.append(title, countEl);
+  const loopSummary = document.createElement("span");
+  loopSummary.className = "action-group-template__loop-summary";
+  loopSummary.dataset.role = "template-loop-summary";
+  const loop = normalizeTemplateLoop(action.templateLoop);
+  loopSummary.textContent = formatTemplateLoopSummary(loop);
+
+  details.append(title, countEl, loopSummary);
 
   const tools = document.createElement("div");
   tools.className = "action-group-template__tools";
 
   const goButton = document.createElement("button");
   goButton.type = "button";
-  goButton.textContent = "Go";
   setActionFieldMetadata(goButton, actionId, "template-go");
   goButton.addEventListener("click", () => seekToIndex(index));
   goButton.addEventListener("focus", () => setHighlightedAction(index));
+  applyIconButton(goButton, "go", "Go to this template step");
 
   const duplicateButton = document.createElement("button");
   duplicateButton.type = "button";
-  duplicateButton.className = "secondary";
-  duplicateButton.textContent = "Duplicate";
   setActionFieldMetadata(duplicateButton, actionId, "template-duplicate");
   duplicateButton.addEventListener("click", () => duplicateTemplateInstance(action.templateInstanceId));
   duplicateButton.addEventListener("focus", () => setHighlightedAction(index));
+  applyIconButton(duplicateButton, "duplicate", "Duplicate template instance");
 
   const deleteButton = document.createElement("button");
   deleteButton.type = "button";
-  deleteButton.textContent = "Delete";
   setActionFieldMetadata(deleteButton, actionId, "template-delete");
   deleteButton.addEventListener("click", () => removeTemplateInstance(action.templateInstanceId));
   deleteButton.addEventListener("focus", () => setHighlightedAction(index));
+  applyIconButton(deleteButton, "delete", "Delete template instance");
 
   const editButton = document.createElement("button");
   editButton.type = "button";
-  editButton.className = "action-group-template__edit";
-  editButton.textContent = "Edit Template";
   setActionFieldMetadata(editButton, actionId, "template-edit");
   editButton.addEventListener("click", () => handleEditTemplateFromTimeline(action.templateId));
   editButton.addEventListener("focus", () => setHighlightedAction(index));
+  applyIconButton(editButton, "edit", "Edit template");
 
   tools.append(goButton, duplicateButton, deleteButton, editButton);
-  content.append(details, tools);
+
+  const loopControls = createTemplateLoopControls(
+    action.templateInstanceId || "",
+    group.id,
+    loop,
+  );
+
+  content.append(details, loopControls, tools);
   cell.append(content);
   row.append(cell);
   return row;
@@ -1127,6 +1457,7 @@ function createActionRow(action, index, group) {
     min: 0,
     step: 0.1,
   });
+  fadeInput.classList.add("input--compact-number");
   setActionFieldMetadata(fadeInput, actionId, "fade");
   fadeInput.addEventListener("change", (event) => handleFadeChange(event, index));
   appendToColumn(row, "fade", fadeInput);
@@ -1137,19 +1468,18 @@ function createActionRow(action, index, group) {
 
   const jumpButton = document.createElement("button");
   jumpButton.type = "button";
-  jumpButton.textContent = "Go";
   jumpButton.addEventListener("click", () => seekToIndex(index));
+  applyIconButton(jumpButton, "go", "Go to this cue");
 
   const duplicateButton = document.createElement("button");
   duplicateButton.type = "button";
-  duplicateButton.className = "secondary";
-  duplicateButton.textContent = "Duplicate";
   duplicateButton.addEventListener("click", () => duplicateAction(index));
+  applyIconButton(duplicateButton, "duplicate", "Duplicate cue");
 
   const removeButton = document.createElement("button");
   removeButton.type = "button";
-  removeButton.textContent = "Delete";
   removeButton.addEventListener("click", () => removeAction(index));
+  applyIconButton(removeButton, "delete", "Delete cue");
 
   tools.append(jumpButton, duplicateButton, removeButton);
   if (toolsCell) {
@@ -1744,6 +2074,7 @@ function createChannelField(action, index, actionId) {
     max: 512,
     step: 1,
   });
+  input.classList.add("input--compact-number");
   setActionFieldMetadata(input, actionId, "channel");
   input.addEventListener("change", (event) => handleChannelNumberChange(event, index));
   if (selectedPreset) {
@@ -1821,6 +2152,7 @@ function createValueField(action, index, actionId) {
     max: 255,
     step: 1,
   });
+  input.classList.add("input--compact-number");
   setActionFieldMetadata(input, actionId, "value");
   input.addEventListener("change", (event) => {
     handleValueNumberChange(event, index);
@@ -2299,9 +2631,8 @@ function renderChannelPresets() {
     actionsEl.className = "preset-card__actions";
     const removeButton = document.createElement("button");
     removeButton.type = "button";
-    removeButton.className = "secondary";
-    removeButton.textContent = "Remove";
     removeButton.addEventListener("click", () => removeChannelPreset(preset.id));
+    applyIconButton(removeButton, "delete", "Remove channel preset");
     actionsEl.append(removeButton);
     header.append(actionsEl);
 
@@ -2381,10 +2712,10 @@ function renderChannelPresets() {
 
       const removeValueButton = document.createElement("button");
       removeValueButton.type = "button";
-      removeValueButton.textContent = "Remove";
       removeValueButton.addEventListener("click", () => {
         removeChannelPresetValue(preset.id, valuePreset.id);
       });
+      applyIconButton(removeValueButton, "delete", "Remove value preset");
 
       valueRow.append(valueName, valueInput, removeValueButton);
       valuesSection.append(valueRow);
@@ -2687,6 +3018,17 @@ function sanitizeChannelValue(raw) {
 function sanitizeLightTemplateRow(raw) {
   if (!raw || typeof raw !== "object") return null;
   const id = typeof raw.id === "string" && raw.id ? raw.id : generateId("templateRow");
+  const type =
+    raw.type === TEMPLATE_ROW_TYPES.DELAY ? TEMPLATE_ROW_TYPES.DELAY : TEMPLATE_ROW_TYPES.ACTION;
+
+  if (type === TEMPLATE_ROW_TYPES.DELAY) {
+    const durationNumber = Number.parseFloat(raw.duration);
+    const duration = Number.isFinite(durationNumber)
+      ? Math.max(0, Number(durationNumber.toFixed(3)))
+      : 0;
+    return { id, type, duration };
+  }
+
   const channelNumber = Number.parseInt(raw.channel, 10);
   const channel = Number.isFinite(channelNumber) ? clamp(channelNumber, 1, 512) : 1;
   const valueNumber = Number.parseInt(raw.value, 10);
@@ -2697,7 +3039,7 @@ function sanitizeLightTemplateRow(raw) {
     typeof raw.channelPresetId === "string" && raw.channelPresetId ? raw.channelPresetId : null;
   const valuePresetId =
     typeof raw.valuePresetId === "string" && raw.valuePresetId ? raw.valuePresetId : null;
-  return { id, channel, value, fade, channelPresetId, valuePresetId };
+  return { id, type, channel, value, fade, channelPresetId, valuePresetId };
 }
 
 function sanitizeLightTemplate(raw) {
@@ -2764,20 +3106,27 @@ function buildLightTemplatePayload() {
     id: template.id,
     name: template.name || "",
     rows: Array.isArray(template.rows)
-      ? template.rows.map((row) => ({
-          id: row.id || generateId("templateRow"),
-          channel: clamp(Number.parseInt(row.channel, 10) || 1, 1, 512),
-          value: clamp(Number.parseInt(row.value, 10) || 0, 0, 255),
-          fade: Math.max(0, Number.parseFloat(row.fade) || 0),
-          channelPresetId:
-            typeof row.channelPresetId === "string" && row.channelPresetId
-              ? row.channelPresetId
-              : null,
-          valuePresetId:
-            typeof row.valuePresetId === "string" && row.valuePresetId
-              ? row.valuePresetId
-              : null,
-        }))
+      ? template.rows
+          .map((row) => sanitizeLightTemplateRow(row))
+          .filter(Boolean)
+          .map((row) => {
+            if (row.type === TEMPLATE_ROW_TYPES.DELAY) {
+              return {
+                id: row.id,
+                type: TEMPLATE_ROW_TYPES.DELAY,
+                duration: row.duration,
+              };
+            }
+            return {
+              id: row.id,
+              type: TEMPLATE_ROW_TYPES.ACTION,
+              channel: row.channel,
+              value: row.value,
+              fade: row.fade,
+              channelPresetId: row.channelPresetId,
+              valuePresetId: row.valuePresetId,
+            };
+          })
       : [],
   }));
 }
@@ -2815,8 +3164,22 @@ function getTemplateRow(templateId, rowId) {
 }
 
 function createTemplateRowDefaults(overrides = {}) {
+  const type =
+    overrides.type === TEMPLATE_ROW_TYPES.DELAY ? TEMPLATE_ROW_TYPES.DELAY : TEMPLATE_ROW_TYPES.ACTION;
+
+  if (type === TEMPLATE_ROW_TYPES.DELAY) {
+    const durationValue = Number.parseFloat(overrides.duration);
+    const duration = Number.isFinite(durationValue) ? Math.max(0, Number(durationValue.toFixed(3))) : 1;
+    return {
+      id: overrides.id || generateId("templateRow"),
+      type,
+      duration,
+    };
+  }
+
   return {
     id: overrides.id || generateId("templateRow"),
+    type,
     channel: clamp(Number.parseInt(overrides.channel, 10) || 1, 1, 512),
     value: clamp(Number.parseInt(overrides.value, 10) || 0, 0, 255),
     fade: Math.max(0, Number.parseFloat(overrides.fade) || 0),
@@ -2943,26 +3306,23 @@ function renderLightTemplateList() {
 
     const editButton = document.createElement("button");
     editButton.type = "button";
-    editButton.className = "secondary";
-    editButton.textContent = "Edit";
     editButton.addEventListener("click", () => {
       if (activeLightTemplateId !== template.id) {
         activeLightTemplateId = template.id;
       }
       renderLightTemplates({ focusTemplateId: template.id });
     });
+    applyIconButton(editButton, "edit", "Edit template");
 
     const duplicateButton = document.createElement("button");
     duplicateButton.type = "button";
-    duplicateButton.className = "secondary";
-    duplicateButton.textContent = "Duplicate";
     duplicateButton.addEventListener("click", () => duplicateLightTemplate(template.id));
+    applyIconButton(duplicateButton, "duplicate", "Duplicate template");
 
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
-    deleteButton.className = "secondary";
-    deleteButton.textContent = "Delete";
     deleteButton.addEventListener("click", () => removeLightTemplate(template.id));
+    applyIconButton(deleteButton, "delete", "Delete template");
 
     actions.append(editButton, duplicateButton, deleteButton);
     item.append(summary, actions);
@@ -3077,15 +3437,13 @@ function createTemplateDetailCard(template) {
 
   const duplicateButton = document.createElement("button");
   duplicateButton.type = "button";
-  duplicateButton.className = "secondary";
-  duplicateButton.textContent = "Duplicate";
   duplicateButton.addEventListener("click", () => duplicateLightTemplate(template.id));
+  applyIconButton(duplicateButton, "duplicate", "Duplicate template");
 
   const deleteButton = document.createElement("button");
   deleteButton.type = "button";
-  deleteButton.className = "secondary";
-  deleteButton.textContent = "Delete";
   deleteButton.addEventListener("click", () => removeLightTemplate(template.id));
+  applyIconButton(deleteButton, "delete", "Delete template");
 
   actionsEl.append(duplicateButton, deleteButton);
   header.append(titleGroup, actionsEl);
@@ -3119,10 +3477,16 @@ function createTemplateDetailCard(template) {
   const addRowButton = document.createElement("button");
   addRowButton.type = "button";
   addRowButton.className = "secondary";
-  addRowButton.textContent = "Add Row";
+  addRowButton.textContent = "Add Channel Row";
   addRowButton.addEventListener("click", () => addRowToLightTemplate(template.id));
 
-  footer.append(addRowButton);
+  const addDelayButton = document.createElement("button");
+  addDelayButton.type = "button";
+  addDelayButton.className = "secondary";
+  addDelayButton.textContent = "Add Delay";
+  addDelayButton.addEventListener("click", () => addDelayRowToLightTemplate(template.id));
+
+  footer.append(addRowButton, addDelayButton);
   body.append(footer);
 
   card.append(header, body);
@@ -3137,8 +3501,40 @@ function formatLightTemplateTitle(template) {
 }
 
 function formatTemplateRowCount(template) {
-  const rows = Array.isArray(template.rows) ? template.rows.length : 0;
-  return rows === 1 ? "1 row" : `${rows} rows`;
+  const rows = Array.isArray(template.rows) ? template.rows : [];
+  const total = rows.length;
+  const stepLabel = total === 1 ? "1 step" : `${total} steps`;
+  const delayCount = rows.filter((row) => row.type === TEMPLATE_ROW_TYPES.DELAY).length;
+  if (!delayCount) {
+    return stepLabel;
+  }
+  const delayLabel = delayCount === 1 ? "1 delay" : `${delayCount} delays`;
+  return `${stepLabel} • ${delayLabel}`;
+}
+
+function formatTemplateLoopSummary(loop) {
+  const normalized = normalizeTemplateLoop(loop);
+  if (!normalized.enabled && !normalized.infinite) {
+    return "Loop: Off";
+  }
+  const modeLabel = normalized.mode === "pingpong" ? "Ping-pong" : "Forward";
+  if (normalized.infinite) {
+    return `Loop: Infinite (${modeLabel})`;
+  }
+  return `Loop: ${normalized.count}× ${modeLabel}`;
+}
+
+function collectTemplateChannels(template) {
+  if (!template || !Array.isArray(template.rows)) return [];
+  const unique = new Set();
+  template.rows.forEach((row) => {
+    if (row.type === TEMPLATE_ROW_TYPES.DELAY) return;
+    const numeric = Number.parseInt(row.channel, 10);
+    if (Number.isFinite(numeric)) {
+      unique.add(clamp(numeric, 1, 512));
+    }
+  });
+  return Array.from(unique).sort((a, b) => a - b);
 }
 
 function updateTemplateDetailHeading(template) {
@@ -3179,7 +3575,7 @@ function createTemplateRowsTable(template) {
 
   const thead = document.createElement("thead");
   const headRow = document.createElement("tr");
-  ["Row", "Channel", "Value", "Fade (s)", "Tools"].forEach((label) => {
+  ["Row", "Channel / Delay", "Value / Duration", "Fade (s)", "Tools"].forEach((label) => {
     const th = document.createElement("th");
     th.scope = "col";
     th.textContent = label;
@@ -3216,6 +3612,9 @@ function createTemplateRowElement(template, row, index) {
   baseRow.dataset.templateId = template.id;
   baseRow.dataset.rowId = row.id;
   baseRow.classList.add("template-row");
+  if (row.type === TEMPLATE_ROW_TYPES.DELAY) {
+    baseRow.classList.add("template-row--delay");
+  }
 
   const nameCell =
     baseRow.querySelector('[data-template-column="name"]') || document.createElement("td");
@@ -3225,27 +3624,46 @@ function createTemplateRowElement(template, row, index) {
   const channelCell =
     baseRow.querySelector('[data-template-column="channel"]') || document.createElement("td");
   channelCell.innerHTML = "";
-  const channelField = createTemplateChannelField(template.id, row);
-  channelCell.append(channelField);
+  if (row.type === TEMPLATE_ROW_TYPES.DELAY) {
+    const delayLabel = document.createElement("span");
+    delayLabel.className = "template-row__delay-label";
+    delayLabel.textContent = "Delay";
+    channelCell.append(delayLabel);
+  } else {
+    const channelField = createTemplateChannelField(template.id, row);
+    channelCell.append(channelField);
+  }
   baseRow.append(channelCell);
 
   const valueCell =
     baseRow.querySelector('[data-template-column="value"]') || document.createElement("td");
   valueCell.innerHTML = "";
-  valueCell.append(createTemplateValueField(template.id, row));
+  if (row.type === TEMPLATE_ROW_TYPES.DELAY) {
+    valueCell.append(createTemplateDelayField(template.id, row));
+  } else {
+    valueCell.append(createTemplateValueField(template.id, row));
+  }
   baseRow.append(valueCell);
 
   const fadeCell =
     baseRow.querySelector('[data-template-column="fade"]') || document.createElement("td");
   fadeCell.innerHTML = "";
-  const fadeInput = createInput({ type: "number", value: row.fade, min: 0, step: 0.1 });
-  fadeInput.dataset.templateId = template.id;
-  fadeInput.dataset.rowId = row.id;
-  fadeInput.dataset.field = "template-fade";
-  fadeInput.addEventListener("change", (event) =>
-    handleTemplateRowFadeChange(template.id, row.id, event),
-  );
-  fadeCell.append(fadeInput);
+  if (row.type === TEMPLATE_ROW_TYPES.DELAY) {
+    const dash = document.createElement("span");
+    dash.className = "template-row__placeholder";
+    dash.textContent = "—";
+    fadeCell.append(dash);
+  } else {
+    const fadeInput = createInput({ type: "number", value: row.fade, min: 0, step: 0.1 });
+    fadeInput.classList.add("input--compact-number");
+    fadeInput.dataset.templateId = template.id;
+    fadeInput.dataset.rowId = row.id;
+    fadeInput.dataset.field = "template-fade";
+    fadeInput.addEventListener("change", (event) =>
+      handleTemplateRowFadeChange(template.id, row.id, event),
+    );
+    fadeCell.append(fadeInput);
+  }
   baseRow.append(fadeCell);
 
   const toolsCell =
@@ -3256,15 +3674,13 @@ function createTemplateRowElement(template, row, index) {
 
   const duplicateButton = document.createElement("button");
   duplicateButton.type = "button";
-  duplicateButton.className = "secondary";
-  duplicateButton.textContent = "Duplicate";
   duplicateButton.addEventListener("click", () => duplicateTemplateRow(template.id, row.id));
+  applyIconButton(duplicateButton, "duplicate", "Duplicate row");
 
   const removeButton = document.createElement("button");
   removeButton.type = "button";
-  removeButton.className = "secondary";
-  removeButton.textContent = "Delete";
   removeButton.addEventListener("click", () => removeTemplateRow(template.id, row.id));
+  applyIconButton(removeButton, "delete", "Delete row");
 
   tools.append(duplicateButton, removeButton);
   toolsCell.append(tools);
@@ -3274,6 +3690,9 @@ function createTemplateRowElement(template, row, index) {
 }
 
 function formatTemplateRowLabel(template, row, index) {
+  if (row.type === TEMPLATE_ROW_TYPES.DELAY) {
+    return `Delay ${index + 1}`;
+  }
   if (row.channelPresetId) {
     const preset = getChannelPreset(row.channelPresetId);
     if (preset) {
@@ -3325,6 +3744,7 @@ function createTemplateChannelField(templateId, row) {
   }
 
   const input = createInput({ type: "number", value: row.channel, min: 1, max: 512, step: 1 });
+  input.classList.add("input--compact-number");
   input.dataset.templateId = templateId;
   input.dataset.rowId = row.id;
   input.dataset.field = "template-channel";
@@ -3397,6 +3817,7 @@ function createTemplateValueField(templateId, row) {
   slider.dataset.field = "template-value-slider";
 
   const input = createInput({ type: "number", value: row.value, min: 0, max: 255, step: 1 });
+  input.classList.add("input--compact-number");
   input.dataset.templateId = templateId;
   input.dataset.rowId = row.id;
   input.dataset.field = "template-value";
@@ -3439,6 +3860,32 @@ function createTemplateValueField(templateId, row) {
   return wrapper;
 }
 
+function createTemplateDelayField(templateId, row) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "template-delay-field";
+
+  const input = createInput({
+    type: "number",
+    value: row.duration ?? 1,
+    min: 0,
+    step: 0.1,
+  });
+  input.classList.add("input--compact-number");
+  input.dataset.templateId = templateId;
+  input.dataset.rowId = row.id;
+  input.dataset.field = "template-delay-duration";
+  input.addEventListener("change", (event) =>
+    handleTemplateRowDurationChange(templateId, row.id, event),
+  );
+
+  const suffix = document.createElement("span");
+  suffix.className = "template-delay-field__unit";
+  suffix.textContent = "s";
+
+  wrapper.append(input, suffix);
+  return wrapper;
+}
+
 function handleTemplateNameInput(templateId, event) {
   const template = getLightTemplate(templateId);
   if (!template) return;
@@ -3461,15 +3908,22 @@ function addLightTemplate() {
 function duplicateLightTemplate(templateId) {
   const template = getLightTemplate(templateId);
   if (!template) return;
-  const clonedRows = (template.rows || []).map((row) =>
-    createTemplateRowDefaults({
+  const clonedRows = (template.rows || []).map((row) => {
+    if (row.type === TEMPLATE_ROW_TYPES.DELAY) {
+      return createTemplateRowDefaults({
+        type: TEMPLATE_ROW_TYPES.DELAY,
+        duration: row.duration,
+      });
+    }
+    return createTemplateRowDefaults({
+      type: TEMPLATE_ROW_TYPES.ACTION,
       channel: row.channel,
       value: row.value,
       fade: row.fade,
       channelPresetId: row.channelPresetId,
       valuePresetId: row.valuePresetId,
-    }),
-  );
+    });
+  });
   const duplicateName = template.name ? `${template.name} Copy` : "Untitled Template Copy";
   const duplicate = createLightTemplateDefaults({ name: duplicateName, rows: clonedRows });
   lightTemplates.push(duplicate);
@@ -3531,6 +3985,16 @@ function getTemplateInstanceInfo(instanceId) {
   };
 }
 
+function getTemplateInstanceLoopSettings(instanceId) {
+  const info = getTemplateInstanceInfo(instanceId);
+  if (!info || !Array.isArray(info.indices) || !info.indices.length) {
+    return null;
+  }
+  const action = actions[info.indices[0]];
+  if (!action) return null;
+  return cloneTemplateLoopSettings(action.templateLoop);
+}
+
 function duplicateTemplateInstance(instanceId) {
   if (!instanceId) return;
   const info = getTemplateInstanceInfo(instanceId);
@@ -3538,11 +4002,21 @@ function duplicateTemplateInstance(instanceId) {
   const template = getLightTemplate(info.templateId);
   if (!template) return;
   const newInstanceId = generateTemplateInstanceId();
+  let loopSettings = getTemplateInstanceLoopSettings(instanceId);
+  if (loopSettings) {
+    const channels = collectTemplateChannels(template);
+    if (channels.length) {
+      loopSettings.channels = channels;
+    } else {
+      delete loopSettings.channels;
+    }
+  }
   const newActions = createActionsFromTemplate(
     template,
     info.stepId,
     info.time,
     newInstanceId,
+    { loopSettings },
   );
   if (!newActions.length) return;
   let insertionIndex = info.lastIndex + 1;
@@ -3587,23 +4061,50 @@ function addRowToLightTemplate(templateId) {
   syncTemplateInstances(templateId);
 }
 
+function addDelayRowToLightTemplate(templateId) {
+  const template = getLightTemplate(templateId);
+  if (!template) return;
+  if (!Array.isArray(template.rows)) {
+    template.rows = [];
+  }
+  const newRow = createTemplateRowDefaults({ type: TEMPLATE_ROW_TYPES.DELAY, duration: 1 });
+  template.rows.push(newRow);
+  saveLightTemplates();
+  renderLightTemplates({
+    preserveFocus: { templateId, rowId: newRow.id, field: "template-delay-duration" },
+  });
+  syncTemplateInstances(templateId);
+}
+
 function duplicateTemplateRow(templateId, rowId) {
   const template = getLightTemplate(templateId);
   if (!template || !Array.isArray(template.rows)) return;
   const index = template.rows.findIndex((row) => row.id === rowId);
   if (index === -1) return;
   const source = template.rows[index];
-  const clone = createTemplateRowDefaults({
-    channel: source.channel,
-    value: source.value,
-    fade: source.fade,
-    channelPresetId: source.channelPresetId,
-    valuePresetId: source.valuePresetId,
-  });
+  const clone =
+    source.type === TEMPLATE_ROW_TYPES.DELAY
+      ? createTemplateRowDefaults({
+          type: TEMPLATE_ROW_TYPES.DELAY,
+          duration: source.duration,
+        })
+      : createTemplateRowDefaults({
+          type: TEMPLATE_ROW_TYPES.ACTION,
+          channel: source.channel,
+          value: source.value,
+          fade: source.fade,
+          channelPresetId: source.channelPresetId,
+          valuePresetId: source.valuePresetId,
+        });
   template.rows.splice(index + 1, 0, clone);
   saveLightTemplates();
   renderLightTemplates({
-    preserveFocus: { templateId, rowId: clone.id, field: "template-channel" },
+    preserveFocus: {
+      templateId,
+      rowId: clone.id,
+      field:
+        clone.type === TEMPLATE_ROW_TYPES.DELAY ? "template-delay-duration" : "template-channel",
+    },
   });
   syncTemplateInstances(templateId);
 }
@@ -3623,7 +4124,7 @@ function handleTemplateRowChannelPresetChange(templateId, rowId, event) {
   const template = getLightTemplate(templateId);
   if (!template) return;
   const row = getTemplateRow(templateId, rowId);
-  if (!row) return;
+  if (!row || row.type === TEMPLATE_ROW_TYPES.DELAY) return;
   const selectedId = event.target.value;
   if (selectedId) {
     row.channelPresetId = selectedId;
@@ -3650,7 +4151,7 @@ function handleTemplateRowChannelInput(templateId, rowId, event) {
   const template = getLightTemplate(templateId);
   if (!template) return;
   const row = getTemplateRow(templateId, rowId);
-  if (!row) return;
+  if (!row || row.type === TEMPLATE_ROW_TYPES.DELAY) return;
   const raw = Number.parseInt(event.target.value, 10);
   if (Number.isNaN(raw)) {
     event.target.classList.add("invalid");
@@ -3672,7 +4173,7 @@ function handleTemplateRowValuePresetChange(templateId, rowId, event) {
   const template = getLightTemplate(templateId);
   if (!template) return;
   const row = getTemplateRow(templateId, rowId);
-  if (!row) return;
+  if (!row || row.type === TEMPLATE_ROW_TYPES.DELAY) return;
   const selectedId = event.target.value;
   const focusDescriptor = describeFocusedTemplateField(event.target);
   if (selectedId && selectedId !== "custom" && row.channelPresetId) {
@@ -3701,7 +4202,7 @@ function handleTemplateRowValueChange(templateId, rowId, event) {
   const template = getLightTemplate(templateId);
   if (!template) return;
   const row = getTemplateRow(templateId, rowId);
-  if (!row) return;
+  if (!row || row.type === TEMPLATE_ROW_TYPES.DELAY) return;
   const raw = Number.parseInt(event.target.value, 10);
   if (Number.isNaN(raw)) {
     event.target.classList.add("invalid");
@@ -3723,11 +4224,24 @@ function handleTemplateRowFadeChange(templateId, rowId, event) {
   const template = getLightTemplate(templateId);
   if (!template) return;
   const row = getTemplateRow(templateId, rowId);
-  if (!row) return;
+  if (!row || row.type === TEMPLATE_ROW_TYPES.DELAY) return;
   const raw = Number.parseFloat(event.target.value);
   const normalized = Number.isFinite(raw) ? Math.max(0, raw) : 0;
   row.fade = Number(normalized.toFixed(3));
   event.target.value = row.fade;
+  saveLightTemplates();
+  syncTemplateInstances(templateId);
+}
+
+function handleTemplateRowDurationChange(templateId, rowId, event) {
+  const template = getLightTemplate(templateId);
+  if (!template) return;
+  const row = getTemplateRow(templateId, rowId);
+  if (!row || row.type !== TEMPLATE_ROW_TYPES.DELAY) return;
+  const raw = Number.parseFloat(event.target.value);
+  const normalized = Number.isFinite(raw) ? Math.max(0, raw) : 0;
+  row.duration = Number(normalized.toFixed(3));
+  event.target.value = row.duration;
   saveLightTemplates();
   syncTemplateInstances(templateId);
 }
@@ -3752,6 +4266,9 @@ function syncTemplateInstances(templateId, options = {}) {
         time: action.time || DEFAULT_ACTION.time,
       };
       instances.set(instanceId, group);
+    }
+    if (!Object.prototype.hasOwnProperty.call(group, "loop")) {
+      group.loop = cloneTemplateLoopSettings(action.templateLoop);
     }
     group.indices.push(index);
   });
@@ -3786,7 +4303,24 @@ function syncTemplateInstances(templateId, options = {}) {
   groups.forEach((group) => {
     const { stepId, time, instanceId, removedBefore: beforeCount = 0 } = group;
     const timeValue = time || DEFAULT_ACTION.time;
-    const newActions = createActionsFromTemplate(template, stepId, timeValue, instanceId);
+    if (Object.prototype.hasOwnProperty.call(group, "loop") && group.loop && template) {
+      const channels = collectTemplateChannels(template);
+      if (channels.length) {
+        group.loop.channels = channels;
+      } else if (group.loop) {
+        delete group.loop.channels;
+      }
+    }
+    const loopOptions = Object.prototype.hasOwnProperty.call(group, "loop")
+      ? { loopSettings: group.loop }
+      : {};
+    const newActions = createActionsFromTemplate(
+      template,
+      stepId,
+      timeValue,
+      instanceId,
+      loopOptions,
+    );
     if (!newActions.length) {
       return;
     }
@@ -3806,11 +4340,22 @@ function syncTemplateInstances(templateId, options = {}) {
   }
 }
 
-function createActionsFromTemplate(template, stepId, time, instanceId) {
+function createActionsFromTemplate(template, stepId, time, instanceId, options = {}) {
   const rows = Array.isArray(template.rows) ? template.rows : [];
   const seconds = parseTimeString(time) ?? parseTimeString(DEFAULT_ACTION.time) ?? 0;
   const timecode = secondsToTimecode(seconds);
-  return rows.map((row) => {
+  const hasLoopSettings = Object.prototype.hasOwnProperty.call(options, "loopSettings");
+  const loopSettings = hasLoopSettings
+    ? options.loopSettings
+      ? normalizeTemplateLoop(options.loopSettings)
+      : null
+    : null;
+
+  const created = [];
+  rows.forEach((row) => {
+    if (row.type === TEMPLATE_ROW_TYPES.DELAY) {
+      return;
+    }
     const action = {
       ...DEFAULT_ACTION,
       time: timecode,
@@ -3825,10 +4370,16 @@ function createActionsFromTemplate(template, stepId, time, instanceId) {
       templateInstanceId: instanceId,
       templateRowId: row.id,
     };
+    if (loopSettings) {
+      action.templateLoop = { ...loopSettings };
+    } else if (hasLoopSettings) {
+      action.templateLoop = null;
+    }
     ensureActionLocalId(action);
     setActionStepId(action, stepId);
-    return action;
+    created.push(action);
   });
+  return created;
 }
 
 function generateTemplateInstanceId() {
@@ -4163,6 +4714,10 @@ function prepareActionsForSave() {
     }
     if (action.templateRowId) {
       entry.templateRowId = action.templateRowId;
+    }
+    const loopSettings = sanitizeTemplateLoop(action.templateLoop);
+    if (loopSettings && shouldSerializeTemplateLoop(loopSettings)) {
+      entry.templateLoop = loopSettings;
     }
     prepared.push(entry);
   });
