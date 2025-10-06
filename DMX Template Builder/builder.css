@@ -7,9 +7,6 @@
   --bg-muted: rgba(0, 0, 0, 0.05);
 }
 
-[aria-hidden=true] {
-  display: none !important;
-}
 
 body {
   margin: 0;
