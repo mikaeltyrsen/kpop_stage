@@ -1503,7 +1503,6 @@ function createTemplateInstanceRow(group, action, index, count) {
   loopSummary.className = "action-group-template__loop-summary";
   loopSummary.dataset.role = "template-loop-summary";
   const loop = normalizeTemplateLoop(action.templateLoop);
-  const template = action.templateId ? getLightTemplate(action.templateId) : null;
   const timeline = template ? buildTemplateTimeline(template) : null;
   const totalDuration = timeline ? Number(timeline.totalDuration || 0) : 0;
   if (totalDuration > 0) {
