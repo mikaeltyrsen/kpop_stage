@@ -104,15 +104,17 @@
                 >
                   <span class="visually-hidden">Reorder</span>
                 </span>
-                <span class="actions-grid__cell actions-grid__header-cell" role="columnheader">
-                  Channel
-                </span>
-                <span class="actions-grid__cell actions-grid__header-cell" role="columnheader">
-                  Value
-                </span>
-                <span class="actions-grid__cell actions-grid__header-cell" role="columnheader">
-                  Fade (s)
-                </span>
+                <div class="actions-grid__cell actions-grid__cell-group actions-grid__header-group" role="presentation">
+                  <span class="actions-grid__cell actions-grid__header-cell" role="columnheader">
+                    Channel
+                  </span>
+                  <span class="actions-grid__cell actions-grid__header-cell" role="columnheader">
+                    Value
+                  </span>
+                  <span class="actions-grid__cell actions-grid__header-cell" role="columnheader">
+                    Fade (s)
+                  </span>
+                </div>
                 <span class="actions-grid__cell actions-grid__header-cell" role="columnheader">
                   Tools
                 </span>
@@ -184,9 +186,11 @@
     <template id="action-row-template">
       <div class="actions-grid__row action-group-item" role="row">
         <div class="actions-grid__cell actions-grid__cell--handle" data-column="handle"></div>
-        <div class="actions-grid__cell" data-column="channel"></div>
-        <div class="actions-grid__cell" data-column="value"></div>
-        <div class="actions-grid__cell actions-grid__cell--fade" data-column="fade"></div>
+        <div class="actions-grid__cell actions-grid__cell-group" data-column-group="fields">
+          <div class="actions-grid__cell" data-column="channel"></div>
+          <div class="actions-grid__cell" data-column="value"></div>
+          <div class="actions-grid__cell actions-grid__cell--fade" data-column="fade"></div>
+        </div>
         <div class="actions-grid__cell actions-grid__cell--tools" data-column="tools"></div>
       </div>
     </template>
@@ -218,7 +222,7 @@
 
     <template id="template-row-template">
       <tr>
-        <td data-template-column="name"></td>
+        <td data-template-column="handle"></td>
         <td data-template-column="channel"></td>
         <td data-template-column="value"></td>
         <td data-template-column="fade"></td>

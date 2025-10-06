@@ -46,6 +46,7 @@ let actionGroupIds = [];
 let stepInfoById = new Map();
 let draggingActionId = null;
 let draggingTemplateInstanceId = null;
+let draggingTemplateRow = null;
 let lastKnownTimelineSeconds = 0;
 let lightTemplates = [];
 let activeLightTemplateId = null;
@@ -1696,6 +1697,117 @@ function clearAllDropIndicators() {
   actionsBody.querySelectorAll(".action-group-header.is-drop-target").forEach((element) => {
     element.classList.remove("is-drop-target");
   });
+}
+
+function getTemplateDragRow(target) {
+  if (target instanceof HTMLElement) {
+    if (target.matches(".template-row")) {
+      return target;
+    }
+    return target.closest(".template-row");
+  }
+  return null;
+}
+
+function handleTemplateRowDragStart(event) {
+  const row = getTemplateDragRow(event.currentTarget);
+  if (!row) return;
+  const templateId = row.dataset.templateId;
+  const rowId = row.dataset.rowId;
+  if (!templateId || !rowId) return;
+  clearTemplateRowDropIndicators();
+  draggingTemplateRow = { templateId, rowId };
+  row.classList.add("is-dragging");
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = "move";
+    const rect = row.getBoundingClientRect();
+    const offsetX = event.clientX - rect.left;
+    const offsetY = event.clientY - rect.top;
+    try {
+      event.dataTransfer.setData("text/plain", rowId);
+      event.dataTransfer.setDragImage(row, offsetX, offsetY);
+    } catch (error) {
+      // Ignore unsupported drag image operations.
+    }
+  }
+}
+
+function handleTemplateRowDragEnd(event) {
+  const row = getTemplateDragRow(event.currentTarget);
+  if (row) {
+    row.classList.remove("is-dragging");
+  }
+  draggingTemplateRow = null;
+  clearTemplateRowDropIndicators();
+}
+
+function handleTemplateRowDragOver(event) {
+  if (!draggingTemplateRow) return;
+  const row = event.currentTarget;
+  if (!(row instanceof HTMLElement)) return;
+  const templateId = row.dataset.templateId;
+  const targetRowId = row.dataset.rowId;
+  if (
+    !templateId ||
+    !targetRowId ||
+    templateId !== draggingTemplateRow.templateId ||
+    targetRowId === draggingTemplateRow.rowId
+  ) {
+    row.classList.remove("drop-before", "drop-after");
+    return;
+  }
+  event.preventDefault();
+  const rect = row.getBoundingClientRect();
+  const before = event.clientY - rect.top < rect.height / 2;
+  row.classList.toggle("drop-before", before);
+  row.classList.toggle("drop-after", !before);
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = "move";
+  }
+}
+
+function handleTemplateRowDragLeave(event) {
+  const row = event.currentTarget;
+  if (!(row instanceof HTMLElement)) return;
+  row.classList.remove("drop-before", "drop-after");
+}
+
+function handleTemplateRowDrop(event) {
+  if (!draggingTemplateRow) return;
+  const row = event.currentTarget;
+  if (!(row instanceof HTMLElement)) return;
+  const templateId = row.dataset.templateId;
+  const targetRowId = row.dataset.rowId;
+  if (!templateId || !targetRowId || templateId !== draggingTemplateRow.templateId) {
+    return;
+  }
+  event.preventDefault();
+  const sourceRowId = draggingTemplateRow.rowId;
+  if (sourceRowId === targetRowId) {
+    row.classList.remove("drop-before", "drop-after");
+    draggingTemplateRow = null;
+    clearTemplateRowDropIndicators();
+    return;
+  }
+  const rect = row.getBoundingClientRect();
+  const before = event.clientY - rect.top < rect.height / 2;
+  const focusDescriptor = describeFocusedTemplateField(document.activeElement);
+  const moved = reorderTemplateRow(templateId, sourceRowId, targetRowId, before);
+  draggingTemplateRow = null;
+  row.classList.remove("drop-before", "drop-after");
+  clearTemplateRowDropIndicators();
+  if (moved) {
+    renderLightTemplates({ preserveFocus: focusDescriptor });
+  }
+}
+
+function clearTemplateRowDropIndicators() {
+  if (!templateDetailContainer) return;
+  templateDetailContainer
+    .querySelectorAll(".template-row.drop-before, .template-row.drop-after, .template-row.is-dragging")
+    .forEach((element) => {
+      element.classList.remove("drop-before", "drop-after", "is-dragging");
+    });
 }
 
 function placeActionAt(actionId, insertionIndex, options = {}) {
@@ -3575,10 +3687,23 @@ function createTemplateRowsTable(template) {
 
   const thead = document.createElement("thead");
   const headRow = document.createElement("tr");
-  ["Row", "Channel / Delay", "Value / Duration", "Fade (s)", "Tools"].forEach((label) => {
+  [
+    { label: "", srLabel: "Reorder" },
+    { label: "Channel / Delay" },
+    { label: "Value / Duration" },
+    { label: "Fade (s)" },
+    { label: "Tools" },
+  ].forEach((column) => {
     const th = document.createElement("th");
     th.scope = "col";
-    th.textContent = label;
+    if (column.label) {
+      th.textContent = column.label;
+    } else if (column.srLabel) {
+      const sr = document.createElement("span");
+      sr.className = "visually-hidden";
+      sr.textContent = column.srLabel;
+      th.append(sr);
+    }
     headRow.append(th);
   });
   thead.append(headRow);
@@ -3616,10 +3741,16 @@ function createTemplateRowElement(template, row, index) {
     baseRow.classList.add("template-row--delay");
   }
 
-  const nameCell =
-    baseRow.querySelector('[data-template-column="name"]') || document.createElement("td");
-  nameCell.textContent = formatTemplateRowLabel(template, row, index);
-  baseRow.append(nameCell);
+  baseRow.addEventListener("dragover", handleTemplateRowDragOver);
+  baseRow.addEventListener("dragleave", handleTemplateRowDragLeave);
+  baseRow.addEventListener("drop", handleTemplateRowDrop);
+
+  const handleCell =
+    baseRow.querySelector('[data-template-column="handle"]') || document.createElement("td");
+  handleCell.innerHTML = "";
+  const dragHandle = createTemplateRowDragHandle(template, row, index);
+  handleCell.append(dragHandle);
+  baseRow.append(handleCell);
 
   const channelCell =
     baseRow.querySelector('[data-template-column="channel"]') || document.createElement("td");
@@ -3687,6 +3818,31 @@ function createTemplateRowElement(template, row, index) {
   baseRow.append(toolsCell);
 
   return baseRow;
+}
+
+function createTemplateRowDragHandle(template, row, index) {
+  const handle = document.createElement("button");
+  handle.type = "button";
+  handle.className = "action-row__drag-handle template-row__drag-handle";
+  const label = formatTemplateRowLabel(template, row, index);
+  const dragLabel = label ? `Drag to reorder ${label}` : "Drag to reorder row";
+  handle.title = dragLabel;
+  handle.setAttribute("aria-label", dragLabel);
+  handle.draggable = true;
+  handle.dataset.templateId = template.id;
+  handle.dataset.rowId = row.id;
+  handle.dataset.field = "template-row-handle";
+
+  const icon = document.createElement("span");
+  icon.className = "action-row__drag-icon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "⋮⋮";
+  handle.append(icon);
+
+  handle.addEventListener("dragstart", handleTemplateRowDragStart);
+  handle.addEventListener("dragend", handleTemplateRowDragEnd);
+
+  return handle;
 }
 
 function formatTemplateRowLabel(template, row, index) {
@@ -4107,6 +4263,31 @@ function duplicateTemplateRow(templateId, rowId) {
     },
   });
   syncTemplateInstances(templateId);
+}
+
+function reorderTemplateRow(templateId, sourceRowId, targetRowId, placeBefore) {
+  const template = getLightTemplate(templateId);
+  if (!template || !Array.isArray(template.rows)) return false;
+  if (sourceRowId === targetRowId) return false;
+
+  const rows = template.rows;
+  const sourceIndex = rows.findIndex((row) => row.id === sourceRowId);
+  const targetIndex = rows.findIndex((row) => row.id === targetRowId);
+  if (sourceIndex === -1 || targetIndex === -1) return false;
+
+  const [moved] = rows.splice(sourceIndex, 1);
+  let insertionIndex = rows.findIndex((row) => row.id === targetRowId);
+  if (insertionIndex === -1) {
+    rows.splice(sourceIndex, 0, moved);
+    return false;
+  }
+  if (!placeBefore) {
+    insertionIndex += 1;
+  }
+  rows.splice(insertionIndex, 0, moved);
+  saveLightTemplates();
+  syncTemplateInstances(templateId);
+  return true;
 }
 
 function removeTemplateRow(templateId, rowId) {
