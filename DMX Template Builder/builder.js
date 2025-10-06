@@ -1238,8 +1238,8 @@ function createTemplateLoopControls(instanceId, groupId, loop, options = {}) {
 
   toggleLabel.append(toggleInput, toggleText);
 
-  const options = document.createElement("div");
-  options.className = "template-loop__options";
+  const optionsContainer = document.createElement("div");
+  optionsContainer.className = "template-loop__options";
 
   const countLabel = document.createElement("label");
   countLabel.className = "template-loop__count-label";
@@ -1296,9 +1296,9 @@ function createTemplateLoopControls(instanceId, groupId, loop, options = {}) {
 
   modeLabel.append(modeText, modeSelect);
 
-  options.append(countLabel, infiniteLabel, modeLabel);
+  optionsContainer.append(countLabel, infiniteLabel, modeLabel);
 
-  container.append(toggleLabel, options);
+  container.append(toggleLabel, optionsContainer);
   updateTemplateLoopControlsState(container, normalized);
   return container;
 }
