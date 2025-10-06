@@ -367,6 +367,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  overflow-x: auto;
 }
 
 .template-card__header {
@@ -1158,7 +1159,8 @@ body {
 
 .preset-select {
   display: grid;
-  grid-template-columns: minmax(max-content, 1fr) minmax(4.5rem, max-content) minmax(6rem, 1fr);
+  //grid-template-columns: minmax(max-content, 1fr) minmax(4.5rem, max-content) minmax(6rem, 1fr);
+  grid-template-columns: 250px 40px
   gap: 0.45rem;
   align-items: center;
 }
@@ -1166,6 +1168,7 @@ body {
 .preset-select select {
   width: auto;
   min-width: max-content;
+  font-size: 0.8em;
 }
 
 .preset-select input[disabled] {
