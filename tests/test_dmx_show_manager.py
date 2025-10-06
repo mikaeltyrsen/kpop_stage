@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 import time
 from pathlib import Path
@@ -164,6 +165,138 @@ def test_preview_paused_stops_runner(tmp_path: Path) -> None:
 
     runner: DummyRunner = manager.runner  # type: ignore[assignment]
     assert runner.started_actions == []
+
+
+def test_expand_actions_with_template_loop_count(tmp_path: Path) -> None:
+    output = DummyOutput(channel_count=4)
+    manager = create_manager(tmp_path, output)
+
+    raw_actions = [
+        {
+            "time": "00:00:00",
+            "channel": 1,
+            "value": 255,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+            "templateLoop": {
+                "enabled": True,
+                "count": 3,
+                "mode": "forward",
+                "duration": 1.0,
+                "channels": [1],
+            },
+        },
+        {
+            "time": "00:00:00.500",
+            "channel": 1,
+            "value": 0,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+        },
+    ]
+
+    expanded = manager._expand_actions_with_loops(raw_actions)
+    times = [action.time_seconds for action in expanded]
+    assert times == pytest.approx([0.0, 0.5, 1.0, 1.5, 2.0, 2.5])
+
+
+def test_expand_actions_with_template_loop_infinite_conflict(tmp_path: Path) -> None:
+    output = DummyOutput(channel_count=4)
+    manager = create_manager(tmp_path, output)
+
+    raw_actions = [
+        {
+            "time": "00:00:00",
+            "channel": 1,
+            "value": 255,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+            "templateLoop": {
+                "enabled": True,
+                "infinite": True,
+                "mode": "forward",
+                "duration": 2.0,
+                "channels": [1],
+            },
+        },
+        {
+            "time": "00:00:01.000",
+            "channel": 1,
+            "value": 0,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+        },
+        {"time": "00:00:05.000", "channel": 1, "value": 50, "fade": 0},
+    ]
+
+    expanded = manager._expand_actions_with_loops(raw_actions)
+    times = [round(action.time_seconds, 6) for action in expanded]
+    assert times == pytest.approx([0.0, 1.0, 2.0, 3.0, 5.0])
+
+
+def test_expand_actions_with_template_loop_requires_duration(tmp_path: Path) -> None:
+    output = DummyOutput(channel_count=4)
+    manager = create_manager(tmp_path, output)
+
+    raw_actions = [
+        {
+            "time": "00:00:00",
+            "channel": 1,
+            "value": 255,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+            "templateLoop": {"enabled": True, "count": 5, "mode": "forward", "duration": 0},
+        },
+        {
+            "time": "00:00:00.500",
+            "channel": 1,
+            "value": 0,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+        },
+    ]
+
+    expanded = manager._expand_actions_with_loops(raw_actions)
+    times = [action.time_seconds for action in expanded]
+    assert times == pytest.approx([0.0, 0.5])
+
+
+def test_save_actions_persists_template_loop(tmp_path: Path) -> None:
+    output = DummyOutput(channel_count=4)
+    manager = create_manager(tmp_path, output)
+    template_path = tmp_path / "loop.json"
+
+    raw_actions = [
+        {
+            "time": "00:00:00",
+            "channel": 1,
+            "value": 200,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+            "templateLoop": {
+                "enabled": True,
+                "count": 2,
+                "mode": "pingpong",
+                "duration": 1.25,
+                "channels": [1, 2],
+            },
+        }
+    ]
+
+    manager.save_actions(template_path, raw_actions)
+
+    with template_path.open("r", encoding="utf-8") as fh:
+        saved = json.load(fh)
+
+    assert "actions" in saved
+    assert saved["actions"][0]["templateLoop"] == {
+        "enabled": True,
+        "count": 2,
+        "infinite": False,
+        "mode": "pingpong",
+        "duration": 1.25,
+        "channels": [1, 2],
+    }
 
 
 def test_dmx_output_continuous_refresh(monkeypatch: pytest.MonkeyPatch) -> None:

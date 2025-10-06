@@ -1370,6 +1370,16 @@ body {
   justify-content: flex-start;
 }
 
+.template-loop-controls--disabled {
+  opacity: 0.55;
+}
+
+.template-loop-controls--disabled input,
+.template-loop-controls--disabled select,
+.template-loop-controls--disabled label {
+  cursor: not-allowed;
+}
+
 .template-loop__toggle {
   display: inline-flex;
   align-items: center;
