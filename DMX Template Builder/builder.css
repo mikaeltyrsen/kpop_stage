@@ -980,7 +980,7 @@ body {
 .actions-grid__header,
 .actions-grid__row {
   display: grid;
-  grid-template-columns: minmax(2.5rem, auto) minmax(0, 1fr) minmax(6.5rem, max-content);
+  grid-template-columns: 35px minmax(0, 1fr) minmax(6.5rem, max-content);
   align-items: stretch;
 }
 
@@ -1005,6 +1005,7 @@ body {
 
 .actions-grid__cell-group > .actions-grid__cell {
   min-width: 0;
+  grow: 1;
 }
 
 .actions-grid__header-group {
