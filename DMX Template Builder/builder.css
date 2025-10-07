@@ -1049,8 +1049,8 @@ body {
   justify-content: flex-start;
 }
 
-actions-grid__cell--fade {
-  width: 60px;
+.actions-grid__cell--fade {
+  width: 90px;
 }
 
 .actions-grid__cell--template {
@@ -1238,7 +1238,7 @@ actions-grid__cell--fade {
 }
 
 .actions-grid__cell input {
-  width: 100%;
+  width: 850%;
 }
 
 .actions-grid__cell select {
@@ -1261,7 +1261,7 @@ actions-grid__cell--fade {
 .preset-select {
   display: grid;
   //grid-template-columns: minmax(max-content, 1fr) minmax(4.5rem, max-content) minmax(6rem, 1fr);
-  grid-template-columns: 120px 1fr 50px;
+  grid-template-columns: auto 1fr auto;
   gap: 0.45rem;
   align-items: center;
 }
@@ -1282,7 +1282,7 @@ actions-grid__cell--fade {
 }
 
 .preset-select .value-slider {
-  width: 100%;
+  width: 90%;
   min-width: 0;
   accent-color: var(--accent);
   background: transparent;
