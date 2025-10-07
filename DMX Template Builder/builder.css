@@ -1044,6 +1044,10 @@ body {
   justify-content: flex-start;
 }
 
+.actions-grid__cell--fade input {
+  width: 50px;
+}
+
 .actions-grid__cell--template {
   align-items: stretch;
 }
