@@ -1044,8 +1044,8 @@ body {
   justify-content: flex-start;
 }
 
-.actions-grid__cell--fade input {
-  width: 50px;
+actions-grid__cell--fade {
+  width: 60px;
 }
 
 .actions-grid__cell--template {
