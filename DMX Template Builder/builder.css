@@ -1241,7 +1241,7 @@ body {
 }
 
 .actions-grid__cell input {
-  width: 850%;
+  width: 100%;
 }
 
 .actions-grid__cell select {
@@ -1285,7 +1285,7 @@ body {
 }
 
 .preset-select .value-slider {
-  width: 90%;
+  width: 100%;
   min-width: 0;
   accent-color: var(--accent);
   background: transparent;
