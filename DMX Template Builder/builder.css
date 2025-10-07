@@ -1261,7 +1261,7 @@ actions-grid__cell--fade {
 .preset-select {
   display: grid;
   //grid-template-columns: minmax(max-content, 1fr) minmax(4.5rem, max-content) minmax(6rem, 1fr);
-  grid-template-columns: 120px 100px 50px;
+  grid-template-columns: 120px 1fr 50px;
   gap: 0.45rem;
   align-items: center;
 }
