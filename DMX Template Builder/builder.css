@@ -1382,11 +1382,13 @@ body {
 .action-group-template__count {
   opacity: 0.7;
   font-size: 0.85rem;
+  display: none;
 }
 
 .action-group-template__loop-summary {
   opacity: 0.7;
   font-size: 0.85rem;
+  display: none;
 }
 
 .action-group-template__tools {
