@@ -1128,46 +1128,14 @@ function autoAssignPresetsToActions(list) {
     }
 
     if (!preset) {
+      preset = getSortedChannelPresets()[0] || null;
+    }
+
+    if (preset) {
+      applyChannelPresetToAction(action, preset);
+    } else {
+      action.channelPresetId = null;
       action.valuePresetId = null;
-      return;
-    }
-
-    const presetChannel = Number.parseInt(preset.channel, 10);
-    if (Number.isFinite(presetChannel)) {
-      action.channel = clamp(presetChannel, 1, 512);
-    }
-
-    if (!Array.isArray(preset.values) || !preset.values.length) {
-      action.valuePresetId = null;
-      return;
-    }
-
-    let valuePreset = null;
-    if (action.valuePresetId) {
-      valuePreset = preset.values.find((value) => value.id === action.valuePresetId) || null;
-      if (!valuePreset) {
-        action.valuePresetId = null;
-      }
-    }
-
-    if (!valuePreset) {
-      const actionValue = Number.parseInt(action.value, 10);
-      if (Number.isFinite(actionValue)) {
-        valuePreset =
-          preset.values.find(
-            (value) => Number.isFinite(value.value) && value.value === actionValue,
-          ) || null;
-      }
-      if (valuePreset) {
-        action.valuePresetId = valuePreset.id;
-      }
-    }
-
-    if (valuePreset) {
-      const presetValue = Number.parseInt(valuePreset.value, 10);
-      if (Number.isFinite(presetValue)) {
-        action.value = clamp(presetValue, 0, 255);
-      }
     }
   });
 }
@@ -1792,11 +1760,6 @@ function createActionRow(action, index, group) {
   const tools = document.createElement("div");
   tools.className = "row-tools";
 
-  const jumpButton = document.createElement("button");
-  jumpButton.type = "button";
-  jumpButton.addEventListener("click", () => seekToIndex(index));
-  applyIconButton(jumpButton, "go", "Go to this cue");
-
   const duplicateButton = document.createElement("button");
   duplicateButton.type = "button";
   duplicateButton.addEventListener("click", () => duplicateAction(index));
@@ -1807,7 +1770,7 @@ function createActionRow(action, index, group) {
   removeButton.addEventListener("click", () => removeAction(index));
   applyIconButton(removeButton, "delete", "Delete cue");
 
-  tools.append(jumpButton, duplicateButton, removeButton);
+  tools.append(duplicateButton, removeButton);
   if (toolsCell) {
     toolsCell.append(tools);
   }
@@ -2471,15 +2434,11 @@ function createInput({ type, value, placeholder, min, max, step }) {
 function createChannelField(action, index, actionId) {
   const wrapper = document.createElement("div");
   wrapper.className = "preset-select";
+  wrapper.classList.add("preset-select--channel");
 
   const select = document.createElement("select");
   setActionFieldMetadata(select, actionId, "channelPreset");
   select.addEventListener("change", (event) => handleChannelPresetChange(event, index));
-
-  const customOption = document.createElement("option");
-  customOption.value = "custom";
-  customOption.textContent = "Custom…";
-  select.append(customOption);
 
   const sortedPresets = getSortedChannelPresets();
   let selectedPreset = null;
@@ -2498,32 +2457,16 @@ function createChannelField(action, index, actionId) {
     action.channelPresetId = null;
   }
 
+  if (!selectedPreset && sortedPresets.length) {
+    selectedPreset = sortedPresets[0];
+    applyChannelPresetToAction(action, selectedPreset);
+  }
+
   if (selectedPreset) {
     select.value = selectedPreset.id;
-  } else {
-    select.value = "custom";
   }
 
-  const input = createInput({
-    type: "number",
-    value: action.channel,
-    min: 1,
-    max: 512,
-    step: 1,
-  });
-  input.classList.add("input--compact-number");
-  setActionFieldMetadata(input, actionId, "channel");
-  input.addEventListener("change", (event) => handleChannelNumberChange(event, index));
-  if (selectedPreset) {
-    input.value = selectedPreset.channel;
-    input.disabled = true;
-    input.title = "Channel is set by preset";
-  } else {
-    input.disabled = false;
-    input.title = "";
-  }
-
-  wrapper.append(select, input);
+  wrapper.append(select);
   return wrapper;
 }
 
@@ -2699,7 +2642,7 @@ function handleAddRowToGroup(stepId) {
     {
       stepId,
       insertIndex,
-      focusField: "channel",
+      focusField: "channelPreset",
     },
   );
 }
@@ -2768,15 +2711,6 @@ function handleValueNumberInput(event, index, slider) {
   updateActiveActionHighlight(lastKnownTimelineSeconds);
 }
 
-function handleChannelNumberChange(event, index) {
-  const action = actions[index];
-  if (action) {
-    action.channelPresetId = null;
-    action.valuePresetId = null;
-  }
-  handleNumberChange(event, index, "channel", 1, 512);
-}
-
 function handleValueNumberChange(event, index) {
   const action = actions[index];
   if (action) {
@@ -2802,40 +2736,82 @@ function handleFadeChange(event, index) {
   queuePreviewSync();
 }
 
+function applyChannelPresetToAction(action, preset) {
+  if (!action || !preset) return;
+  action.channelPresetId = preset.id;
+  const presetChannel = Number.parseInt(preset.channel, 10);
+  if (Number.isFinite(presetChannel)) {
+    action.channel = clamp(presetChannel, 1, 512);
+  }
+
+  if (Array.isArray(preset.values) && preset.values.length) {
+    let selectedValue = preset.values.find((value) => value.id === action.valuePresetId) || null;
+    if (!selectedValue) {
+      const numeric = Number.parseInt(action.value, 10);
+      if (Number.isFinite(numeric)) {
+        selectedValue =
+          preset.values.find((value) => Number.isFinite(value.value) && value.value === numeric) || null;
+      }
+    }
+    const fallbackValue = selectedValue || preset.values[0];
+    action.valuePresetId = fallbackValue.id;
+    const valueNumber = Number.parseInt(fallbackValue.value, 10);
+    if (Number.isFinite(valueNumber)) {
+      action.value = clamp(valueNumber, 0, 255);
+    }
+  } else {
+    action.valuePresetId = null;
+  }
+}
+
+function applyChannelPresetToTemplateRow(row, preset) {
+  if (!row || !preset || row.type === TEMPLATE_ROW_TYPES.DELAY) return;
+  row.channelPresetId = preset.id;
+  const presetChannel = Number.parseInt(preset.channel, 10);
+  if (Number.isFinite(presetChannel)) {
+    row.channel = clamp(presetChannel, 1, 512);
+  }
+
+  if (Array.isArray(preset.values) && preset.values.length) {
+    let selectedValue = preset.values.find((value) => value.id === row.valuePresetId) || null;
+    if (!selectedValue) {
+      const numeric = Number.parseInt(row.value, 10);
+      if (Number.isFinite(numeric)) {
+        selectedValue =
+          preset.values.find((value) => Number.isFinite(value.value) && value.value === numeric) || null;
+      }
+    }
+    const fallbackValue = selectedValue || preset.values[0];
+    row.valuePresetId = fallbackValue.id;
+    const valueNumber = Number.parseInt(fallbackValue.value, 10);
+    if (Number.isFinite(valueNumber)) {
+      row.value = clamp(valueNumber, 0, 255);
+    }
+  } else {
+    row.valuePresetId = null;
+  }
+}
+
 function handleChannelPresetChange(event, index) {
   const selectedId = event.target.value;
   const action = actions[index];
   if (!action) return;
 
-  if (selectedId && selectedId !== "custom") {
-    const preset = channelPresets.find((item) => item.id === selectedId);
-    if (preset) {
-      action.channelPresetId = preset.id;
-      const presetChannel = Number.parseInt(preset.channel, 10);
-      if (Number.isFinite(presetChannel)) {
-        action.channel = clamp(presetChannel, 1, 512);
-      }
-
-      if (Array.isArray(preset.values) && preset.values.length) {
-        const existing = preset.values.find((value) => value.id === action.valuePresetId);
-        const selectedValue = existing || preset.values[0];
-        action.valuePresetId = selectedValue.id;
-        const valueNumber = Number.parseInt(selectedValue.value, 10);
-        if (Number.isFinite(valueNumber)) {
-          action.value = clamp(valueNumber, 0, 255);
-        }
-      } else {
-        action.valuePresetId = null;
-      }
-
-      renderActions();
-      queuePreviewSync();
-      return;
-    }
+  const preset = channelPresets.find((item) => item.id === selectedId);
+  if (preset) {
+    applyChannelPresetToAction(action, preset);
+    renderActions();
+    queuePreviewSync();
+    return;
   }
 
-  action.channelPresetId = null;
-  action.valuePresetId = null;
+  const fallback = getSortedChannelPresets()[0];
+  if (fallback) {
+    applyChannelPresetToAction(action, fallback);
+  } else {
+    action.channelPresetId = null;
+    action.valuePresetId = null;
+  }
   renderActions();
   queuePreviewSync();
 }
@@ -2883,6 +2859,18 @@ function seekToIndex(index) {
 
 function addAction(action, options = {}) {
   const newAction = { ...DEFAULT_ACTION, ...action };
+  if (newAction.channelPresetId) {
+    const preset = channelPresets.find((item) => item.id === newAction.channelPresetId);
+    if (preset) {
+      applyChannelPresetToAction(newAction, preset);
+    }
+  }
+  if (!newAction.channelPresetId) {
+    const fallback = getSortedChannelPresets()[0];
+    if (fallback) {
+      applyChannelPresetToAction(newAction, fallback);
+    }
+  }
   const actionId = getActionLocalId(newAction);
   const stepId = setActionStepId(newAction, options.stepId);
   const insertIndex =
@@ -2895,7 +2883,7 @@ function addAction(action, options = {}) {
     options.focusDescriptor ||
     (options.focusField
       ? { kind: "action", actionId, field: options.focusField }
-      : { kind: "action", actionId, field: "channel" });
+      : { kind: "action", actionId, field: "channelPreset" });
 
   renderActions({ preserveFocus: focusDescriptor });
   setHighlightedStep(stepId);
@@ -2922,7 +2910,7 @@ function duplicateAction(index) {
     channelPresetId: original.channelPresetId,
     valuePresetId: original.valuePresetId,
   };
-  addAction(copy, { stepId, insertIndex: index + 1, focusField: "channel" });
+  addAction(copy, { stepId, insertIndex: index + 1, focusField: "channelPreset" });
 }
 
 function sortActions(list) {
@@ -3777,7 +3765,7 @@ function createTemplateRowDefaults(overrides = {}) {
     };
   }
 
-  return {
+  const row = {
     id: overrides.id || generateId("templateRow"),
     type,
     channel: clamp(Number.parseInt(overrides.channel, 10) || 1, 1, 512),
@@ -3792,6 +3780,22 @@ function createTemplateRowDefaults(overrides = {}) {
         ? overrides.valuePresetId
         : null,
   };
+
+  if (row.channelPresetId) {
+    const preset = getChannelPreset(row.channelPresetId);
+    if (preset) {
+      applyChannelPresetToTemplateRow(row, preset);
+    }
+  }
+
+  if (!row.channelPresetId) {
+    const fallback = getSortedChannelPresets()[0];
+    if (fallback) {
+      applyChannelPresetToTemplateRow(row, fallback);
+    }
+  }
+
+  return row;
 }
 
 function createLightTemplateDefaults(overrides = {}) {
@@ -4353,6 +4357,7 @@ function formatTemplateRowLabel(template, row, index) {
 function createTemplateChannelField(templateId, row) {
   const wrapper = document.createElement("div");
   wrapper.className = "preset-select";
+  wrapper.classList.add("preset-select--channel");
 
   const select = document.createElement("select");
   select.dataset.templateId = templateId;
@@ -4361,11 +4366,6 @@ function createTemplateChannelField(templateId, row) {
   select.addEventListener("change", (event) =>
     handleTemplateRowChannelPresetChange(templateId, row.id, event),
   );
-
-  const customOption = document.createElement("option");
-  customOption.value = "";
-  customOption.textContent = "Custom…";
-  select.append(customOption);
 
   const presets = getSortedChannelPresets();
   let selectedPreset = null;
@@ -4380,31 +4380,16 @@ function createTemplateChannelField(templateId, row) {
     }
   });
 
+  if (!selectedPreset && presets.length) {
+    selectedPreset = presets[0];
+    applyChannelPresetToTemplateRow(row, selectedPreset);
+  }
+
   if (selectedPreset) {
     select.value = selectedPreset.id;
-  } else {
-    select.value = "";
   }
 
-  const input = createInput({ type: "number", value: row.channel, min: 1, max: 512, step: 1 });
-  input.classList.add("input--compact-number");
-  input.dataset.templateId = templateId;
-  input.dataset.rowId = row.id;
-  input.dataset.field = "template-channel";
-  input.addEventListener("change", (event) =>
-    handleTemplateRowChannelInput(templateId, row.id, event),
-  );
-
-  if (selectedPreset && Number.isFinite(selectedPreset.channel)) {
-    input.value = clamp(Number.parseInt(selectedPreset.channel, 10) || 1, 1, 512);
-    input.disabled = true;
-    input.title = "Channel is set by preset";
-  } else {
-    input.disabled = false;
-    input.title = "";
-  }
-
-  wrapper.append(select, input);
+  wrapper.append(select);
   return wrapper;
 }
 
@@ -4697,7 +4682,7 @@ function addRowToLightTemplate(templateId) {
   template.rows.push(newRow);
   saveLightTemplates();
   renderLightTemplates({
-    preserveFocus: { templateId, rowId: newRow.id, field: "template-channel" },
+    preserveFocus: { templateId, rowId: newRow.id, field: "template-channel-preset" },
   });
   syncTemplateInstances(templateId);
 }
@@ -4744,7 +4729,9 @@ function duplicateTemplateRow(templateId, rowId) {
       templateId,
       rowId: clone.id,
       field:
-        clone.type === TEMPLATE_ROW_TYPES.DELAY ? "template-delay-duration" : "template-channel",
+        clone.type === TEMPLATE_ROW_TYPES.DELAY
+          ? "template-delay-duration"
+          : "template-channel-preset",
     },
   });
   syncTemplateInstances(templateId);
@@ -4792,46 +4779,21 @@ function handleTemplateRowChannelPresetChange(templateId, rowId, event) {
   const row = getTemplateRow(templateId, rowId);
   if (!row || row.type === TEMPLATE_ROW_TYPES.DELAY) return;
   const selectedId = event.target.value;
-  if (selectedId) {
-    row.channelPresetId = selectedId;
-    const preset = getChannelPreset(selectedId);
-    if (preset) {
-      const channelNumber = Number.parseInt(preset.channel, 10);
-      if (Number.isFinite(channelNumber)) {
-        row.channel = clamp(channelNumber, 1, 512);
-      }
-      if (!Array.isArray(preset.values) || !preset.values.some((value) => value.id === row.valuePresetId)) {
-        row.valuePresetId = null;
-      }
-    }
+  const preset = getChannelPreset(selectedId);
+  if (preset) {
+    applyChannelPresetToTemplateRow(row, preset);
   } else {
-    row.channelPresetId = null;
+    const fallback = getSortedChannelPresets()[0];
+    if (fallback) {
+      applyChannelPresetToTemplateRow(row, fallback);
+    } else {
+      row.channelPresetId = null;
+      row.valuePresetId = null;
+    }
   }
   const focusDescriptor = describeFocusedTemplateField(event.target);
   saveLightTemplates();
   renderLightTemplates({ preserveFocus: focusDescriptor });
-  syncTemplateInstances(templateId);
-}
-
-function handleTemplateRowChannelInput(templateId, rowId, event) {
-  const template = getLightTemplate(templateId);
-  if (!template) return;
-  const row = getTemplateRow(templateId, rowId);
-  if (!row || row.type === TEMPLATE_ROW_TYPES.DELAY) return;
-  const raw = Number.parseInt(event.target.value, 10);
-  if (Number.isNaN(raw)) {
-    event.target.classList.add("invalid");
-    event.target.setCustomValidity("Channel must be between 1 and 512.");
-    event.target.reportValidity();
-    return;
-  }
-  const clamped = clamp(raw, 1, 512);
-  event.target.value = clamped;
-  event.target.classList.remove("invalid");
-  event.target.setCustomValidity("");
-  row.channel = clamped;
-  row.channelPresetId = null;
-  saveLightTemplates();
   syncTemplateInstances(templateId);
 }
 

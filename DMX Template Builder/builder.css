@@ -1261,6 +1261,10 @@ body {
   align-items: center;
 }
 
+.preset-select--channel {
+  grid-template-columns: minmax(140px, 1fr);
+}
+
 .preset-select select {
   width: auto;
   min-width: max-content;
