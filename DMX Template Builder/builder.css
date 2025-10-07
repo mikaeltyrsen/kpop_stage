@@ -1126,14 +1126,13 @@ body {
 }
 
 .action-group-header__time-input {
-  width: 8.5rem;
   padding: 0.35rem 0.4rem;
   border-radius: 0.4rem;
   border: 1px solid rgba(148, 163, 184, 0.4);
   background: rgba(15, 23, 42, 0.75);
   color: inherit;
   font: inherit;
-  width: auto;
+  width: auto !important;
 }
 
 .action-group-header__time-input:focus-visible {
