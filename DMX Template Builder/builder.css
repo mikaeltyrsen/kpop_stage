@@ -1092,6 +1092,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  width: 100%;
 }
 
 .action-group-header__toggle {
@@ -1132,6 +1133,7 @@ body {
   background: rgba(15, 23, 42, 0.75);
   color: inherit;
   font: inherit;
+  width: auto;
 }
 
 .action-group-header__time-input:focus-visible {
