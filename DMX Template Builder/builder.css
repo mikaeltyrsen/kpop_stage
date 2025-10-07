@@ -1005,7 +1005,11 @@ body {
 
 .actions-grid__cell-group > .actions-grid__cell {
   min-width: 0;
-  grow: 1;
+  
+}
+
+.actions-grid__cell-group > .actions-grid__cell[data-column=value] {
+  flex-grow: 1;
 }
 
 .actions-grid__header-group {
