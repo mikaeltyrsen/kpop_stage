@@ -20,6 +20,24 @@ body {
   flex-direction: column;
 }
 
+button {
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.75);
+  color: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  background: rgba(129, 140, 248, 0.2);
+}
+
+button:focus-visible {
+  outline: 2px solid rgba(129, 140, 248, 0.6);
+  outline-offset: 1px;
+}
+
 .builder-header {
   padding: 1.5rem clamp(1rem, 3vw, 2.5rem);
   background: linear-gradient(135deg, #111827 0%, #1f2937 40%, #312e81 100%);
