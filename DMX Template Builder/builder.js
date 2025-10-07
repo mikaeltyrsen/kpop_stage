@@ -357,9 +357,15 @@ function setActiveTab(tab) {
   if (normalized === activeTab) {
     return;
   }
+  const previousTab = activeTab;
   activeTab = normalized;
+  if (previousTab === "templates" && normalized !== "templates" && activeLightTemplateId) {
+    activeLightTemplateId = null;
+    renderLightTemplates();
+  }
   updateTabSelection();
   updateWorkspaceVisibility();
+  queuePreviewSync();
 }
 
 function resetActionIdCounter() {
@@ -744,8 +750,12 @@ async function syncPreview(options = {}) {
     }
     throw error;
   }
+  const blackoutChannels = collectChannelsForBlackout({
+    templateId: shouldPreviewActiveTemplateOnly() ? activeLightTemplateId : null,
+  });
+  const preparedWithBlackout = prependBlackoutActions(prepared, blackoutChannels);
   try {
-    await sendPreview(prepared);
+    await sendPreview(preparedWithBlackout);
   } catch (error) {
     if (options.showError) {
       showStatus(error.message || "Unable to update preview.", "error");
@@ -804,6 +814,85 @@ function prepareTemplatePreviewActions(templateId) {
   }
 
   return sortActions(previewActions);
+}
+
+function collectChannelsForBlackout(options = {}) {
+  const unique = new Set();
+
+  if (Array.isArray(channelPresets)) {
+    channelPresets.forEach((preset) => {
+      const channelNumber = Number.parseInt(preset?.channel, 10);
+      if (Number.isFinite(channelNumber)) {
+        unique.add(clamp(channelNumber, 1, 512));
+      }
+    });
+  }
+
+  if (Array.isArray(actions)) {
+    actions.forEach((action) => {
+      const channelNumber = Number.parseInt(action?.channel, 10);
+      if (Number.isFinite(channelNumber)) {
+        unique.add(clamp(channelNumber, 1, 512));
+      }
+    });
+  }
+
+  if (options.templateId) {
+    const template = getLightTemplate(options.templateId);
+    const templateChannels = collectTemplateChannels(template);
+    templateChannels.forEach((channel) => {
+      unique.add(clamp(channel, 1, 512));
+    });
+  }
+
+  const channels = Array.from(unique).sort((a, b) => a - b);
+  if (channels.length) {
+    return channels;
+  }
+
+  const fallback = [];
+  for (let channel = 1; channel <= 512; channel += 1) {
+    fallback.push(channel);
+  }
+  return fallback;
+}
+
+function createBlackoutActionsForChannels(channels, timecode = DEFAULT_ACTION.time) {
+  if (!Array.isArray(channels) || !channels.length) {
+    return [];
+  }
+  const unique = [];
+  const seen = new Set();
+  channels.forEach((value) => {
+    const channelNumber = Number.parseInt(value, 10);
+    if (!Number.isFinite(channelNumber)) {
+      return;
+    }
+    const clamped = clamp(channelNumber, 1, 512);
+    if (!seen.has(clamped)) {
+      seen.add(clamped);
+      unique.push(clamped);
+    }
+  });
+  if (!unique.length) {
+    return [];
+  }
+  const normalizedTime = typeof timecode === "string" && timecode ? timecode : DEFAULT_ACTION.time;
+  return unique.sort((a, b) => a - b).map((channel) => ({
+    time: normalizedTime,
+    channel,
+    value: 0,
+    fade: 0,
+  }));
+}
+
+function prependBlackoutActions(actionsList, channels, timecode = DEFAULT_ACTION.time) {
+  const source = Array.isArray(actionsList) ? [...actionsList] : [];
+  const blackout = createBlackoutActionsForChannels(channels, timecode);
+  if (!blackout.length) {
+    return source;
+  }
+  return [...blackout, ...source];
 }
 
 async function sendPreview(preparedActions) {
@@ -3765,6 +3854,7 @@ async function initLightTemplatesUI() {
 function renderLightTemplates(options = {}) {
   if (!lightTemplatesContainer || !templateDetailContainer) return;
 
+  const previousActiveTemplateId = activeLightTemplateId;
   const focusDescriptor =
     options.preserveFocus || describeFocusedTemplateField(document.activeElement);
 
@@ -3786,6 +3876,10 @@ function renderLightTemplates(options = {}) {
     focusTemplateField({ templateId: options.focusTemplateId, field: "template-name" });
   } else if (focusDescriptor) {
     focusTemplateField(focusDescriptor);
+  }
+
+  if (previousActiveTemplateId !== activeLightTemplateId && activeTab === "templates") {
+    queuePreviewSync();
   }
 }
 
