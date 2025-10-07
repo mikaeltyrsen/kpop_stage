@@ -1109,8 +1109,15 @@ def api_dmx_preview() -> Any:
     paused_raw = data.get("paused", False)
     paused = bool(paused_raw) if isinstance(paused_raw, bool) else False
 
+    template_preview = bool(data.get("template_preview"))
+
     try:
-        dmx_manager.start_preview(actions_payload, start_time=start_time, paused=paused)
+        dmx_manager.start_preview(
+            actions_payload,
+            start_time=start_time,
+            paused=paused,
+            template_preview=template_preview,
+        )
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
     except Exception:  # pragma: no cover - defensive logging

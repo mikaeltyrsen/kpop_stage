@@ -61,7 +61,7 @@ def test_start_show_resets_levels_before_running(tmp_path: Path) -> None:
     manager.start_show_for_video({"id": "video"})
 
     assert output.level_history
-    assert output.level_history[0] == [10, 20, 30, 40]
+    assert output.level_history[0] == [255, 0, 0, 0]
 
     runner: DummyRunner = manager.runner  # type: ignore[assignment]
     assert runner.stop_calls == 1
@@ -124,6 +124,40 @@ def test_preview_uses_baseline_for_levels(tmp_path: Path) -> None:
     assert output.level_history
     latest_levels = output.level_history[-1]
     assert latest_levels == [105, 20, 30]
+
+
+def test_start_show_without_instant_actions_defaults_to_zero(tmp_path: Path) -> None:
+    output = DummyOutput(channel_count=4)
+    manager = create_manager(tmp_path, output)
+    manager.update_baseline_levels([50, 60, 70, 80])
+
+    actions = [
+        DMXAction(time_seconds=1.0, channel=2, value=200, fade=0.5),
+    ]
+
+    manager.load_show_for_video = lambda _: actions  # type: ignore[assignment]
+
+    manager.start_show_for_video({"id": "video"})
+
+    assert output.level_history
+    assert output.level_history[0] == [0, 0, 0, 0]
+
+
+def test_preview_template_uses_zero_baseline(tmp_path: Path) -> None:
+    output = DummyOutput(channel_count=3)
+    manager = create_manager(tmp_path, output)
+    manager.update_baseline_levels([25, 50, 75])
+
+    raw_actions = [
+        {"time": "00:00:00", "channel": 2, "value": 100, "fade": 0},
+        {"time": "00:00:01", "channel": 3, "value": 150, "fade": 0},
+    ]
+
+    manager.start_preview(raw_actions, start_time=0.0, paused=False, template_preview=True)
+
+    assert output.level_history
+    latest_levels = output.level_history[-1]
+    assert latest_levels == [0, 100, 0]
 
 
 def test_preview_applies_zero_fade_action_at_start_time(tmp_path: Path) -> None:
@@ -231,7 +265,47 @@ def test_expand_actions_with_template_loop_infinite_conflict(tmp_path: Path) -> 
 
     expanded = manager._expand_actions_with_loops(raw_actions)
     times = [round(action.time_seconds, 6) for action in expanded]
-    assert times == pytest.approx([0.0, 1.0, 2.0, 3.0, 5.0])
+    assert times == pytest.approx([0.0, 1.0, 2.0, 3.0, 4.0, 5.0])
+
+
+def test_template_loop_stops_when_same_instance_changes_channel(tmp_path: Path) -> None:
+    output = DummyOutput(channel_count=4)
+    manager = create_manager(tmp_path, output)
+
+    raw_actions = [
+        {
+            "time": "00:00:00",
+            "channel": 1,
+            "value": 255,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+            "templateLoop": {
+                "enabled": True,
+                "count": 10,
+                "mode": "forward",
+                "duration": 1.0,
+                "channels": [1, 2],
+            },
+        },
+        {
+            "time": "00:00:00.500",
+            "channel": 2,
+            "value": 128,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+        },
+        {
+            "time": "00:00:03.200",
+            "channel": 2,
+            "value": 0,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+        },
+    ]
+
+    expanded = manager._expand_actions_with_loops(raw_actions)
+    times = [round(action.time_seconds, 6) for action in expanded]
+    assert times == pytest.approx([0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.2])
 
 
 def test_expand_actions_with_template_loop_requires_duration(tmp_path: Path) -> None:

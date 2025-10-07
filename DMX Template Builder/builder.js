@@ -4,6 +4,7 @@ const saveButton = document.getElementById("save-template");
 const exportButton = document.getElementById("export-template");
 const statusEl = document.getElementById("status-message");
 const actionsBody = document.getElementById("actions-body");
+const actionsTableWrapper = document.querySelector("#timeline-panel .table-wrapper");
 const templateInfoEl = document.getElementById("template-info");
 const videoEl = document.getElementById("preview-video");
 const rowTemplate = document.getElementById("action-row-template");
@@ -21,6 +22,7 @@ const timelineEmptyState = document.getElementById("timeline-empty-state");
 const lightTemplatesContainer = document.getElementById("light-templates");
 const templateDetailContainer = document.getElementById("template-detail");
 const addLightTemplateButton = document.getElementById("add-light-template");
+const lightTemplateFilterInput = document.getElementById("light-template-filter");
 const templatePickerEl = document.getElementById("template-picker");
 const templatePickerSearch = document.getElementById("template-picker-search");
 const templatePickerResults = document.getElementById("template-picker-results");
@@ -55,6 +57,7 @@ let lightTemplates = [];
 let activeLightTemplateId = null;
 let templatePickerStepId = null;
 let templateInstanceCounter = 0;
+let lightTemplateFilterQuery = "";
 
 const TEMPLATE_INSTANCE_PROPERTY = "__templateInstanceId";
 const TEMPLATE_ROW_PROPERTY = "__templateRowId";
@@ -540,17 +543,91 @@ function setActionFieldMetadata(element, actionId, field) {
   element.dataset.field = field;
 }
 
+function scrollStepIntoView(stepId, options = {}) {
+  if (!stepId || !actionsBody) {
+    return;
+  }
+
+  const target = actionsBody.querySelector(`[data-group-id="${stepId}"]`);
+  if (!target) {
+    return;
+  }
+
+  const containerOption = options.container;
+  let container = null;
+  if (containerOption instanceof HTMLElement) {
+    container = containerOption;
+  } else if (actionsTableWrapper instanceof HTMLElement) {
+    container = actionsTableWrapper;
+  }
+
+  const behavior = options.behavior || "smooth";
+
+  if (container) {
+    const containerRect =
+      typeof container.getBoundingClientRect === "function"
+        ? container.getBoundingClientRect()
+        : null;
+    const targetRect =
+      typeof target.getBoundingClientRect === "function" ? target.getBoundingClientRect() : null;
+
+    if (containerRect && targetRect) {
+      const margin =
+        typeof options.margin === "number" && Number.isFinite(options.margin)
+          ? options.margin
+          : 16;
+      const topDelta = targetRect.top - containerRect.top - margin;
+      const bottomDelta = targetRect.bottom - containerRect.bottom + margin;
+
+      if (topDelta < 0) {
+        if (typeof container.scrollBy === "function") {
+          container.scrollBy({ top: topDelta, behavior });
+        } else {
+          container.scrollTop += topDelta;
+        }
+        return;
+      }
+
+      if (bottomDelta > 0) {
+        if (typeof container.scrollBy === "function") {
+          container.scrollBy({ top: bottomDelta, behavior });
+        } else {
+          container.scrollTop += bottomDelta;
+        }
+        return;
+      }
+
+      return;
+    }
+  }
+
+  try {
+    target.scrollIntoView({
+      behavior,
+      block: options.block || "nearest",
+      inline: "nearest",
+    });
+  } catch (error) {
+    target.scrollIntoView();
+  }
+}
+
 function handleAddStep() {
   const time = getCurrentVideoTimecode();
   const stepId = generateStepId();
   collapsedStepIds.delete(stepId);
-  addAction(
+  const result = addAction(
     { time },
     {
       stepId,
       focusDescriptor: { kind: "group", groupId: stepId, field: "step-time" },
     },
   );
+  if (result && result.stepId) {
+    window.requestAnimationFrame(() => {
+      scrollStepIntoView(result.stepId, { behavior: "smooth" });
+    });
+  }
 }
 
 function getCurrentVideoTimecode() {
@@ -689,29 +766,44 @@ function prepareTemplatePreviewActions(templateId) {
   if (!template) {
     return [];
   }
-  const rows = Array.isArray(template.rows) ? template.rows : [];
-  if (!rows.length) {
+  const { entries, totalDuration } = buildTemplateTimeline(template);
+  if (!entries.length) {
     return [];
   }
 
-  const previewRows = rows.map((row) => {
-    const channelValue = Number.parseInt(row.channel, 10);
-    const valueValue = Number.parseInt(row.value, 10);
-    const fadeValue = Number.parseFloat(row.fade);
+  const previewActions = [];
+  const duration = Number.isFinite(totalDuration) ? Number(totalDuration) : 0;
+  const hasDuration = duration > 0;
+  let loopCount = 1;
+  if (hasDuration) {
+    const targetSeconds = 12;
+    const maxLoops = 6;
+    loopCount = Math.max(2, Math.min(maxLoops, Math.ceil(targetSeconds / duration)));
+  }
 
-    const channel = clamp(Number.isFinite(channelValue) ? channelValue : 1, 1, 512);
-    const value = clamp(Number.isFinite(valueValue) ? valueValue : 0, 0, 255);
-    const normalizedFade = Number.isFinite(fadeValue) ? Math.max(0, fadeValue) : 0;
+  for (let iteration = 0; iteration < loopCount; iteration += 1) {
+    const baseOffset = hasDuration ? duration * iteration : 0;
+    entries.forEach(({ row, offset }) => {
+      if (!row || row.type === TEMPLATE_ROW_TYPES.DELAY) {
+        return;
+      }
+      const channelValue = Number.parseInt(row.channel, 10);
+      const valueValue = Number.parseInt(row.value, 10);
+      const fadeValue = Number.parseFloat(row.fade);
+      const channel = clamp(Number.isFinite(channelValue) ? channelValue : 1, 1, 512);
+      const value = clamp(Number.isFinite(valueValue) ? valueValue : 0, 0, 255);
+      const normalizedFade = Number.isFinite(fadeValue) ? Math.max(0, fadeValue) : 0;
+      const seconds = Number(((baseOffset + offset) || 0).toFixed(6));
+      previewActions.push({
+        time: secondsToTimecode(seconds),
+        channel,
+        value,
+        fade: Number(normalizedFade.toFixed(3)),
+      });
+    });
+  }
 
-    return {
-      time: DEFAULT_ACTION.time,
-      channel,
-      value,
-      fade: Number(normalizedFade.toFixed(3)),
-    };
-  });
-
-  return sortActions(previewRows);
+  return sortActions(previewActions);
 }
 
 async function sendPreview(preparedActions) {
@@ -729,6 +821,7 @@ async function sendPreview(preparedActions) {
       actions: preparedActions,
       start_time: startTime,
       paused: isPaused,
+      template_preview: shouldPreviewActiveTemplateOnly(),
     }),
   });
   if (!response.ok) {
@@ -3495,6 +3588,60 @@ function buildLightTemplatePayload() {
   }));
 }
 
+function getLightTemplateSortKey(template) {
+  if (!template || typeof template !== "object") {
+    return { hasName: false, name: "", id: "" };
+  }
+  const name = typeof template.name === "string" ? template.name.trim() : "";
+  return {
+    hasName: Boolean(name),
+    name: name.toLowerCase(),
+    exactName: name,
+    id: typeof template.id === "string" ? template.id : "",
+  };
+}
+
+function getSortedLightTemplates(list = lightTemplates) {
+  const templates = Array.isArray(list) ? [...list] : [];
+  return templates.sort((a, b) => {
+    const aKey = getLightTemplateSortKey(a);
+    const bKey = getLightTemplateSortKey(b);
+    if (aKey.hasName && !bKey.hasName) {
+      return -1;
+    }
+    if (!aKey.hasName && bKey.hasName) {
+      return 1;
+    }
+    if (aKey.hasName && bKey.hasName) {
+      const compare = aKey.name.localeCompare(bKey.name, undefined, {
+        sensitivity: "base",
+        numeric: true,
+      });
+      if (compare !== 0) {
+        return compare;
+      }
+      const exactCompare = aKey.exactName.localeCompare(bKey.exactName, undefined, {
+        numeric: true,
+      });
+      if (exactCompare !== 0) {
+        return exactCompare;
+      }
+    }
+    return aKey.id.localeCompare(bKey.id);
+  });
+}
+
+function getLightTemplatesForList() {
+  const sorted = getSortedLightTemplates();
+  const query = (lightTemplateFilterQuery || "").trim().toLowerCase();
+  if (!query) {
+    return sorted;
+  }
+  return sorted.filter((template) =>
+    formatLightTemplateTitle(template).toLowerCase().includes(query),
+  );
+}
+
 async function persistLightTemplates(templates) {
   const response = await fetchApi("/light-templates", {
     method: "PUT",
@@ -3576,6 +3723,18 @@ async function initLightTemplatesUI() {
     });
   }
 
+  if (lightTemplateFilterInput) {
+    const handleFilterInput = () => {
+      lightTemplateFilterQuery = lightTemplateFilterInput.value || "";
+      renderLightTemplateList();
+    };
+    lightTemplateFilterQuery = lightTemplateFilterInput.value || "";
+    lightTemplateFilterInput.addEventListener("input", handleFilterInput);
+    lightTemplateFilterInput.addEventListener("search", handleFilterInput);
+  } else {
+    lightTemplateFilterQuery = "";
+  }
+
   templatePickerCloseElements.forEach((element) => {
     element.addEventListener("click", () => closeTemplatePicker());
   });
@@ -3644,7 +3803,18 @@ function renderLightTemplateList() {
     return;
   }
 
-  lightTemplates.forEach((template) => {
+  const templatesForList = getLightTemplatesForList();
+
+  if (!templatesForList.length) {
+    const empty = document.createElement("li");
+    empty.className = "template-list__empty";
+    empty.textContent = "No templates match your filter.";
+    empty.setAttribute("role", "presentation");
+    lightTemplatesContainer.append(empty);
+    return;
+  }
+
+  templatesForList.forEach((template) => {
     const item = document.createElement("li");
     item.className = "template-list__item";
     item.dataset.templateId = template.id;
@@ -3902,38 +4072,6 @@ function collectTemplateChannels(template) {
     }
   });
   return Array.from(unique).sort((a, b) => a - b);
-}
-
-function updateTemplateDetailHeading(template) {
-  if (!templateDetailContainer || !template) return;
-  const card = templateDetailContainer.querySelector(
-    `.template-card[data-template-id="${template.id}"]`,
-  );
-  if (!card) return;
-  const title = card.querySelector(".template-card__title");
-  if (title) {
-    title.textContent = formatLightTemplateTitle(template);
-  }
-  const meta = card.querySelector(".template-list__meta");
-  if (meta) {
-    meta.textContent = formatTemplateRowCount(template);
-  }
-}
-
-function updateTemplateListEntry(template) {
-  if (!lightTemplatesContainer || !template) return;
-  const item = lightTemplatesContainer.querySelector(
-    `.template-list__item[data-template-id="${template.id}"]`,
-  );
-  if (!item) return;
-  const title = item.querySelector(".template-list__title");
-  if (title) {
-    title.textContent = formatLightTemplateTitle(template);
-  }
-  const meta = item.querySelector(".template-list__meta");
-  if (meta) {
-    meta.textContent = formatTemplateRowCount(template);
-  }
 }
 
 function createTemplateRowsTable(template) {
@@ -4301,11 +4439,9 @@ function handleTemplateNameInput(templateId, event) {
   const template = getLightTemplate(templateId);
   if (!template) return;
   template.name = event.target.value;
+  const focusDescriptor = describeFocusedTemplateField(event.target);
   saveLightTemplates();
-  updateTemplateDetailHeading(template);
-  updateTemplateListEntry(template);
-  const query = templatePickerSearch ? templatePickerSearch.value || "" : "";
-  renderTemplatePickerResults(query);
+  renderLightTemplates({ preserveFocus: focusDescriptor });
 }
 
 function addLightTemplate() {
@@ -4926,11 +5062,12 @@ function renderTemplatePickerResults(query) {
   if (!templatePickerResults) return;
   templatePickerResults.innerHTML = "";
   const normalized = (query || "").trim().toLowerCase();
+  const baseList = getSortedLightTemplates(lightTemplates);
   const items = normalized
-    ? lightTemplates.filter((template) =>
+    ? baseList.filter((template) =>
         (template.name || "").toLowerCase().includes(normalized),
       )
-    : [...lightTemplates];
+    : baseList;
 
   if (!items.length) {
     const emptyItem = document.createElement("li");

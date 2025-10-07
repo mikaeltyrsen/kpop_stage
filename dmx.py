@@ -338,6 +338,8 @@ class DMXOutput:
         self._lock = threading.Lock()
         self._dirty = False
         self._stop_event = threading.Event()
+        self._transition_lock = threading.Lock()
+        self._channel_transitions: Dict[int, threading.Event] = {}
         self._sender, self._sender_cleanup = self._build_sender(universe)
         self._thread = threading.Thread(target=self._run_sender, daemon=True)
         self._thread.start()
@@ -511,10 +513,28 @@ class DMXOutput:
                 LOGGER.exception("Error while sending DMX data")
             self._stop_event.wait(1.0 / DMX_FPS)
 
-    def set_channel(self, channel: int, value: int) -> None:
+    def _cancel_channel_transition_locked(self, channel: int) -> None:
+        cancel = self._channel_transitions.pop(channel, None)
+        if cancel:
+            cancel.set()
+
+    def _cancel_channel_transition(self, channel: int) -> None:
+        with self._transition_lock:
+            self._cancel_channel_transition_locked(channel)
+
+    def _cancel_all_transitions(self) -> None:
+        with self._transition_lock:
+            events = list(self._channel_transitions.values())
+            self._channel_transitions.clear()
+        for cancel in events:
+            cancel.set()
+
+    def set_channel(self, channel: int, value: int, *, _cancel_transition: bool = True) -> None:
         idx = channel - 1
         if idx < 0 or idx >= self.channel_count:
             raise ValueError("Channel out of range")
+        if _cancel_transition:
+            self._cancel_channel_transition(channel)
         with self._lock:
             self._levels[idx] = _clamp(value, 0, 255)
             self._dirty = True
@@ -536,11 +556,13 @@ class DMXOutput:
         values = list(levels)
         if len(values) != self.channel_count:
             raise ValueError("Levels iterable must contain exactly 512 values")
+        self._cancel_all_transitions()
         with self._lock:
             self._levels[:] = [_clamp(v, 0, 255) for v in values]
             self._dirty = True
 
     def blackout(self) -> None:
+        self._cancel_all_transitions()
         with self._lock:
             if any(self._levels):
                 self._levels = [0] * self.channel_count
@@ -562,23 +584,37 @@ class DMXOutput:
         steps = max(int(duration * DMX_FPS), 1)
         step_duration = duration / steps
 
+        cancel_event = threading.Event()
+        with self._transition_lock:
+            self._cancel_channel_transition_locked(channel)
+            self._channel_transitions[channel] = cancel_event
+
         def _worker() -> None:
-            for step in range(1, steps + 1):
-                if stop_event and stop_event.is_set():
-                    return
-                ratio = step / steps
-                current = round(start_value + (value - start_value) * ratio)
-                self.set_channel(channel, current)
-                if stop_event:
-                    if stop_event.wait(step_duration):
+            try:
+                for step in range(1, steps + 1):
+                    if cancel_event.is_set():
                         return
-                else:
-                    time.sleep(step_duration)
+                    if stop_event and stop_event.is_set():
+                        return
+                    ratio = step / steps
+                    current = round(start_value + (value - start_value) * ratio)
+                    self.set_channel(channel, current, _cancel_transition=False)
+                    if stop_event:
+                        if stop_event.wait(step_duration):
+                            return
+                    else:
+                        time.sleep(step_duration)
+            finally:
+                with self._transition_lock:
+                    existing = self._channel_transitions.get(channel)
+                    if existing is cancel_event:
+                        self._channel_transitions.pop(channel, None)
 
         thread = threading.Thread(target=_worker, daemon=True)
         thread.start()
 
     def shutdown(self) -> None:
+        self._cancel_all_transitions()
         self._stop_event.set()
         if self._thread.is_alive():
             self._thread.join(timeout=1.0)
@@ -691,7 +727,7 @@ class DMXShowManager:
     ) -> List[DMXAction]:
         parsed_entries: List[Dict[str, Any]] = []
         instances: Dict[str, Dict[str, Any]] = {}
-        channel_times: Dict[int, List[tuple[float, Optional[str]]]] = {}
+        channel_times: Dict[int, List[Dict[str, Any]]] = {}
 
         for raw in raw_actions:
             if not isinstance(raw, dict):
@@ -706,7 +742,13 @@ class DMXShowManager:
                 "loop": loop_settings,
             }
             parsed_entries.append(entry)
-            channel_times.setdefault(action.channel, []).append((action.time_seconds, instance_id))
+            channel_times.setdefault(action.channel, []).append(
+                {
+                    "time": action.time_seconds,
+                    "instance_id": instance_id,
+                    "entry": entry,
+                }
+            )
             if instance_id:
                 info = instances.setdefault(instance_id, {"entries": [], "loop": None})
                 info["entries"].append(entry)
@@ -714,7 +756,7 @@ class DMXShowManager:
                     info["loop"] = loop_settings
 
         for times in channel_times.values():
-            times.sort(key=lambda item: item[0])
+            times.sort(key=lambda item: item["time"])
 
         expanded: List[DMXAction] = [entry["action"] for entry in parsed_entries]
         epsilon = 1e-6
@@ -731,10 +773,6 @@ class DMXShowManager:
 
             ordered_entries = sorted(entries, key=lambda item: item["action"].time_seconds)
             base_start = ordered_entries[0]["action"].time_seconds
-            relative_offsets = [
-                (item["action"].time_seconds - base_start, item["action"])
-                for item in ordered_entries
-            ]
 
             channels = list(loop_settings.channels)
             if not channels:
@@ -742,12 +780,32 @@ class DMXShowManager:
             if not channels:
                 continue
 
+            relative_offsets: List[tuple[float, DMXAction]] = []
+            loop_entry_ids: set[int] = set()
+            loop_window = max(duration - epsilon, 0.0)
+
+            for entry in ordered_entries:
+                action = entry["action"]
+                if action.channel not in channels:
+                    continue
+                offset = action.time_seconds - base_start
+                if offset < -epsilon:
+                    continue
+                if offset > loop_window + epsilon:
+                    continue
+                relative_offsets.append((offset, action))
+                loop_entry_ids.add(id(entry))
+
+            if not relative_offsets:
+                continue
+
             conflict_time: Optional[float] = None
             for channel in channels:
-                for time_value, owner in channel_times.get(channel, []):
+                for entry_info in channel_times.get(channel, []):
+                    time_value = entry_info["time"]
                     if time_value <= base_start + epsilon:
                         continue
-                    if owner == instance_id:
+                    if id(entry_info["entry"]) in loop_entry_ids:
                         continue
                     if conflict_time is None or time_value < conflict_time:
                         conflict_time = time_value
@@ -756,7 +814,9 @@ class DMXShowManager:
             available_iterations: Optional[int]
             if conflict_time is not None:
                 available_time = max(0.0, conflict_time - base_start)
-                available_iterations = max(1, int(math.floor((available_time + epsilon) / duration)))
+                available_iterations = max(
+                    1, int(math.floor((available_time + epsilon) / duration)) + 1
+                )
             else:
                 available_iterations = None
 
@@ -853,8 +913,16 @@ class DMXShowManager:
             )
             actions = actions + custom_actions
         self.runner.stop()
-        baseline_levels = list(self._baseline_levels)
-        self.output.set_levels(baseline_levels)
+
+        initial_levels = [0] * self.output.channel_count
+        epsilon = 0.001
+        for action in actions:
+            if action.time_seconds <= epsilon and action.fade <= 0:
+                index = action.channel - 1
+                if 0 <= index < len(initial_levels):
+                    initial_levels[index] = _clamp(action.value, 0, 255)
+
+        self.output.set_levels(initial_levels)
 
         with self._lock:
             self._has_active_show = bool(actions)
@@ -872,6 +940,8 @@ class DMXShowManager:
         raw_actions: Iterable[Dict[str, object]],
         start_time: float = 0.0,
         paused: bool = False,
+        *,
+        template_preview: bool = False,
     ) -> None:
         try:
             offset = float(start_time)
@@ -881,7 +951,10 @@ class DMXShowManager:
         actions = self._expand_actions_with_loops(raw_actions)
         ordered = sorted(actions, key=lambda action: action.time_seconds)
 
-        baseline_levels = list(self._baseline_levels)
+        if template_preview:
+            baseline_levels = [0] * self.output.channel_count
+        else:
+            baseline_levels = list(self._baseline_levels)
         levels = baseline_levels[:]
         adjusted: List[DMXAction] = []
         channel_levels: Dict[int, int] = {
