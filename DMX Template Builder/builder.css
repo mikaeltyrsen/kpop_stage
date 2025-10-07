@@ -1366,6 +1366,7 @@ body {
   align-items: center;
   gap: 0.75rem;
   justify-content: space-between;
+  width: 100%;
 }
 
 .action-group-template__details {
@@ -1409,7 +1410,7 @@ body {
   align-items: center;
   gap: 0.75rem;
   flex-wrap: nowrap;
-  flex: 1 1 16rem;
+  //flex: 1 1 16rem;
   justify-content: flex-start;
 }
 
