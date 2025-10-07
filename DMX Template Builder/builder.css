@@ -1365,9 +1365,6 @@ button:focus-visible {
   text-align: right;
 }
 
-.action-group-header__add-template {
-  border: 1px dashed rgba(148, 163, 184, 0.35);
-}
 
 .action-group-template {
   background: rgba(59, 130, 246, 0.08);
