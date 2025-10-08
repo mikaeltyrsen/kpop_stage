@@ -61,7 +61,7 @@ def test_start_show_resets_levels_before_running(tmp_path: Path) -> None:
     manager.start_show_for_video({"id": "video"})
 
     assert output.level_history
-    assert output.level_history[0] == [255, 0, 0, 0]
+    assert output.level_history[0] == [255, 20, 30, 40]
 
     runner: DummyRunner = manager.runner  # type: ignore[assignment]
     assert runner.stop_calls == 1
@@ -126,7 +126,7 @@ def test_preview_uses_baseline_for_levels(tmp_path: Path) -> None:
     assert latest_levels == [105, 20, 30]
 
 
-def test_start_show_without_instant_actions_defaults_to_zero(tmp_path: Path) -> None:
+def test_start_show_without_instant_actions_uses_baseline_levels(tmp_path: Path) -> None:
     output = DummyOutput(channel_count=4)
     manager = create_manager(tmp_path, output)
     manager.update_baseline_levels([50, 60, 70, 80])
@@ -140,7 +140,7 @@ def test_start_show_without_instant_actions_defaults_to_zero(tmp_path: Path) -> 
     manager.start_show_for_video({"id": "video"})
 
     assert output.level_history
-    assert output.level_history[0] == [0, 0, 0, 0]
+    assert output.level_history[0] == [50, 60, 70, 80]
 
 
 def test_preview_template_uses_zero_baseline(tmp_path: Path) -> None:

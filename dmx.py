@@ -967,7 +967,7 @@ class DMXShowManager:
             actions = actions + custom_actions
         self.runner.stop()
 
-        initial_levels = [0] * self.output.channel_count
+        initial_levels = list(self._baseline_levels)
         epsilon = 0.001
         for action in actions:
             if action.time_seconds <= epsilon and action.fade <= 0:
