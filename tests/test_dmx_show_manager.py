@@ -268,6 +268,42 @@ def test_expand_actions_with_template_loop_infinite_conflict(tmp_path: Path) -> 
     assert times == pytest.approx([0.0, 1.0, 2.0, 3.0, 4.0, 5.0])
 
 
+def test_expand_actions_with_template_loop_infinite_without_conflict(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(dmx, "TEMPLATE_LOOP_INFINITE_DURATION_SECONDS", 3.0)
+    output = DummyOutput(channel_count=4)
+    manager = create_manager(tmp_path, output)
+
+    raw_actions = [
+        {
+            "time": "00:00:00",
+            "channel": 1,
+            "value": 255,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+            "templateLoop": {
+                "enabled": True,
+                "infinite": True,
+                "mode": "forward",
+                "duration": 1.0,
+                "channels": [1],
+            },
+        },
+        {
+            "time": "00:00:00.500",
+            "channel": 1,
+            "value": 0,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+        },
+    ]
+
+    expanded = manager._expand_actions_with_loops(raw_actions)
+    times = [round(action.time_seconds, 6) for action in expanded]
+    assert times == pytest.approx([0.0, 0.5, 1.0, 1.5, 2.0, 2.5])
+
+
 def test_template_loop_stops_when_same_instance_changes_channel(tmp_path: Path) -> None:
     output = DummyOutput(channel_count=4)
     manager = create_manager(tmp_path, output)
