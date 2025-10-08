@@ -38,6 +38,13 @@ button:focus-visible {
   outline-offset: 1px;
 }
 
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+
 .builder-header {
   padding: 1.5rem clamp(1rem, 3vw, 2.5rem);
   background: linear-gradient(135deg, #111827 0%, #1f2937 40%, #312e81 100%);
