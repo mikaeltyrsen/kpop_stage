@@ -1,0 +1,92 @@
+{
+  "presets": [
+    {
+      "id": "color_red",
+      "name": "Red",
+      "iconColor": "#ff3b30",
+      "red": 255,
+      "green": 0,
+      "blue": 0
+    },
+    {
+      "id": "color_orange",
+      "name": "Orange",
+      "iconColor": "#ff9500",
+      "red": 255,
+      "green": 87,
+      "blue": 0
+    },
+    {
+      "id": "color_amber",
+      "name": "Amber",
+      "iconColor": "#ffcc00",
+      "red": 255,
+      "green": 170,
+      "blue": 0
+    },
+    {
+      "id": "color_yellow",
+      "name": "Yellow",
+      "iconColor": "#ffd60a",
+      "red": 255,
+      "green": 214,
+      "blue": 10
+    },
+    {
+      "id": "color_green",
+      "name": "Green",
+      "iconColor": "#34c759",
+      "red": 0,
+      "green": 255,
+      "blue": 0
+    },
+    {
+      "id": "color_teal",
+      "name": "Teal",
+      "iconColor": "#30d158",
+      "red": 0,
+      "green": 209,
+      "blue": 88
+    },
+    {
+      "id": "color_cyan",
+      "name": "Cyan",
+      "iconColor": "#32ade6",
+      "red": 0,
+      "green": 173,
+      "blue": 230
+    },
+    {
+      "id": "color_blue",
+      "name": "Blue",
+      "iconColor": "#007aff",
+      "red": 0,
+      "green": 122,
+      "blue": 255
+    },
+    {
+      "id": "color_purple",
+      "name": "Purple",
+      "iconColor": "#c801c9",
+      "red": 200,
+      "green": 0,
+      "blue": 200
+    },
+    {
+      "id": "color_pink",
+      "name": "Pink",
+      "iconColor": "#ff2d55",
+      "red": 255,
+      "green": 45,
+      "blue": 85
+    },
+    {
+      "id": "color_white",
+      "name": "White",
+      "iconColor": "#ffffff",
+      "red": 255,
+      "green": 255,
+      "blue": 255
+    }
+  ]
+}

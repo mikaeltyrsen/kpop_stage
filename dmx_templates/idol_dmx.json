@@ -1,3 +1,5239 @@
 {
-  "actions": []
+  "actions": [
+    {
+      "time": "00:00:00",
+      "channel": 43,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-90",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-2",
+      "templateRowId": "templateRow_kkljp6p1"
+    },
+    {
+      "time": "00:00:00",
+      "channel": 44,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-2",
+      "templateRowId": "templateRow_g40qs6kc"
+    },
+    {
+      "time": "00:00:00",
+      "channel": 45,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-2",
+      "templateRowId": "templateRow_kxulog7w"
+    },
+    {
+      "time": "00:00:00",
+      "channel": 46,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-2",
+      "templateRowId": "templateRow_brgwxu91"
+    },
+    {
+      "time": "00:00:00",
+      "channel": 57,
+      "value": 49,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strip",
+      "valuePresetId": "mover-light-strip-purple"
+    },
+    {
+      "time": "00:00:00",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "valuePresetId": "mover-light-beam-brightness-full"
+    },
+    {
+      "time": "00:00:00",
+      "channel": 20,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:00:00",
+      "channel": 21,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:00:00",
+      "channel": 22,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:00:00",
+      "channel": 23,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:00:00",
+      "channel": 24,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:00:02.900",
+      "channel": 52,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "valuePresetId": "mover-light-beam-white-full",
+      "templateId": "template_l7g6c0mn",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_4odlavd2"
+    },
+    {
+      "time": "00:00:02.900",
+      "channel": 51,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "templateId": "template_l7g6c0mn",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_xoccwuul"
+    },
+    {
+      "time": "00:00:02.900",
+      "channel": 50,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "templateId": "template_l7g6c0mn",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_swdih0fd"
+    },
+    {
+      "time": "00:00:02.900",
+      "channel": 49,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "templateId": "template_l7g6c0mn",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_bnijpdjy"
+    },
+    {
+      "time": "00:00:02.900",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "valuePresetId": "mover-light-beam-brightness-full",
+      "templateId": "template_l7g6c0mn",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_igr2bsto"
+    },
+    {
+      "time": "00:00:02.900",
+      "channel": 47,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "valuePresetId": "mover-light-beam-brightness-normal"
+    },
+    {
+      "time": "00:00:04",
+      "channel": 40,
+      "value": 161,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-360"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 43,
+      "value": 192,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-135",
+      "templateId": "template_32pxq5y2",
+      "templateInstanceId": "template-instance-5",
+      "templateRowId": "templateRow_7c2vwj0l"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 44,
+      "value": 192,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-135",
+      "templateId": "template_32pxq5y2",
+      "templateInstanceId": "template-instance-5",
+      "templateRowId": "templateRow_4awdhe48"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 45,
+      "value": 192,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-135",
+      "templateId": "template_32pxq5y2",
+      "templateInstanceId": "template-instance-5",
+      "templateRowId": "templateRow_viz36l29"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 46,
+      "value": 192,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-135",
+      "templateId": "template_32pxq5y2",
+      "templateInstanceId": "template-instance-5",
+      "templateRowId": "templateRow_mdhj2uze"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "valuePresetId": "mover-light-beam-white-off",
+      "templateId": "template_e918r8bx",
+      "templateInstanceId": "template-instance-6",
+      "templateRowId": "templateRow_dqf1pcdg"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 51,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "templateId": "template_e918r8bx",
+      "templateInstanceId": "template-instance-6",
+      "templateRowId": "templateRow_27arczug"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 50,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "templateId": "template_e918r8bx",
+      "templateInstanceId": "template-instance-6",
+      "templateRowId": "templateRow_wwujfgrf"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 49,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "valuePresetId": "mover-light-beam-red-full",
+      "templateId": "template_e918r8bx",
+      "templateInstanceId": "template-instance-6",
+      "templateRowId": "templateRow_gh28lwyn"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "valuePresetId": "mover-light-beam-brightness-full",
+      "templateId": "template_e918r8bx",
+      "templateInstanceId": "template-instance-6",
+      "templateRowId": "templateRow_4t6e33sn"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "templateId": "template_iptpwrbi",
+      "templateInstanceId": "template-instance-7",
+      "templateRowId": "templateRow_pkupfgaf"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 11,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "templateId": "template_iptpwrbi",
+      "templateInstanceId": "template-instance-7",
+      "templateRowId": "templateRow_wyrgyq0g"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 12,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "templateId": "template_iptpwrbi",
+      "templateInstanceId": "template-instance-7",
+      "templateRowId": "templateRow_5676gw9a"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 13,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "valuePresetId": "right-light-blue-off",
+      "templateId": "template_iptpwrbi",
+      "templateInstanceId": "template-instance-7",
+      "templateRowId": "templateRow_fbzozmdx"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-full",
+      "templateId": "template_fvlb4yul",
+      "templateInstanceId": "template-instance-8",
+      "templateRowId": "templateRow_q7y8225n"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 2,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "valuePresetId": "left-light-red-full",
+      "templateId": "template_fvlb4yul",
+      "templateInstanceId": "template-instance-8",
+      "templateRowId": "templateRow_dnifjnyw"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 3,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "valuePresetId": "left-light-green-off",
+      "templateId": "template_fvlb4yul",
+      "templateInstanceId": "template-instance-8",
+      "templateRowId": "templateRow_43nre6bh"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 4,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "valuePresetId": "left-light-blue-off",
+      "templateId": "template_fvlb4yul",
+      "templateInstanceId": "template-instance-8",
+      "templateRowId": "templateRow_asy8s1wn"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 40,
+      "value": 23,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-45"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 20,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 21,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 22,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 23,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:00:07.800",
+      "channel": 24,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:00:11",
+      "channel": 41,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed",
+      "valuePresetId": "mover-light-rotation-speed-fast"
+    },
+    {
+      "time": "00:00:11",
+      "channel": 40,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-540"
+    },
+    {
+      "time": "00:00:11",
+      "channel": 1,
+      "value": 0,
+      "fade": 3.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-off"
+    },
+    {
+      "time": "00:00:11",
+      "channel": 10,
+      "value": 0,
+      "fade": 3.0,
+      "channelPresetId": "right-light-dimmer",
+      "valuePresetId": "right-light-dimmer-off"
+    },
+    {
+      "time": "00:00:11",
+      "channel": 43,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-45",
+      "templateId": "template_xggx28i6",
+      "templateInstanceId": "template-instance-16",
+      "templateRowId": "templateRow_ylkah1xc"
+    },
+    {
+      "time": "00:00:11",
+      "channel": 44,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-45",
+      "templateId": "template_xggx28i6",
+      "templateInstanceId": "template-instance-16",
+      "templateRowId": "templateRow_46vhnino"
+    },
+    {
+      "time": "00:00:11",
+      "channel": 45,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-45",
+      "templateId": "template_xggx28i6",
+      "templateInstanceId": "template-instance-16",
+      "templateRowId": "templateRow_nwnr8ytf"
+    },
+    {
+      "time": "00:00:11",
+      "channel": 46,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-45",
+      "templateId": "template_xggx28i6",
+      "templateInstanceId": "template-instance-16",
+      "templateRowId": "templateRow_cg0f9bei"
+    },
+    {
+      "time": "00:00:11",
+      "channel": 47,
+      "value": 0,
+      "fade": 3.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "valuePresetId": "mover-light-beam-brightness-off"
+    },
+    {
+      "time": "00:00:11",
+      "channel": 20,
+      "value": 0,
+      "fade": 3.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:00:11",
+      "channel": 21,
+      "value": 200,
+      "fade": 3.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:00:11",
+      "channel": 22,
+      "value": 0,
+      "fade": 3.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:00:11",
+      "channel": 23,
+      "value": 200,
+      "fade": 3.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:00:11",
+      "channel": 24,
+      "value": 0,
+      "fade": 3.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:00:14.382",
+      "channel": 56,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-super-fast"
+    },
+    {
+      "time": "00:00:14.382",
+      "channel": 40,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-0"
+    },
+    {
+      "time": "00:00:14.382",
+      "channel": 41,
+      "value": 150,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed",
+      "valuePresetId": "mover-light-rotation-speed-medium"
+    },
+    {
+      "time": "00:00:14.382",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "valuePresetId": "mover-light-beam-white-off",
+      "templateId": "template_l2z3o7o1",
+      "templateInstanceId": "template-instance-17",
+      "templateRowId": "templateRow_867x1bdc"
+    },
+    {
+      "time": "00:00:14.382",
+      "channel": 51,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "valuePresetId": "mover-light-beam-blue-full",
+      "templateId": "template_l2z3o7o1",
+      "templateInstanceId": "template-instance-17",
+      "templateRowId": "templateRow_79pdp7z4"
+    },
+    {
+      "time": "00:00:14.382",
+      "channel": 50,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "valuePresetId": "mover-light-beam-green-full",
+      "templateId": "template_l2z3o7o1",
+      "templateInstanceId": "template-instance-17",
+      "templateRowId": "templateRow_kxm9b3ig"
+    },
+    {
+      "time": "00:00:14.382",
+      "channel": 49,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "valuePresetId": "mover-light-beam-red-off",
+      "templateId": "template_l2z3o7o1",
+      "templateInstanceId": "template-instance-17",
+      "templateRowId": "templateRow_2a1igsgh"
+    },
+    {
+      "time": "00:00:14.382",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "valuePresetId": "mover-light-beam-brightness-full",
+      "templateId": "template_l2z3o7o1",
+      "templateInstanceId": "template-instance-17",
+      "templateRowId": "templateRow_stezvl9p"
+    },
+    {
+      "time": "00:00:14.382",
+      "channel": 57,
+      "value": 49,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strip",
+      "valuePresetId": "mover-light-strip-purple"
+    },
+    {
+      "time": "00:00:14.382",
+      "channel": 25,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "back-light-strobe",
+      "valuePresetId": "back-light-strobe-fast"
+    },
+    {
+      "time": "00:00:14.382",
+      "channel": 20,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-dimmer",
+      "valuePresetId": "back-light-dimmer-full"
+    },
+    {
+      "time": "00:00:16.524",
+      "channel": 56,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-none"
+    },
+    {
+      "time": "00:00:16.524",
+      "channel": 43,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-18",
+      "templateRowId": "templateRow_a21he9pe",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:16.524",
+      "channel": 44,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-18",
+      "templateRowId": "templateRow_27rckyhb",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:16.524",
+      "channel": 45,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-18",
+      "templateRowId": "templateRow_x7jvnkhv",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:16.524",
+      "channel": 46,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-18",
+      "templateRowId": "templateRow_3fkf6d9u",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:16.524",
+      "channel": 40,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-0",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-18",
+      "templateRowId": "templateRow_7jc0kfrk",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:17.524",
+      "channel": 43,
+      "value": 192,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-135",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-18",
+      "templateRowId": "templateRow_p0m9nkkc",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:17.524",
+      "channel": 44,
+      "value": 192,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-135",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-18",
+      "templateRowId": "templateRow_t960j39p",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:17.524",
+      "channel": 45,
+      "value": 192,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-135",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-18",
+      "templateRowId": "templateRow_5vs7mk3s",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:17.524",
+      "channel": 46,
+      "value": 192,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-135",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-18",
+      "templateRowId": "templateRow_pr8bmdws",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:17.524",
+      "channel": 40,
+      "value": 138,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-270",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-18",
+      "templateRowId": "templateRow_luhp3w8a",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:17.941",
+      "channel": 1,
+      "value": 40,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "value_a04vere9",
+      "templateId": "template_7t7a1a17",
+      "templateInstanceId": "template-instance-10",
+      "templateRowId": "templateRow_ockniszz"
+    },
+    {
+      "time": "00:00:17.941",
+      "channel": 2,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "valuePresetId": "left-light-red-off",
+      "templateId": "template_7t7a1a17",
+      "templateInstanceId": "template-instance-10",
+      "templateRowId": "templateRow_bju6rc2l"
+    },
+    {
+      "time": "00:00:17.941",
+      "channel": 3,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "valuePresetId": "left-light-green-full",
+      "templateId": "template_7t7a1a17",
+      "templateInstanceId": "template-instance-10",
+      "templateRowId": "templateRow_s2zgmoad"
+    },
+    {
+      "time": "00:00:17.941",
+      "channel": 4,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "templateId": "template_7t7a1a17",
+      "templateInstanceId": "template-instance-10",
+      "templateRowId": "templateRow_179bcsh2"
+    },
+    {
+      "time": "00:00:17.941",
+      "channel": 5,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-white",
+      "valuePresetId": "left-light-white-off",
+      "templateId": "template_7t7a1a17",
+      "templateInstanceId": "template-instance-10",
+      "templateRowId": "templateRow_9b2csnh2"
+    },
+    {
+      "time": "00:00:17.941",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-off"
+    },
+    {
+      "time": "00:00:18.524",
+      "channel": 43,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-18",
+      "templateRowId": "templateRow_hso9q7d0",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:18.524",
+      "channel": 44,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-18",
+      "templateRowId": "templateRow_oibw9p81",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:18.524",
+      "channel": 45,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-18",
+      "templateRowId": "templateRow_9ltze0p6",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:18.524",
+      "channel": 46,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-18",
+      "templateRowId": "templateRow_jjdnmbjn",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:18.524",
+      "channel": 40,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-540",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-18",
+      "templateRowId": "templateRow_7vvuyebl",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:23.787",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:23.787",
+      "channel": 2,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:23.787",
+      "channel": 3,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:23.787",
+      "channel": 4,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:23.787",
+      "channel": 5,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:23.787",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:23.787",
+      "channel": 11,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:23.787",
+      "channel": 12,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:23.787",
+      "channel": 13,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:23.787",
+      "channel": 14,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:23.903",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:23.903",
+      "channel": 2,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:23.903",
+      "channel": 3,
+      "value": 173,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:23.903",
+      "channel": 4,
+      "value": 230,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:23.903",
+      "channel": 5,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:23.903",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:23.903",
+      "channel": 11,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:23.903",
+      "channel": 12,
+      "value": 173,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:23.903",
+      "channel": 13,
+      "value": 230,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:23.903",
+      "channel": 14,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:23.903",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "valuePresetId": "mover-light-beam-white-off",
+      "templateId": "template_e918r8bx",
+      "templateInstanceId": "template-instance-19",
+      "templateRowId": "templateRow_dqf1pcdg"
+    },
+    {
+      "time": "00:00:23.903",
+      "channel": 51,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "templateId": "template_e918r8bx",
+      "templateInstanceId": "template-instance-19",
+      "templateRowId": "templateRow_27arczug"
+    },
+    {
+      "time": "00:00:23.903",
+      "channel": 50,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "templateId": "template_e918r8bx",
+      "templateInstanceId": "template-instance-19",
+      "templateRowId": "templateRow_wwujfgrf"
+    },
+    {
+      "time": "00:00:23.903",
+      "channel": 49,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "valuePresetId": "mover-light-beam-red-full",
+      "templateId": "template_e918r8bx",
+      "templateInstanceId": "template-instance-19",
+      "templateRowId": "templateRow_gh28lwyn"
+    },
+    {
+      "time": "00:00:23.903",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "valuePresetId": "mover-light-beam-brightness-full",
+      "templateId": "template_e918r8bx",
+      "templateInstanceId": "template-instance-19",
+      "templateRowId": "templateRow_4t6e33sn"
+    },
+    {
+      "time": "00:00:24.800",
+      "channel": 54,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-red",
+      "valuePresetId": "mover-light-laser-red-full"
+    },
+    {
+      "time": "00:00:24.800",
+      "channel": 48,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strobe",
+      "valuePresetId": "mover-light-strobe-super-fast"
+    },
+    {
+      "time": "00:00:25.400",
+      "channel": 56,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-super-fast"
+    },
+    {
+      "time": "00:00:26.200",
+      "channel": 56,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-none"
+    },
+    {
+      "time": "00:00:26.485",
+      "channel": 48,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strobe",
+      "valuePresetId": "mover-light-strobe-none"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.5,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 2,
+      "value": 0,
+      "fade": 0.5,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 3,
+      "value": 255,
+      "fade": 0.5,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 4,
+      "value": 0,
+      "fade": 0.5,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 5,
+      "value": 0,
+      "fade": 0.5,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.5,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 11,
+      "value": 0,
+      "fade": 0.5,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 12,
+      "value": 255,
+      "fade": 0.5,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 13,
+      "value": 0,
+      "fade": 0.5,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 14,
+      "value": 0,
+      "fade": 0.5,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.5,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 49,
+      "value": 0,
+      "fade": 0.5,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 50,
+      "value": 255,
+      "fade": 0.5,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 51,
+      "value": 0,
+      "fade": 0.5,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.5,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 55,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-green",
+      "valuePresetId": "mover-light-laser-green-full"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 54,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-red",
+      "valuePresetId": "mover-light-laser-red-off"
+    },
+    {
+      "time": "00:00:33.500",
+      "channel": 57,
+      "value": 22,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strip",
+      "valuePresetId": "mover-light-strip-green"
+    },
+    {
+      "time": "00:00:35.898",
+      "channel": 10,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "valuePresetId": "right-light-dimmer-off"
+    },
+    {
+      "time": "00:00:35.898",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-off"
+    },
+    {
+      "time": "00:00:35.898",
+      "channel": 47,
+      "value": 255,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:00:35.898",
+      "channel": 49,
+      "value": 255,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:00:35.898",
+      "channel": 50,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:00:35.898",
+      "channel": 51,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:00:35.898",
+      "channel": 52,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:00:35.898",
+      "channel": 54,
+      "value": 255,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-laser-red",
+      "valuePresetId": "mover-light-laser-red-full"
+    },
+    {
+      "time": "00:00:35.898",
+      "channel": 55,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-laser-green",
+      "valuePresetId": "mover-light-laser-green-off"
+    },
+    {
+      "time": "00:00:35.898",
+      "channel": 57,
+      "value": 58,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strip",
+      "valuePresetId": "mover-light-strip-cyan"
+    },
+    {
+      "time": "00:00:41.150",
+      "channel": 40,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-0"
+    },
+    {
+      "time": "00:00:41.150",
+      "channel": 41,
+      "value": 100,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed",
+      "valuePresetId": "mover-light-rotation-speed-slow"
+    },
+    {
+      "time": "00:00:44.012",
+      "channel": 41,
+      "value": 50,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed",
+      "valuePresetId": "mover-light-rotation-speed-super-slow"
+    },
+    {
+      "time": "00:00:44.012",
+      "channel": 40,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-540"
+    },
+    {
+      "time": "00:00:44.012",
+      "channel": 43,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-46",
+      "templateRowId": "templateRow_hthim9wl"
+    },
+    {
+      "time": "00:00:44.012",
+      "channel": 44,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-46",
+      "templateRowId": "templateRow_jfmhn7zo"
+    },
+    {
+      "time": "00:00:44.012",
+      "channel": 45,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-46",
+      "templateRowId": "templateRow_i582bszy"
+    },
+    {
+      "time": "00:00:44.012",
+      "channel": 46,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-46",
+      "templateRowId": "templateRow_qwosatc7"
+    },
+    {
+      "time": "00:00:44.300",
+      "channel": 56,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-super-fast"
+    },
+    {
+      "time": "00:00:44.300",
+      "channel": 43,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-0",
+      "templateId": "template_o8bb4qpn",
+      "templateInstanceId": "template-instance-47",
+      "templateRowId": "templateRow_uybogdi3"
+    },
+    {
+      "time": "00:00:44.300",
+      "channel": 44,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-0",
+      "templateId": "template_o8bb4qpn",
+      "templateInstanceId": "template-instance-47",
+      "templateRowId": "templateRow_xldxeas8"
+    },
+    {
+      "time": "00:00:44.300",
+      "channel": 45,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-0",
+      "templateId": "template_o8bb4qpn",
+      "templateInstanceId": "template-instance-47",
+      "templateRowId": "templateRow_jfzcxexb"
+    },
+    {
+      "time": "00:00:44.300",
+      "channel": 46,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-0",
+      "templateId": "template_o8bb4qpn",
+      "templateInstanceId": "template-instance-47",
+      "templateRowId": "templateRow_3y9hufim"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 56,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-none"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 20,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-30",
+      "templateRowId": "templateRow_csqqccp3"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 30,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-30",
+      "templateRowId": "templateRow_fg56un1v"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 10,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-30",
+      "templateRowId": "templateRow_29fadwjh"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-30",
+      "templateRowId": "templateRow_bfhqq4bn"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 47,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-30",
+      "templateRowId": "templateRow_kf84go41"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 54,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-red",
+      "valuePresetId": "mover-light-laser-red-off",
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-30",
+      "templateRowId": "templateRow_trrfn230"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 55,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-green",
+      "valuePresetId": "mover-light-laser-green-off",
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-30",
+      "templateRowId": "templateRow_4getcmpj"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 56,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-none",
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-30",
+      "templateRowId": "templateRow_jke0qxhi"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 2,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 3,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 4,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 5,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 11,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 12,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 13,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 14,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 6,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "left-light-strobe",
+      "valuePresetId": "left-light-strobe-fast"
+    },
+    {
+      "time": "00:00:45.600",
+      "channel": 15,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "right-light-strobe",
+      "valuePresetId": "right-light-strobe-fast"
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 49,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 50,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 51,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 2,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 3,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 4,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 5,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 11,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 12,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 13,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 14,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 43,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-48",
+      "templateRowId": "templateRow_a21he9pe",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 44,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-48",
+      "templateRowId": "templateRow_27rckyhb",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 45,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-48",
+      "templateRowId": "templateRow_x7jvnkhv",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 46,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-48",
+      "templateRowId": "templateRow_3fkf6d9u",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:46.588",
+      "channel": 40,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-0",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-48",
+      "templateRowId": "templateRow_7jc0kfrk",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:47.588",
+      "channel": 43,
+      "value": 192,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-135",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-48",
+      "templateRowId": "templateRow_p0m9nkkc",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:47.588",
+      "channel": 44,
+      "value": 192,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-135",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-48",
+      "templateRowId": "templateRow_t960j39p",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:47.588",
+      "channel": 45,
+      "value": 192,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-135",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-48",
+      "templateRowId": "templateRow_5vs7mk3s",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:47.588",
+      "channel": 46,
+      "value": 192,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-135",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-48",
+      "templateRowId": "templateRow_pr8bmdws",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:47.588",
+      "channel": 40,
+      "value": 138,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-270",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-48",
+      "templateRowId": "templateRow_luhp3w8a",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:48.588",
+      "channel": 43,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-48",
+      "templateRowId": "templateRow_hso9q7d0",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:48.588",
+      "channel": 44,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-48",
+      "templateRowId": "templateRow_oibw9p81",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:48.588",
+      "channel": 45,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-48",
+      "templateRowId": "templateRow_9ltze0p6",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:48.588",
+      "channel": 46,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-48",
+      "templateRowId": "templateRow_jjdnmbjn",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:48.588",
+      "channel": 40,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-540",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-48",
+      "templateRowId": "templateRow_7vvuyebl",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:00:57.051",
+      "channel": 54,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-red",
+      "valuePresetId": "mover-light-laser-red-full"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 20,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-21",
+      "templateRowId": "templateRow_csqqccp3"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 30,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-21",
+      "templateRowId": "templateRow_fg56un1v"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 10,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-21",
+      "templateRowId": "templateRow_29fadwjh"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-21",
+      "templateRowId": "templateRow_bfhqq4bn"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 47,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-21",
+      "templateRowId": "templateRow_kf84go41"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 54,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-red",
+      "valuePresetId": "mover-light-laser-red-off",
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-21",
+      "templateRowId": "templateRow_trrfn230"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 55,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-green",
+      "valuePresetId": "mover-light-laser-green-off",
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-21",
+      "templateRowId": "templateRow_4getcmpj"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 56,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-none",
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-21",
+      "templateRowId": "templateRow_jke0qxhi"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 43,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-23",
+      "templateRowId": "templateRow_hthim9wl"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 44,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-23",
+      "templateRowId": "templateRow_jfmhn7zo"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 45,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-23",
+      "templateRowId": "templateRow_i582bszy"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 46,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-23",
+      "templateRowId": "templateRow_qwosatc7"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 20,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 21,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 22,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 23,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:07.752",
+      "channel": 24,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 49,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 50,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 51,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 43,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-90",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-24",
+      "templateRowId": "templateRow_kkljp6p1"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 44,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-24",
+      "templateRowId": "templateRow_g40qs6kc"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 45,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-24",
+      "templateRowId": "templateRow_kxulog7w"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 46,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-24",
+      "templateRowId": "templateRow_brgwxu91"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 48,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strobe",
+      "valuePresetId": "mover-light-strobe-super-fast"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 41,
+      "value": 220,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 30,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 31,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 32,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 33,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 34,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 35,
+      "value": 150,
+      "fade": 0.0,
+      "channelPresetId": "front-light-strobe",
+      "valuePresetId": "front-light-strobe-medium"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 57,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strip",
+      "valuePresetId": "mover-light-strip-off"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 20,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 21,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 22,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 23,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 24,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 30,
+      "value": 68,
+      "fade": 0.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 31,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 32,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 33,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 34,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:09.113",
+      "channel": 35,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-strobe",
+      "valuePresetId": "front-light-strobe-none"
+    },
+    {
+      "time": "00:01:11.139",
+      "channel": 43,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-31",
+      "templateRowId": "templateRow_hthim9wl"
+    },
+    {
+      "time": "00:01:11.139",
+      "channel": 44,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-31",
+      "templateRowId": "templateRow_jfmhn7zo"
+    },
+    {
+      "time": "00:01:11.139",
+      "channel": 45,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-31",
+      "templateRowId": "templateRow_i582bszy"
+    },
+    {
+      "time": "00:01:11.139",
+      "channel": 46,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-31",
+      "templateRowId": "templateRow_qwosatc7"
+    },
+    {
+      "time": "00:01:12.456",
+      "channel": 48,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strobe",
+      "valuePresetId": "mover-light-strobe-none"
+    },
+    {
+      "time": "00:01:12.456",
+      "channel": 41,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed",
+      "valuePresetId": "mover-light-rotation-speed-none"
+    },
+    {
+      "time": "00:01:12.456",
+      "channel": 40,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-540"
+    },
+    {
+      "time": "00:01:12.456",
+      "channel": 43,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-45",
+      "templateId": "template_xggx28i6",
+      "templateInstanceId": "template-instance-36",
+      "templateRowId": "templateRow_ylkah1xc"
+    },
+    {
+      "time": "00:01:12.456",
+      "channel": 35,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-strobe",
+      "valuePresetId": "front-light-strobe-none"
+    },
+    {
+      "time": "00:01:12.456",
+      "channel": 30,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:12.456",
+      "channel": 31,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:12.456",
+      "channel": 32,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:12.456",
+      "channel": 33,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:12.456",
+      "channel": 34,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:12.456",
+      "channel": 44,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-45",
+      "templateId": "template_xggx28i6",
+      "templateInstanceId": "template-instance-36",
+      "templateRowId": "templateRow_46vhnino"
+    },
+    {
+      "time": "00:01:12.456",
+      "channel": 45,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-45",
+      "templateId": "template_xggx28i6",
+      "templateInstanceId": "template-instance-36",
+      "templateRowId": "templateRow_nwnr8ytf"
+    },
+    {
+      "time": "00:01:12.456",
+      "channel": 46,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-45",
+      "templateId": "template_xggx28i6",
+      "templateInstanceId": "template-instance-36",
+      "templateRowId": "templateRow_cg0f9bei"
+    },
+    {
+      "time": "00:01:14.598",
+      "channel": 43,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-90",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-35",
+      "templateRowId": "templateRow_kkljp6p1"
+    },
+    {
+      "time": "00:01:14.598",
+      "channel": 44,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-35",
+      "templateRowId": "templateRow_g40qs6kc"
+    },
+    {
+      "time": "00:01:14.598",
+      "channel": 45,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-35",
+      "templateRowId": "templateRow_kxulog7w"
+    },
+    {
+      "time": "00:01:14.598",
+      "channel": 46,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-35",
+      "templateRowId": "templateRow_brgwxu91"
+    },
+    {
+      "time": "00:01:14.598",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-37",
+      "templateRowId": "templateRow_9hyqg7ir"
+    },
+    {
+      "time": "00:01:14.598",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-37",
+      "templateRowId": "templateRow_n2hvow1u"
+    },
+    {
+      "time": "00:01:14.598",
+      "channel": 6,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-strobe",
+      "valuePresetId": "left-light-strobe-none",
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-37",
+      "templateRowId": "templateRow_e2a358uw"
+    },
+    {
+      "time": "00:01:14.598",
+      "channel": 15,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-strobe",
+      "valuePresetId": "right-light-strobe-none",
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-37",
+      "templateRowId": "templateRow_uhuv7qge"
+    },
+    {
+      "time": "00:01:14.598",
+      "channel": 40,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-0"
+    },
+    {
+      "time": "00:01:14.798",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-37",
+      "templateRowId": "templateRow_dmitxiz3"
+    },
+    {
+      "time": "00:01:14.798",
+      "channel": 10,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-37",
+      "templateRowId": "templateRow_iyxl0bmr"
+    },
+    {
+      "time": "00:01:16.410",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-off"
+    },
+    {
+      "time": "00:01:16.410",
+      "channel": 40,
+      "value": 161,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-360"
+    },
+    {
+      "time": "00:01:16.410",
+      "channel": 43,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-45",
+      "templateId": "template_xggx28i6",
+      "templateInstanceId": "template-instance-50",
+      "templateRowId": "templateRow_ylkah1xc"
+    },
+    {
+      "time": "00:01:16.410",
+      "channel": 44,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-45",
+      "templateId": "template_xggx28i6",
+      "templateInstanceId": "template-instance-50",
+      "templateRowId": "templateRow_46vhnino"
+    },
+    {
+      "time": "00:01:16.410",
+      "channel": 45,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-45",
+      "templateId": "template_xggx28i6",
+      "templateInstanceId": "template-instance-50",
+      "templateRowId": "templateRow_nwnr8ytf"
+    },
+    {
+      "time": "00:01:16.410",
+      "channel": 46,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-45",
+      "templateId": "template_xggx28i6",
+      "templateInstanceId": "template-instance-50",
+      "templateRowId": "templateRow_cg0f9bei"
+    },
+    {
+      "time": "00:01:17.600",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-off"
+    },
+    {
+      "time": "00:01:17.600",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-38",
+      "templateRowId": "templateRow_9hyqg7ir"
+    },
+    {
+      "time": "00:01:17.600",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-38",
+      "templateRowId": "templateRow_n2hvow1u"
+    },
+    {
+      "time": "00:01:17.600",
+      "channel": 6,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-strobe",
+      "valuePresetId": "left-light-strobe-none",
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-38",
+      "templateRowId": "templateRow_e2a358uw"
+    },
+    {
+      "time": "00:01:17.600",
+      "channel": 15,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-strobe",
+      "valuePresetId": "right-light-strobe-none",
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-38",
+      "templateRowId": "templateRow_uhuv7qge"
+    },
+    {
+      "time": "00:01:17.600",
+      "channel": 47,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:17.600",
+      "channel": 49,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:17.600",
+      "channel": 50,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:17.600",
+      "channel": 51,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:17.600",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:17.800",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-38",
+      "templateRowId": "templateRow_dmitxiz3"
+    },
+    {
+      "time": "00:01:17.800",
+      "channel": 10,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-38",
+      "templateRowId": "templateRow_iyxl0bmr"
+    },
+    {
+      "time": "00:01:18.900",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-off"
+    },
+    {
+      "time": "00:01:18.900",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-39",
+      "templateRowId": "templateRow_9hyqg7ir"
+    },
+    {
+      "time": "00:01:18.900",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-39",
+      "templateRowId": "templateRow_n2hvow1u"
+    },
+    {
+      "time": "00:01:18.900",
+      "channel": 6,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-strobe",
+      "valuePresetId": "left-light-strobe-none",
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-39",
+      "templateRowId": "templateRow_e2a358uw"
+    },
+    {
+      "time": "00:01:18.900",
+      "channel": 15,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-strobe",
+      "valuePresetId": "right-light-strobe-none",
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-39",
+      "templateRowId": "templateRow_uhuv7qge"
+    },
+    {
+      "time": "00:01:19.100",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-39",
+      "templateRowId": "templateRow_dmitxiz3"
+    },
+    {
+      "time": "00:01:19.100",
+      "channel": 10,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-39",
+      "templateRowId": "templateRow_iyxl0bmr"
+    },
+    {
+      "time": "00:01:19.828",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-off"
+    },
+    {
+      "time": "00:01:19.828",
+      "channel": 20,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-41",
+      "templateRowId": "templateRow_csqqccp3"
+    },
+    {
+      "time": "00:01:19.828",
+      "channel": 30,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-41",
+      "templateRowId": "templateRow_fg56un1v"
+    },
+    {
+      "time": "00:01:19.828",
+      "channel": 10,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-41",
+      "templateRowId": "templateRow_29fadwjh"
+    },
+    {
+      "time": "00:01:19.828",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-41",
+      "templateRowId": "templateRow_bfhqq4bn"
+    },
+    {
+      "time": "00:01:19.828",
+      "channel": 47,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-41",
+      "templateRowId": "templateRow_kf84go41"
+    },
+    {
+      "time": "00:01:19.828",
+      "channel": 54,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-red",
+      "valuePresetId": "mover-light-laser-red-off",
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-41",
+      "templateRowId": "templateRow_trrfn230"
+    },
+    {
+      "time": "00:01:19.828",
+      "channel": 55,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-green",
+      "valuePresetId": "mover-light-laser-green-off",
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-41",
+      "templateRowId": "templateRow_4getcmpj"
+    },
+    {
+      "time": "00:01:19.828",
+      "channel": 56,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-none",
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-41",
+      "templateRowId": "templateRow_jke0qxhi"
+    },
+    {
+      "time": "00:01:20.411",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-42",
+      "templateRowId": "templateRow_9hyqg7ir"
+    },
+    {
+      "time": "00:01:20.411",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-42",
+      "templateRowId": "templateRow_n2hvow1u"
+    },
+    {
+      "time": "00:01:20.411",
+      "channel": 6,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-strobe",
+      "valuePresetId": "left-light-strobe-none",
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-42",
+      "templateRowId": "templateRow_e2a358uw"
+    },
+    {
+      "time": "00:01:20.411",
+      "channel": 15,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-strobe",
+      "valuePresetId": "right-light-strobe-none",
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-42",
+      "templateRowId": "templateRow_uhuv7qge"
+    },
+    {
+      "time": "00:01:20.411",
+      "channel": 43,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-45",
+      "templateRowId": "templateRow_hthim9wl"
+    },
+    {
+      "time": "00:01:20.411",
+      "channel": 44,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-45",
+      "templateRowId": "templateRow_jfmhn7zo"
+    },
+    {
+      "time": "00:01:20.411",
+      "channel": 45,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-45",
+      "templateRowId": "templateRow_i582bszy"
+    },
+    {
+      "time": "00:01:20.411",
+      "channel": 46,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-45",
+      "templateRowId": "templateRow_qwosatc7"
+    },
+    {
+      "time": "00:01:20.611",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-42",
+      "templateRowId": "templateRow_dmitxiz3"
+    },
+    {
+      "time": "00:01:20.611",
+      "channel": 10,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-42",
+      "templateRowId": "templateRow_iyxl0bmr"
+    },
+    {
+      "time": "00:01:20.734",
+      "channel": 11,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "valuePresetId": "right-light-red-full",
+      "templateId": "template_5r9ost2u",
+      "templateInstanceId": "template-instance-51",
+      "templateRowId": "templateRow_g6esbavx"
+    },
+    {
+      "time": "00:01:20.734",
+      "channel": 13,
+      "value": 150,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "templateId": "template_5r9ost2u",
+      "templateInstanceId": "template-instance-51",
+      "templateRowId": "templateRow_0kuu27je"
+    },
+    {
+      "time": "00:01:20.734",
+      "channel": 12,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "valuePresetId": "right-light-green-off",
+      "templateId": "template_5r9ost2u",
+      "templateInstanceId": "template-instance-51",
+      "templateRowId": "templateRow_a3hik1k7"
+    },
+    {
+      "time": "00:01:20.734",
+      "channel": 10,
+      "value": 40,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "templateId": "template_5r9ost2u",
+      "templateInstanceId": "template-instance-51",
+      "templateRowId": "templateRow_u2uwk8rb"
+    },
+    {
+      "time": "00:01:20.734",
+      "channel": 2,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "valuePresetId": "left-light-red-full",
+      "templateId": "template_80coc8p9",
+      "templateInstanceId": "template-instance-52",
+      "templateRowId": "templateRow_te1ntg6a"
+    },
+    {
+      "time": "00:01:20.734",
+      "channel": 4,
+      "value": 150,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "templateId": "template_80coc8p9",
+      "templateInstanceId": "template-instance-52",
+      "templateRowId": "templateRow_y1bad7fs"
+    },
+    {
+      "time": "00:01:20.734",
+      "channel": 3,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "valuePresetId": "left-light-green-off",
+      "templateId": "template_80coc8p9",
+      "templateInstanceId": "template-instance-52",
+      "templateRowId": "templateRow_7jykp2w3"
+    },
+    {
+      "time": "00:01:20.734",
+      "channel": 1,
+      "value": 40,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "value_f2v3rnkt",
+      "templateId": "template_80coc8p9",
+      "templateInstanceId": "template-instance-52",
+      "templateRowId": "templateRow_fpe3g9y8"
+    },
+    {
+      "time": "00:01:20.934",
+      "channel": 10,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "valuePresetId": "right-light-dimmer-off",
+      "templateId": "template_5r9ost2u",
+      "templateInstanceId": "template-instance-51",
+      "templateRowId": "templateRow_fr1atb3z"
+    },
+    {
+      "time": "00:01:20.934",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-off",
+      "templateId": "template_80coc8p9",
+      "templateInstanceId": "template-instance-52",
+      "templateRowId": "templateRow_x7qldx2n"
+    },
+    {
+      "time": "00:01:21.434",
+      "channel": 10,
+      "value": 40,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "templateId": "template_5r9ost2u",
+      "templateInstanceId": "template-instance-51",
+      "templateRowId": "templateRow_mecktibj"
+    },
+    {
+      "time": "00:01:21.434",
+      "channel": 13,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "valuePresetId": "right-light-blue-full",
+      "templateId": "template_5r9ost2u",
+      "templateInstanceId": "template-instance-51",
+      "templateRowId": "templateRow_p32muomb"
+    },
+    {
+      "time": "00:01:21.434",
+      "channel": 11,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "valuePresetId": "right-light-red-off",
+      "templateId": "template_5r9ost2u",
+      "templateInstanceId": "template-instance-51",
+      "templateRowId": "templateRow_nnsas88w"
+    },
+    {
+      "time": "00:01:21.434",
+      "channel": 12,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "valuePresetId": "right-light-green-full",
+      "templateId": "template_5r9ost2u",
+      "templateInstanceId": "template-instance-51",
+      "templateRowId": "templateRow_u5hp1x8h"
+    },
+    {
+      "time": "00:01:21.434",
+      "channel": 1,
+      "value": 40,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "value_f2v3rnkt",
+      "templateId": "template_80coc8p9",
+      "templateInstanceId": "template-instance-52",
+      "templateRowId": "templateRow_tazmnphv"
+    },
+    {
+      "time": "00:01:21.434",
+      "channel": 4,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "valuePresetId": "left-light-blue-full",
+      "templateId": "template_80coc8p9",
+      "templateInstanceId": "template-instance-52",
+      "templateRowId": "templateRow_c4cf04q9"
+    },
+    {
+      "time": "00:01:21.434",
+      "channel": 2,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "valuePresetId": "left-light-red-off",
+      "templateId": "template_80coc8p9",
+      "templateInstanceId": "template-instance-52",
+      "templateRowId": "templateRow_wz9kpzm3"
+    },
+    {
+      "time": "00:01:21.434",
+      "channel": 3,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "valuePresetId": "left-light-green-full",
+      "templateId": "template_80coc8p9",
+      "templateInstanceId": "template-instance-52",
+      "templateRowId": "templateRow_1vczha5q"
+    },
+    {
+      "time": "00:01:21.634",
+      "channel": 10,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "valuePresetId": "right-light-dimmer-off",
+      "templateId": "template_5r9ost2u",
+      "templateInstanceId": "template-instance-51",
+      "templateRowId": "templateRow_k728l13q"
+    },
+    {
+      "time": "00:01:21.634",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-off",
+      "templateId": "template_80coc8p9",
+      "templateInstanceId": "template-instance-52",
+      "templateRowId": "templateRow_64fp8o5u"
+    },
+    {
+      "time": "00:01:22.502",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-off"
+    },
+    {
+      "time": "00:01:22.502",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-53",
+      "templateRowId": "templateRow_9hyqg7ir"
+    },
+    {
+      "time": "00:01:22.502",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-53",
+      "templateRowId": "templateRow_n2hvow1u"
+    },
+    {
+      "time": "00:01:22.502",
+      "channel": 6,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-strobe",
+      "valuePresetId": "left-light-strobe-none",
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-53",
+      "templateRowId": "templateRow_e2a358uw"
+    },
+    {
+      "time": "00:01:22.502",
+      "channel": 15,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-strobe",
+      "valuePresetId": "right-light-strobe-none",
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-53",
+      "templateRowId": "templateRow_uhuv7qge"
+    },
+    {
+      "time": "00:01:22.502",
+      "channel": 43,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-90",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-55",
+      "templateRowId": "templateRow_kkljp6p1"
+    },
+    {
+      "time": "00:01:22.502",
+      "channel": 44,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-55",
+      "templateRowId": "templateRow_g40qs6kc"
+    },
+    {
+      "time": "00:01:22.502",
+      "channel": 45,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-55",
+      "templateRowId": "templateRow_kxulog7w"
+    },
+    {
+      "time": "00:01:22.502",
+      "channel": 46,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-55",
+      "templateRowId": "templateRow_brgwxu91"
+    },
+    {
+      "time": "00:01:22.702",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-53",
+      "templateRowId": "templateRow_dmitxiz3"
+    },
+    {
+      "time": "00:01:22.702",
+      "channel": 10,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_94u9t9ma",
+      "templateInstanceId": "template-instance-53",
+      "templateRowId": "templateRow_iyxl0bmr"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 2,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 3,
+      "value": 173,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 4,
+      "value": 230,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 5,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 11,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 12,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 13,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 14,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 49,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 50,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 51,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 6,
+      "value": 100,
+      "fade": 0.0,
+      "channelPresetId": "left-light-strobe",
+      "valuePresetId": "left-light-strobe-slow"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 15,
+      "value": 150,
+      "fade": 0.0,
+      "channelPresetId": "right-light-strobe",
+      "valuePresetId": "right-light-strobe-medium"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 48,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strobe",
+      "valuePresetId": "mover-light-strobe-fast"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 43,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-56",
+      "templateRowId": "templateRow_hthim9wl"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 44,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-56",
+      "templateRowId": "templateRow_jfmhn7zo"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 45,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-56",
+      "templateRowId": "templateRow_i582bszy"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 46,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-56",
+      "templateRowId": "templateRow_qwosatc7"
+    },
+    {
+      "time": "00:01:24.974",
+      "channel": 41,
+      "value": 240,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed"
+    },
+    {
+      "time": "00:01:29.017",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:29.017",
+      "channel": 49,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:29.017",
+      "channel": 50,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:29.017",
+      "channel": 51,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:29.017",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:29.017",
+      "channel": 48,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strobe",
+      "valuePresetId": "mover-light-strobe-super-fast"
+    },
+    {
+      "time": "00:01:29.017",
+      "channel": 41,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed",
+      "valuePresetId": "mover-light-rotation-speed-fast"
+    },
+    {
+      "time": "00:01:29.017",
+      "channel": 43,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-90",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-44",
+      "templateRowId": "templateRow_kkljp6p1"
+    },
+    {
+      "time": "00:01:29.017",
+      "channel": 44,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-44",
+      "templateRowId": "templateRow_g40qs6kc"
+    },
+    {
+      "time": "00:01:29.017",
+      "channel": 45,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-44",
+      "templateRowId": "templateRow_kxulog7w"
+    },
+    {
+      "time": "00:01:29.017",
+      "channel": 46,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-44",
+      "templateRowId": "templateRow_brgwxu91"
+    },
+    {
+      "time": "00:01:29.700",
+      "channel": 56,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-super-fast"
+    },
+    {
+      "time": "00:01:29.700",
+      "channel": 20,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-25",
+      "templateRowId": "templateRow_csqqccp3"
+    },
+    {
+      "time": "00:01:29.700",
+      "channel": 30,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-25",
+      "templateRowId": "templateRow_fg56un1v"
+    },
+    {
+      "time": "00:01:29.700",
+      "channel": 10,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-25",
+      "templateRowId": "templateRow_29fadwjh"
+    },
+    {
+      "time": "00:01:29.700",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-25",
+      "templateRowId": "templateRow_bfhqq4bn"
+    },
+    {
+      "time": "00:01:29.700",
+      "channel": 47,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-25",
+      "templateRowId": "templateRow_kf84go41"
+    },
+    {
+      "time": "00:01:29.700",
+      "channel": 54,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-red",
+      "valuePresetId": "mover-light-laser-red-off",
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-25",
+      "templateRowId": "templateRow_trrfn230"
+    },
+    {
+      "time": "00:01:29.700",
+      "channel": 55,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-green",
+      "valuePresetId": "mover-light-laser-green-off",
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-25",
+      "templateRowId": "templateRow_4getcmpj"
+    },
+    {
+      "time": "00:01:29.700",
+      "channel": 56,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-none",
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-25",
+      "templateRowId": "templateRow_jke0qxhi"
+    },
+    {
+      "time": "00:01:29.700",
+      "channel": 56,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-super-fast"
+    },
+    {
+      "time": "00:01:29.700",
+      "channel": 6,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-strobe",
+      "valuePresetId": "left-light-strobe-none"
+    },
+    {
+      "time": "00:01:29.700",
+      "channel": 15,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-strobe",
+      "valuePresetId": "right-light-strobe-none"
+    },
+    {
+      "time": "00:01:30.253",
+      "channel": 56,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-none"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 2,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 3,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 4,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 5,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 11,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 12,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 13,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 14,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 20,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 21,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 22,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 23,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 24,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 20,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 21,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 22,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 23,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 24,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:31.339",
+      "channel": 25,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-strobe",
+      "valuePresetId": "back-light-strobe-none"
+    },
+    {
+      "time": "00:01:32.230",
+      "channel": 20,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-27",
+      "templateRowId": "templateRow_csqqccp3"
+    },
+    {
+      "time": "00:01:32.230",
+      "channel": 30,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-27",
+      "templateRowId": "templateRow_fg56un1v"
+    },
+    {
+      "time": "00:01:32.230",
+      "channel": 10,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-27",
+      "templateRowId": "templateRow_29fadwjh"
+    },
+    {
+      "time": "00:01:32.230",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-27",
+      "templateRowId": "templateRow_bfhqq4bn"
+    },
+    {
+      "time": "00:01:32.230",
+      "channel": 47,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-27",
+      "templateRowId": "templateRow_kf84go41"
+    },
+    {
+      "time": "00:01:32.230",
+      "channel": 54,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-red",
+      "valuePresetId": "mover-light-laser-red-off",
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-27",
+      "templateRowId": "templateRow_trrfn230"
+    },
+    {
+      "time": "00:01:32.230",
+      "channel": 55,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-green",
+      "valuePresetId": "mover-light-laser-green-off",
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-27",
+      "templateRowId": "templateRow_4getcmpj"
+    },
+    {
+      "time": "00:01:32.230",
+      "channel": 56,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-none",
+      "templateId": "template_oh24adve",
+      "templateInstanceId": "template-instance-27",
+      "templateRowId": "templateRow_jke0qxhi"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 49,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 50,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 51,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 2,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 3,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 4,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 5,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 11,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 12,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 13,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 14,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 6,
+      "value": 100,
+      "fade": 0.0,
+      "channelPresetId": "left-light-strobe",
+      "valuePresetId": "left-light-strobe-slow"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 15,
+      "value": 100,
+      "fade": 0.0,
+      "channelPresetId": "right-light-strobe",
+      "valuePresetId": "right-light-strobe-slow"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 43,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-43",
+      "templateRowId": "templateRow_a21he9pe",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 44,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-43",
+      "templateRowId": "templateRow_27rckyhb",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 45,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-43",
+      "templateRowId": "templateRow_x7jvnkhv",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 46,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-43",
+      "templateRowId": "templateRow_3fkf6d9u",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 40,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-0",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-43",
+      "templateRowId": "templateRow_7jc0kfrk",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 54,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-red",
+      "valuePresetId": "mover-light-laser-red-full"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 53,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-pattern"
+    },
+    {
+      "time": "00:01:35.368",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-off"
+    },
+    {
+      "time": "00:01:36.368",
+      "channel": 43,
+      "value": 192,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-135",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-43",
+      "templateRowId": "templateRow_p0m9nkkc",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:01:36.368",
+      "channel": 44,
+      "value": 192,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-135",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-43",
+      "templateRowId": "templateRow_t960j39p",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:01:36.368",
+      "channel": 45,
+      "value": 192,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-135",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-43",
+      "templateRowId": "templateRow_5vs7mk3s",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:01:36.368",
+      "channel": 46,
+      "value": 192,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-135",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-43",
+      "templateRowId": "templateRow_pr8bmdws",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:01:36.368",
+      "channel": 40,
+      "value": 138,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-270",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-43",
+      "templateRowId": "templateRow_luhp3w8a",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:01:37.368",
+      "channel": 43,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-43",
+      "templateRowId": "templateRow_hso9q7d0",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:01:37.368",
+      "channel": 44,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-43",
+      "templateRowId": "templateRow_oibw9p81",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:01:37.368",
+      "channel": 45,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-43",
+      "templateRowId": "templateRow_9ltze0p6",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:01:37.368",
+      "channel": 46,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-45",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-43",
+      "templateRowId": "templateRow_jjdnmbjn",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:01:37.368",
+      "channel": 40,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-540",
+      "templateId": "template_09k0nyzo",
+      "templateInstanceId": "template-instance-43",
+      "templateRowId": "templateRow_7vvuyebl",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          40,
+          43,
+          44,
+          45,
+          46
+        ]
+      }
+    },
+    {
+      "time": "00:01:44.376",
+      "channel": 48,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strobe",
+      "valuePresetId": "mover-light-strobe-super-fast"
+    },
+    {
+      "time": "00:01:46.406",
+      "channel": 43,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-29",
+      "templateRowId": "templateRow_hthim9wl"
+    },
+    {
+      "time": "00:01:46.406",
+      "channel": 44,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-29",
+      "templateRowId": "templateRow_jfmhn7zo"
+    },
+    {
+      "time": "00:01:46.406",
+      "channel": 45,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-29",
+      "templateRowId": "templateRow_i582bszy"
+    },
+    {
+      "time": "00:01:46.406",
+      "channel": 46,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-180",
+      "templateId": "template_noai4wnb",
+      "templateInstanceId": "template-instance-29",
+      "templateRowId": "templateRow_qwosatc7"
+    },
+    {
+      "time": "00:01:46.406",
+      "channel": 41,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed",
+      "valuePresetId": "mover-light-rotation-speed-none"
+    },
+    {
+      "time": "00:01:46.406",
+      "channel": 47,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:46.406",
+      "channel": 49,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:46.406",
+      "channel": 50,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:46.406",
+      "channel": 51,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:46.406",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:46.406",
+      "channel": 53,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-pattern"
+    },
+    {
+      "time": "00:01:48.261",
+      "channel": 30,
+      "value": 81,
+      "fade": 0.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:48.261",
+      "channel": 31,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:48.261",
+      "channel": 32,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:48.261",
+      "channel": 33,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:48.261",
+      "channel": 34,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:50.700",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-off"
+    },
+    {
+      "time": "00:01:50.700",
+      "channel": 43,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-90",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-28",
+      "templateRowId": "templateRow_kkljp6p1"
+    },
+    {
+      "time": "00:01:50.700",
+      "channel": 44,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-28",
+      "templateRowId": "templateRow_g40qs6kc"
+    },
+    {
+      "time": "00:01:50.700",
+      "channel": 45,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-28",
+      "templateRowId": "templateRow_kxulog7w"
+    },
+    {
+      "time": "00:01:50.700",
+      "channel": 46,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-28",
+      "templateRowId": "templateRow_brgwxu91"
+    },
+    {
+      "time": "00:01:50.700",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:50.700",
+      "channel": 49,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:50.700",
+      "channel": 50,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:50.700",
+      "channel": 51,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:50.700",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:50.700",
+      "channel": 48,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strobe",
+      "valuePresetId": "mover-light-strobe-none"
+    },
+    {
+      "time": "00:01:50.700",
+      "channel": 57,
+      "value": 49,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strip",
+      "valuePresetId": "mover-light-strip-purple"
+    },
+    {
+      "time": "00:01:50.700",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-off"
+    },
+    {
+      "time": "00:01:50.700",
+      "channel": 10,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "valuePresetId": "right-light-dimmer-off"
+    },
+    {
+      "time": "00:01:50.700",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-off"
+    }
+  ]
 }

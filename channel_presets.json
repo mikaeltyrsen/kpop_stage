@@ -6,6 +6,8 @@
       "group": "Left Light",
       "channel": 1,
       "component": "brightness",
+      "componentType": "slider",
+      "componentName": "Brightness",
       "values": [
         {
           "id": "left-light-dimmer-off",
@@ -40,6 +42,8 @@
       "group": "Left Light",
       "channel": 2,
       "component": "red",
+      "componentType": "color",
+      "componentName": "Red",
       "values": [
         {
           "id": "left-light-red-off",
@@ -59,6 +63,8 @@
       "group": "Left Light",
       "channel": 3,
       "component": "green",
+      "componentType": "color",
+      "componentName": "Green",
       "values": [
         {
           "id": "left-light-green-off",
@@ -78,6 +84,8 @@
       "group": "Left Light",
       "channel": 4,
       "component": "blue",
+      "componentType": "color",
+      "componentName": "Blue",
       "values": [
         {
           "id": "left-light-blue-off",
@@ -97,6 +105,8 @@
       "group": "Left Light",
       "channel": 5,
       "component": "white",
+      "componentType": "slider",
+      "componentName": "White",
       "values": [
         {
           "id": "left-light-white-off",
@@ -115,6 +125,9 @@
       "name": "Left Light - Strobe",
       "group": "Left Light",
       "channel": 6,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "left-light-strobe-none",
@@ -153,6 +166,9 @@
       "name": "Left Light - Effects",
       "group": "Left Light",
       "channel": 7,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "left-light-effects-none",
@@ -191,6 +207,9 @@
       "name": "Left Light - Effect Speed",
       "group": "Left Light",
       "channel": 8,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "left-light-effect-speed-none",
@@ -229,6 +248,9 @@
       "name": "Right Light - Dimmer",
       "group": "Right Light",
       "channel": 10,
+      "component": "brightness",
+      "componentType": "slider",
+      "componentName": "Brightness",
       "values": [
         {
           "id": "right-light-dimmer-off",
@@ -255,14 +277,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "brightness"
+      ]
     },
     {
       "id": "right-light-red",
       "name": "Right Light - Red",
       "group": "Right Light",
       "channel": 11,
+      "component": "red",
+      "componentType": "color",
+      "componentName": "Red",
       "values": [
         {
           "id": "right-light-red-off",
@@ -274,14 +298,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "red"
+      ]
     },
     {
       "id": "right-light-green",
       "name": "Right Light - Green",
       "group": "Right Light",
       "channel": 12,
+      "component": "green",
+      "componentType": "color",
+      "componentName": "Green",
       "values": [
         {
           "id": "right-light-green-off",
@@ -293,14 +319,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "green"
+      ]
     },
     {
       "id": "right-light-blue",
       "name": "Right Light - Blue",
       "group": "Right Light",
       "channel": 13,
+      "component": "blue",
+      "componentType": "color",
+      "componentName": "Blue",
       "values": [
         {
           "id": "right-light-blue-off",
@@ -312,14 +340,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "blue"
+      ]
     },
     {
       "id": "right-light-white",
       "name": "Right Light - White",
       "group": "Right Light",
       "channel": 14,
+      "component": "white",
+      "componentType": "slider",
+      "componentName": "White",
       "values": [
         {
           "id": "right-light-white-off",
@@ -331,14 +361,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "white"
+      ]
     },
     {
       "id": "right-light-strobe",
       "name": "Right Light - Strobe",
       "group": "Right Light",
       "channel": 15,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "right-light-strobe-none",
@@ -377,6 +409,9 @@
       "name": "Right Light - Effects",
       "group": "Right Light",
       "channel": 16,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "right-light-effects-none",
@@ -415,6 +450,9 @@
       "name": "Right Light - Effect Speed",
       "group": "Right Light",
       "channel": 17,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "right-light-effect-speed-none",
@@ -453,6 +491,9 @@
       "name": "Back Light - Dimmer",
       "group": "Back Light",
       "channel": 20,
+      "component": "brightness",
+      "componentType": "slider",
+      "componentName": "Brightness",
       "values": [
         {
           "id": "back-light-dimmer-off",
@@ -479,14 +520,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "brightness"
+      ]
     },
     {
       "id": "back-light-red",
       "name": "Back Light - Red",
       "group": "Back Light",
       "channel": 21,
+      "component": "red",
+      "componentType": "color",
+      "componentName": "Red",
       "values": [
         {
           "id": "back-light-red-off",
@@ -498,14 +541,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "red"
+      ]
     },
     {
       "id": "back-light-green",
       "name": "Back Light - Green",
       "group": "Back Light",
       "channel": 22,
+      "component": "green",
+      "componentType": "color",
+      "componentName": "Green",
       "values": [
         {
           "id": "back-light-green-off",
@@ -517,14 +562,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "green"
+      ]
     },
     {
       "id": "back-light-blue",
       "name": "Back Light - Blue",
       "group": "Back Light",
       "channel": 23,
+      "component": "blue",
+      "componentType": "color",
+      "componentName": "Blue",
       "values": [
         {
           "id": "back-light-blue-off",
@@ -536,14 +583,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "blue"
+      ]
     },
     {
       "id": "back-light-white",
       "name": "Back Light - White",
       "group": "Back Light",
       "channel": 24,
+      "component": "white",
+      "componentType": "slider",
+      "componentName": "White",
       "values": [
         {
           "id": "back-light-white-off",
@@ -555,14 +604,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "white"
+      ]
     },
     {
       "id": "back-light-strobe",
       "name": "Back Light - Strobe",
       "group": "Back Light",
       "channel": 25,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "back-light-strobe-none",
@@ -601,6 +652,9 @@
       "name": "Back Light - Effects",
       "group": "Back Light",
       "channel": 26,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "back-light-effects-none",
@@ -639,6 +693,9 @@
       "name": "Back Light - Effect Speed",
       "group": "Back Light",
       "channel": 27,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "back-light-effect-speed-none",
@@ -677,6 +734,9 @@
       "name": "Front Light - Dimmer",
       "group": "Front Light",
       "channel": 30,
+      "component": "brightness",
+      "componentType": "slider",
+      "componentName": "Brightness",
       "values": [
         {
           "id": "front-light-dimmer-off",
@@ -703,14 +763,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "brightness"
+      ]
     },
     {
       "id": "front-light-red",
       "name": "Front Light - Red",
       "group": "Front Light",
       "channel": 31,
+      "component": "red",
+      "componentType": "color",
+      "componentName": "Red",
       "values": [
         {
           "id": "front-light-red-off",
@@ -722,14 +784,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "red"
+      ]
     },
     {
       "id": "front-light-green",
       "name": "Front Light - Green",
       "group": "Front Light",
       "channel": 32,
+      "component": "green",
+      "componentType": "color",
+      "componentName": "Green",
       "values": [
         {
           "id": "front-light-green-off",
@@ -741,14 +805,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "green"
+      ]
     },
     {
       "id": "front-light-blue",
       "name": "Front Light - Blue",
       "group": "Front Light",
       "channel": 33,
+      "component": "blue",
+      "componentType": "color",
+      "componentName": "Blue",
       "values": [
         {
           "id": "front-light-blue-off",
@@ -760,14 +826,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "blue"
+      ]
     },
     {
       "id": "front-light-white",
       "name": "Front Light - White",
       "group": "Front Light",
       "channel": 34,
+      "component": "white",
+      "componentType": "slider",
+      "componentName": "White",
       "values": [
         {
           "id": "front-light-white-off",
@@ -779,14 +847,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "white"
+      ]
     },
     {
       "id": "front-light-strobe",
       "name": "Front Light - Strobe",
       "group": "Front Light",
       "channel": 35,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "front-light-strobe-none",
@@ -825,6 +895,9 @@
       "name": "Front Light - Effects",
       "group": "Front Light",
       "channel": 36,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "front-light-effects-none",
@@ -863,6 +936,9 @@
       "name": "Front Light - Effect Speed",
       "group": "Front Light",
       "channel": 37,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "front-light-effect-speed-none",
@@ -901,6 +977,9 @@
       "name": "Mover Light - Rotation",
       "group": "Movers",
       "channel": 40,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "mover-light-rotation-0",
@@ -969,6 +1048,9 @@
       "name": "Mover Light - Rotation Speed",
       "group": "Movers",
       "channel": 41,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "mover-light-rotation-speed-none",
@@ -977,12 +1059,12 @@
         },
         {
           "id": "mover-light-rotation-speed-super-slow",
-          "name": "Super Slow",
+          "name": "Super Fast",
           "value": 50
         },
         {
           "id": "mover-light-rotation-speed-slow",
-          "name": "Slow",
+          "name": "Fast",
           "value": 100
         },
         {
@@ -992,12 +1074,12 @@
         },
         {
           "id": "mover-light-rotation-speed-fast",
-          "name": "Fast",
+          "name": "Slow",
           "value": 200
         },
         {
           "id": "mover-light-rotation-speed-super-fast",
-          "name": "Super Fast",
+          "name": "Super Slow",
           "value": 255
         }
       ]
@@ -1007,6 +1089,9 @@
       "name": "Mover Light - Pattern Rotation",
       "group": "Movers",
       "channel": 42,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "mover-light-pattern-rotation-0",
@@ -1070,6 +1155,9 @@
       "name": "Mover Light - Beam 1 Rotation",
       "group": "Movers",
       "channel": 43,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "mover-light-beam-rotation-0",
@@ -1103,6 +1191,9 @@
       "name": "Mover Light - Beam 2 Rotation",
       "group": "Movers",
       "channel": 44,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "mover-light-beam2-rotation-0",
@@ -1136,6 +1227,9 @@
       "name": "Mover Light - Beam 3 Rotation",
       "group": "Movers",
       "channel": 45,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "mover-light-beam3-rotation-0",
@@ -1169,6 +1263,9 @@
       "name": "Mover Light - Beam 4 Rotation",
       "group": "Movers",
       "channel": 46,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "mover-light-beam4-rotation-0",
@@ -1202,6 +1299,9 @@
       "name": "Mover Light - Beam Brightness",
       "group": "Movers",
       "channel": 47,
+      "component": "brightness",
+      "componentType": "slider",
+      "componentName": "Brightness",
       "values": [
         {
           "id": "mover-light-beam-brightness-off",
@@ -1228,14 +1328,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "brightness"
+      ]
     },
     {
       "id": "mover-light-strobe",
       "name": "Mover Light - Strobe",
       "group": "Movers",
       "channel": 48,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "mover-light-strobe-none",
@@ -1274,6 +1376,9 @@
       "name": "Mover Light - Beam Red",
       "group": "Movers",
       "channel": 49,
+      "component": "red",
+      "componentType": "color",
+      "componentName": "Red",
       "values": [
         {
           "id": "mover-light-beam-red-off",
@@ -1285,14 +1390,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "red"
+      ]
     },
     {
       "id": "mover-light-beam-green",
       "name": "Mover Light - Beam Green",
       "group": "Movers",
       "channel": 50,
+      "component": "green",
+      "componentType": "color",
+      "componentName": "Green",
       "values": [
         {
           "id": "mover-light-beam-green-off",
@@ -1304,14 +1411,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "green"
+      ]
     },
     {
       "id": "mover-light-beam-blue",
       "name": "Mover Light - Beam Blue",
       "group": "Movers",
       "channel": 51,
+      "component": "blue",
+      "componentType": "color",
+      "componentName": "Blue",
       "values": [
         {
           "id": "mover-light-beam-blue-off",
@@ -1323,14 +1432,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "blue"
+      ]
     },
     {
       "id": "mover-light-beam-white",
       "name": "Mover Light - Beam White",
       "group": "Movers",
       "channel": 52,
+      "component": "white",
+      "componentType": "slider",
+      "componentName": "White",
       "values": [
         {
           "id": "mover-light-beam-white-off",
@@ -1342,14 +1453,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "white"
+      ]
     },
     {
       "id": "mover-light-laser-pattern",
       "name": "Mover Light - Laser Pattern",
       "group": "Movers",
       "channel": 53,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": []
     },
     {
@@ -1357,6 +1470,9 @@
       "name": "Mover Light - Laser Red",
       "group": "Movers",
       "channel": 54,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "mover-light-laser-red-off",
@@ -1368,14 +1484,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "red"
+      ]
     },
     {
       "id": "mover-light-laser-green",
       "name": "Mover Light - Laser Green",
       "group": "Movers",
       "channel": 55,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "mover-light-laser-green-off",
@@ -1387,14 +1505,16 @@
           "name": "Full",
           "value": 255
         }
-      ],
-      "component": "green"
+      ]
     },
     {
       "id": "mover-light-white-flash",
       "name": "Mover Light - White Flash",
       "group": "Movers",
       "channel": 56,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "mover-light-white-flash-none",
@@ -1426,14 +1546,16 @@
           "name": "Super Fast",
           "value": 255
         }
-      ],
-      "component": "white"
+      ]
     },
     {
       "id": "mover-light-strip",
       "name": "Mover Light - Light Strip",
       "group": "Movers",
       "channel": 57,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "mover-light-strip-off",
@@ -1443,7 +1565,7 @@
         {
           "id": "mover-light-strip-red",
           "name": "Red",
-          "value": 13
+          "value": 15
         },
         {
           "id": "mover-light-strip-green",
@@ -1487,6 +1609,9 @@
       "name": "Mover Light - Light Strip Strobe",
       "group": "Movers",
       "channel": 58,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "mover-light-strip-strobe-none",
@@ -1525,6 +1650,9 @@
       "name": "Mover Light - Effects",
       "group": "Movers",
       "channel": 59,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
       "values": [
         {
           "id": "mover-light-effects-none",

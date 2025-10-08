@@ -3,38 +3,298 @@
     {
       "time": "00:00:01",
       "channel": 1,
-      "value": 255,
-      "fade": 1.0
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-off"
     },
     {
       "time": "00:00:01",
-      "channel": 2,
+      "channel": 20,
       "value": 255,
-      "fade": 0.0
+      "fade": 0.0,
+      "templateId": "template_7rc9acnd",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_82xlkilk",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 0.4,
+        "channels": [
+          1,
+          10,
+          20,
+          30
+        ]
+      }
     },
     {
       "time": "00:00:01",
-      "channel": 3,
-      "value": 255,
-      "fade": 0.0
+      "channel": 30,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_7rc9acnd",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_kuo5eav4",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 0.4,
+        "channels": [
+          1,
+          10,
+          20,
+          30
+        ]
+      }
     },
     {
-      "time": "00:01:23",
+      "time": "00:00:01",
       "channel": 1,
       "value": 255,
-      "fade": 1.0
+      "fade": 0.0,
+      "templateId": "template_7rc9acnd",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_t8myjzoo",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 0.4,
+        "channels": [
+          1,
+          10,
+          20,
+          30
+        ]
+      }
     },
     {
-      "time": "00:01:23",
-      "channel": 2,
+      "time": "00:00:01",
+      "channel": 10,
       "value": 255,
-      "fade": 0.0
+      "fade": 0.0,
+      "templateId": "template_7rc9acnd",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_hu7k5yxy",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 0.4,
+        "channels": [
+          1,
+          10,
+          20,
+          30
+        ]
+      }
     },
     {
-      "time": "00:03:34",
-      "channel": 3,
+      "time": "00:00:01",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "valuePresetId": "left-light-dimmer-off",
+      "templateId": "template_7rc9acnd",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_jaa2hzhw",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 0.4,
+        "channels": [
+          1,
+          10,
+          20,
+          30
+        ]
+      }
+    },
+    {
+      "time": "00:00:01.200",
+      "channel": 20,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_7rc9acnd",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_vngxmq9h",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 0.4,
+        "channels": [
+          1,
+          10,
+          20,
+          30
+        ]
+      }
+    },
+    {
+      "time": "00:00:01.200",
+      "channel": 10,
       "value": 255,
-      "fade": 5.0
+      "fade": 0.0,
+      "templateId": "template_7rc9acnd",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_gpf6502v",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 0.4,
+        "channels": [
+          1,
+          10,
+          20,
+          30
+        ]
+      }
+    },
+    {
+      "time": "00:00:01.200",
+      "channel": 30,
+      "value": 255,
+      "fade": 0.0,
+      "templateId": "template_7rc9acnd",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_tlensgfb",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 0.4,
+        "channels": [
+          1,
+          10,
+          20,
+          30
+        ]
+      }
+    },
+    {
+      "time": "00:00:01.200",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "templateId": "template_7rc9acnd",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_2jodqzyg",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 0.4,
+        "channels": [
+          1,
+          10,
+          20,
+          30
+        ]
+      }
+    },
+    {
+      "time": "00:00:01.400",
+      "channel": 20,
+      "value": 255,
+      "fade": 0.0,
+      "templateId": "template_7rc9acnd",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_jyiknrnd",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 0.4,
+        "channels": [
+          1,
+          10,
+          20,
+          30
+        ]
+      }
+    },
+    {
+      "time": "00:00:01.400",
+      "channel": 30,
+      "value": 255,
+      "fade": 0.0,
+      "templateId": "template_7rc9acnd",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_8cm656fa",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 0.4,
+        "channels": [
+          1,
+          10,
+          20,
+          30
+        ]
+      }
+    },
+    {
+      "time": "00:00:01.400",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "templateId": "template_7rc9acnd",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_u4r6w5o9",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 0.4,
+        "channels": [
+          1,
+          10,
+          20,
+          30
+        ]
+      }
+    },
+    {
+      "time": "00:00:01.400",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "templateId": "template_7rc9acnd",
+      "templateInstanceId": "template-instance-1",
+      "templateRowId": "templateRow_27koajri",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 0.4,
+        "channels": [
+          1,
+          10,
+          20,
+          30
+        ]
+      }
     }
   ]
 }
