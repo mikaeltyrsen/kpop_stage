@@ -247,9 +247,39 @@ def _generate_template_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex}"
 
 
+def _determine_row_type(raw: Dict[str, Any]) -> str:
+    raw_type = raw.get("type")
+    if isinstance(raw_type, str):
+        normalized = raw_type.strip().lower()
+        if normalized == "delay":
+            return "delay"
+        if normalized == "action":
+            return "action"
+
+    # Heuristic for legacy delay rows that may lack a type but include a duration
+    if "duration" in raw and "channel" not in raw:
+        return "delay"
+
+    return "action"
+
+
 def sanitize_template_row(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if not isinstance(raw, dict):
         return None
+
+    row_type = _determine_row_type(raw)
+
+    row_id = raw.get("id")
+    if not isinstance(row_id, str) or not row_id:
+        row_id = _generate_template_id("row")
+
+    if row_type == "delay":
+        try:
+            duration_value = float(raw.get("duration", 0))
+        except (TypeError, ValueError):
+            duration_value = 0.0
+        duration = max(0.0, duration_value)
+        return {"id": row_id, "type": "delay", "duration": duration}
 
     try:
         channel_value = int(raw.get("channel", 1))
@@ -269,10 +299,6 @@ def sanitize_template_row(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         fade_value = 0.0
     fade = max(0.0, fade_value)
 
-    row_id = raw.get("id")
-    if not isinstance(row_id, str) or not row_id:
-        row_id = _generate_template_id("row")
-
     channel_preset_id = raw.get("channelPresetId")
     if not isinstance(channel_preset_id, str) or not channel_preset_id:
         channel_preset_id = None
@@ -283,6 +309,7 @@ def sanitize_template_row(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
     return {
         "id": row_id,
+        "type": "action",
         "channel": channel,
         "value": value,
         "fade": fade,
