@@ -378,19 +378,27 @@ function createDefaultMasterState(master, previous = null) {
   if (!master) {
     return null;
   }
-  const previousState = previous && previous.id === master.id ? previous : null;
-  const state = {
-    id: master.id,
-    color: previousState ? normalizeHexColor(previousState.color) : DEFAULT_MASTER_COLOR,
-  };
+  const hasPrevious = previous && previous.id === master.id;
+  const state = hasPrevious ? previous : { id: master.id };
+  state.id = master.id;
+
+  const baseColor = hasPrevious ? previous.color : state.color;
+  state.color = normalizeHexColor(baseColor || DEFAULT_MASTER_COLOR);
+
   if (master.hasBrightness) {
-    const fallback = previousState ? previousState.brightness : 255;
+    const fallback = hasPrevious ? previous.brightness : state.brightness;
     state.brightness = clampChannelValue(fallback ?? 255);
+  } else if (Object.prototype.hasOwnProperty.call(state, "brightness")) {
+    delete state.brightness;
   }
+
   if (master.hasWhite) {
-    const fallback = previousState ? previousState.white : 0;
+    const fallback = hasPrevious ? previous.white : state.white;
     state.white = clampChannelValue(fallback ?? 0);
+  } else if (Object.prototype.hasOwnProperty.call(state, "white")) {
+    delete state.white;
   }
+
   return state;
 }
 
