@@ -1809,6 +1809,31 @@ input::-webkit-inner-spin-button {
   min-width: 3.5ch;
 }
 
+.master-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.master-dropdown__label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  min-width: 4.5rem;
+}
+
+.master-dropdown__select {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.4rem;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background-color: rgba(255, 255, 255, 0.9);
+  color: inherit;
+}
+
 .row-tools,
 .template-row__tools {
   display: flex;

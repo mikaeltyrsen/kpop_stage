@@ -68,6 +68,10 @@ def test_put_channel_presets_saves_and_returns_sanitized(channel_presets_tempfil
     assert first["values"][0]["value"] == 255
     assert 0 <= first["values"][1]["value"] <= 255
     assert returned[2]["component"] == "red"
+    assert returned[2]["componentType"] == "color"
+    assert returned[2]["componentName"] == "Red"
+    assert returned[0]["componentType"] == ""
+    assert returned[0]["componentName"] == ""
 
     assert channel_presets_tempfile.exists()
     stored = json.loads(channel_presets_tempfile.read_text(encoding="utf-8"))

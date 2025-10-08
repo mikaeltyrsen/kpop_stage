@@ -74,7 +74,7 @@ const activeChannelFilterIds = new Set();
 const channelFilterGroupMap = new Map();
 
 const CHANNEL_COMPONENTS = Object.freeze({
-  NONE: "none",
+  NONE: "",
   RED: "red",
   GREEN: "green",
   BLUE: "blue",
@@ -82,14 +82,43 @@ const CHANNEL_COMPONENTS = Object.freeze({
   BRIGHTNESS: "brightness",
 });
 
-const CHANNEL_COMPONENT_LABELS = Object.freeze({
-  [CHANNEL_COMPONENTS.NONE]: "None",
+const CHANNEL_COMPONENT_SUGGESTIONS = Object.freeze([
+  CHANNEL_COMPONENTS.NONE,
+  CHANNEL_COMPONENTS.RED,
+  CHANNEL_COMPONENTS.GREEN,
+  CHANNEL_COMPONENTS.BLUE,
+  CHANNEL_COMPONENTS.WHITE,
+  CHANNEL_COMPONENTS.BRIGHTNESS,
+]);
+
+const CHANNEL_COMPONENT_TYPES = Object.freeze({
+  COLOR: "color",
+  SLIDER: "slider",
+  DROPDOWN: "dropdown",
+});
+
+const CHANNEL_COMPONENT_TYPE_VALUES = new Set(Object.values(CHANNEL_COMPONENT_TYPES));
+
+const CHANNEL_COMPONENT_DEFAULT_NAMES = Object.freeze({
   [CHANNEL_COMPONENTS.RED]: "Red",
   [CHANNEL_COMPONENTS.GREEN]: "Green",
   [CHANNEL_COMPONENTS.BLUE]: "Blue",
   [CHANNEL_COMPONENTS.WHITE]: "White",
   [CHANNEL_COMPONENTS.BRIGHTNESS]: "Brightness",
 });
+
+const COLOR_COMPONENT_KEYS = new Set([
+  CHANNEL_COMPONENTS.RED,
+  CHANNEL_COMPONENTS.GREEN,
+  CHANNEL_COMPONENTS.BLUE,
+]);
+
+const DEFAULT_SLIDER_VALUES = Object.freeze({
+  [CHANNEL_COMPONENTS.BRIGHTNESS]: 255,
+  [CHANNEL_COMPONENTS.WHITE]: 0,
+});
+
+const CHANNEL_COMPONENT_DEFAULT_TYPE = CHANNEL_COMPONENT_TYPES.SLIDER;
 
 const CHANNEL_MASTER_PREFIX = "master:";
 
@@ -109,7 +138,6 @@ const DEFAULT_COLOR_PRESETS = Object.freeze([
 
 let channelMasters = [];
 const channelMasterMap = new Map();
-const CHANNEL_COMPONENT_VALUES = new Set(Object.values(CHANNEL_COMPONENTS));
 const DEFAULT_MASTER_COLOR = "#ffffff";
 
 const TEMPLATE_INSTANCE_PROPERTY = "__templateInstanceId";
@@ -199,14 +227,87 @@ function applyIconButton(button, type, label) {
   }
 }
 
+function slugifyComponentKey(value) {
+  return (value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .replace(/_{2,}/g, "_");
+}
+
 function normalizeChannelComponent(value) {
   if (typeof value !== "string") {
     return CHANNEL_COMPONENTS.NONE;
   }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return CHANNEL_COMPONENTS.NONE;
+  }
+  if (trimmed.toLowerCase() === "none") {
+    return CHANNEL_COMPONENTS.NONE;
+  }
+  return slugifyComponentKey(trimmed);
+}
+
+function normalizeChannelComponentType(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
   const normalized = value.trim().toLowerCase();
-  return CHANNEL_COMPONENT_VALUES.has(normalized)
-    ? normalized
-    : CHANNEL_COMPONENTS.NONE;
+  return CHANNEL_COMPONENT_TYPE_VALUES.has(normalized) ? normalized : "";
+}
+
+function getPresetComponentType(preset) {
+  if (!preset || typeof preset !== "object") {
+    return "";
+  }
+  const rawType = normalizeChannelComponentType(preset.componentType);
+  if (rawType) {
+    return rawType;
+  }
+  const componentKey = getChannelPresetComponent(preset);
+  if (COLOR_COMPONENT_KEYS.has(componentKey)) {
+    return CHANNEL_COMPONENT_TYPES.COLOR;
+  }
+  if (componentKey === CHANNEL_COMPONENTS.BRIGHTNESS || componentKey === CHANNEL_COMPONENTS.WHITE) {
+    return CHANNEL_COMPONENT_TYPES.SLIDER;
+  }
+  if (Array.isArray(preset.values) && preset.values.length) {
+    return CHANNEL_COMPONENT_TYPES.DROPDOWN;
+  }
+  return CHANNEL_COMPONENT_DEFAULT_TYPE;
+}
+
+function titleizeComponentKey(key) {
+  if (!key) {
+    return "";
+  }
+  return key
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function getPresetComponentName(preset) {
+  if (!preset || typeof preset !== "object") {
+    return "";
+  }
+  if (typeof preset.componentName === "string" && preset.componentName.trim()) {
+    return preset.componentName.trim();
+  }
+  const componentKey = getChannelPresetComponent(preset);
+  if (componentKey && CHANNEL_COMPONENT_DEFAULT_NAMES[componentKey]) {
+    return CHANNEL_COMPONENT_DEFAULT_NAMES[componentKey];
+  }
+  const type = getPresetComponentType(preset);
+  if (type === CHANNEL_COMPONENT_TYPES.DROPDOWN) {
+    return "Mode";
+  }
+  if (type === CHANNEL_COMPONENT_TYPES.SLIDER) {
+    return titleizeComponentKey(componentKey) || "Level";
+  }
+  return titleizeComponentKey(componentKey);
 }
 
 function getChannelPresetComponent(preset) {
@@ -259,24 +360,64 @@ function refreshChannelMasters() {
         key: groupKey,
         name: groupName,
         presets: {},
+        componentMeta: new Map(),
+        componentOrder: [],
       };
       groups.set(groupKey, entry);
     }
+    const componentType = getPresetComponentType(preset);
+    const componentName = getPresetComponentName(preset);
     entry.presets[component] = preset;
+    entry.componentMeta.set(component, {
+      key: component,
+      type: componentType,
+      name: componentName,
+      preset,
+    });
+    if (!entry.componentOrder.includes(component)) {
+      entry.componentOrder.push(component);
+    }
   });
 
   const masters = [];
   groups.forEach((entry) => {
     const components = entry.presets;
-    const hasColor = Boolean(
-      components[CHANNEL_COMPONENTS.RED] ||
-        components[CHANNEL_COMPONENTS.GREEN] ||
-        components[CHANNEL_COMPONENTS.BLUE],
-    );
-    const componentCount = Object.keys(components).length;
-    if (!hasColor && componentCount < 2) {
+    const meta = entry.componentMeta || new Map();
+    const componentKeys = Array.isArray(entry.componentOrder)
+      ? entry.componentOrder.slice()
+      : Object.keys(components);
+    const componentCount = componentKeys.length;
+    if (!componentCount) {
       return;
     }
+    const hasColor = COLOR_COMPONENT_KEYS.size
+      ? [...COLOR_COMPONENT_KEYS].every((key) => components[key])
+      : false;
+    const sliderComponents = [];
+    const dropdownComponents = [];
+    const colorComponents = [];
+
+    componentKeys.forEach((key) => {
+      const info = meta.get(key);
+      if (!info) {
+        return;
+      }
+      if (info.type === CHANNEL_COMPONENT_TYPES.COLOR) {
+        colorComponents.push({ ...info });
+      } else if (info.type === CHANNEL_COMPONENT_TYPES.SLIDER) {
+        sliderComponents.push({
+          ...info,
+          defaultValue:
+            Number.isFinite(DEFAULT_SLIDER_VALUES[info.key])
+              ? DEFAULT_SLIDER_VALUES[info.key]
+              : 0,
+        });
+      } else if (info.type === CHANNEL_COMPONENT_TYPES.DROPDOWN) {
+        const options = Array.isArray(info.preset?.values) ? info.preset.values : [];
+        dropdownComponents.push({ ...info, options });
+      }
+    });
+
     const channels = Object.values(components)
       .map((preset) => Number.parseInt(preset.channel, 10))
       .filter((channel) => Number.isFinite(channel))
@@ -289,8 +430,13 @@ function refreshChannelMasters() {
       presets: components,
       channels,
       hasColor,
-      hasWhite: Boolean(components[CHANNEL_COMPONENTS.WHITE]),
-      hasBrightness: Boolean(components[CHANNEL_COMPONENTS.BRIGHTNESS]),
+      hasWhite: sliderComponents.some((item) => item.key === CHANNEL_COMPONENTS.WHITE),
+      hasBrightness: sliderComponents.some((item) => item.key === CHANNEL_COMPONENTS.BRIGHTNESS),
+      componentMeta: meta,
+      componentOrder: componentKeys,
+      sliderComponents,
+      dropdownComponents,
+      colorComponents,
     });
   });
 
@@ -389,21 +535,101 @@ function createDefaultMasterState(master, previous = null) {
   const state = hasPrevious ? previous : { id: master.id };
   state.id = master.id;
 
-  const baseColor = hasPrevious ? previous.color : state.color;
-  state.color = normalizeHexColor(baseColor || DEFAULT_MASTER_COLOR);
-
-  if (master.hasBrightness) {
-    const fallback = hasPrevious ? previous.brightness : state.brightness;
-    state.brightness = clampChannelValue(fallback ?? 255);
-  } else if (Object.prototype.hasOwnProperty.call(state, "brightness")) {
-    delete state.brightness;
+  if (master.hasColor) {
+    const baseColor = hasPrevious ? previous.color : state.color;
+    state.color = normalizeHexColor(baseColor || DEFAULT_MASTER_COLOR);
+  } else if (Object.prototype.hasOwnProperty.call(state, "color")) {
+    delete state.color;
   }
 
-  if (master.hasWhite) {
-    const fallback = hasPrevious ? previous.white : state.white;
-    state.white = clampChannelValue(fallback ?? 0);
-  } else if (Object.prototype.hasOwnProperty.call(state, "white")) {
+  const previousSliders =
+    hasPrevious && previous.sliders && typeof previous.sliders === "object"
+      ? previous.sliders
+      : null;
+  const sliderState = {};
+  if (Array.isArray(master.sliderComponents)) {
+    master.sliderComponents.forEach((component) => {
+      if (!component || !component.key) {
+        return;
+      }
+      let fallback =
+        previousSliders && typeof previousSliders[component.key] === "number"
+          ? previousSliders[component.key]
+          : null;
+      if (fallback === null || fallback === undefined) {
+        if (
+          component.key === CHANNEL_COMPONENTS.BRIGHTNESS &&
+          hasPrevious &&
+          typeof previous.brightness === "number"
+        ) {
+          fallback = previous.brightness;
+        } else if (
+          component.key === CHANNEL_COMPONENTS.WHITE &&
+          hasPrevious &&
+          typeof previous.white === "number"
+        ) {
+          fallback = previous.white;
+        } else if (typeof component.defaultValue === "number") {
+          fallback = component.defaultValue;
+        }
+      }
+      const value = clampChannelValue(
+        fallback === null || fallback === undefined ? component.defaultValue ?? 0 : fallback,
+      );
+      sliderState[component.key] = value;
+      if (component.key === CHANNEL_COMPONENTS.BRIGHTNESS) {
+        state.brightness = value;
+      }
+      if (component.key === CHANNEL_COMPONENTS.WHITE) {
+        state.white = value;
+      }
+    });
+  }
+
+  if (Object.keys(sliderState).length) {
+    state.sliders = sliderState;
+  } else if (Object.prototype.hasOwnProperty.call(state, "sliders")) {
+    delete state.sliders;
+  }
+
+  if (!master.hasBrightness && Object.prototype.hasOwnProperty.call(state, "brightness")) {
+    delete state.brightness;
+  }
+  if (!master.hasWhite && Object.prototype.hasOwnProperty.call(state, "white")) {
     delete state.white;
+  }
+
+  const previousDropdowns =
+    hasPrevious && previous.dropdownSelections && typeof previous.dropdownSelections === "object"
+      ? previous.dropdownSelections
+      : null;
+  const dropdownState = {};
+  if (Array.isArray(master.dropdownComponents)) {
+    master.dropdownComponents.forEach((component) => {
+      if (!component || !component.key) {
+        return;
+      }
+      const options = Array.isArray(component.options) ? component.options : [];
+      if (!options.length) {
+        return;
+      }
+      let selection =
+        previousDropdowns && typeof previousDropdowns[component.key] === "string"
+          ? previousDropdowns[component.key]
+          : null;
+      if (!selection || !options.some((option) => option.id === selection)) {
+        selection = options[0].id;
+      }
+      if (selection) {
+        dropdownState[component.key] = selection;
+      }
+    });
+  }
+
+  if (Object.keys(dropdownState).length) {
+    state.dropdownSelections = dropdownState;
+  } else if (Object.prototype.hasOwnProperty.call(state, "dropdownSelections")) {
+    delete state.dropdownSelections;
   }
 
   return state;
@@ -421,21 +647,53 @@ function ensureMasterState(action, master) {
   action.channel = getMasterPrimaryChannel(master);
   if (master.hasBrightness && typeof state.brightness === "number") {
     action.value = clampChannelValue(state.brightness);
+  } else if (Array.isArray(master.sliderComponents) && master.sliderComponents.length) {
+    const firstSlider = master.sliderComponents[0];
+    const sliders = state.sliders || {};
+    const sliderValue = sliders[firstSlider.key];
+    if (typeof sliderValue === "number") {
+      action.value = clampChannelValue(sliderValue);
+    }
   }
   return state;
 }
 
 function buildMasterChannelValues(master, state) {
   const values = {};
-  const rgb = hexToRgb(state?.color);
-  values[CHANNEL_COMPONENTS.RED] = rgb.r;
-  values[CHANNEL_COMPONENTS.GREEN] = rgb.g;
-  values[CHANNEL_COMPONENTS.BLUE] = rgb.b;
-  if (master.hasWhite) {
-    values[CHANNEL_COMPONENTS.WHITE] = clampChannelValue(state?.white ?? 0);
+  if (master.hasColor) {
+    const rgb = hexToRgb(state?.color);
+    values[CHANNEL_COMPONENTS.RED] = rgb.r;
+    values[CHANNEL_COMPONENTS.GREEN] = rgb.g;
+    values[CHANNEL_COMPONENTS.BLUE] = rgb.b;
   }
-  if (master.hasBrightness) {
-    values[CHANNEL_COMPONENTS.BRIGHTNESS] = clampChannelValue(state?.brightness ?? 255);
+  if (Array.isArray(master.sliderComponents)) {
+    const sliders = state?.sliders || {};
+    master.sliderComponents.forEach((component) => {
+      if (!component || !component.key) {
+        return;
+      }
+      const rawValue = sliders[component.key];
+      const fallback =
+        rawValue === null || rawValue === undefined ? component.defaultValue ?? 0 : rawValue;
+      values[component.key] = clampChannelValue(fallback);
+    });
+  }
+  if (Array.isArray(master.dropdownComponents)) {
+    const selections = state?.dropdownSelections || {};
+    master.dropdownComponents.forEach((component) => {
+      if (!component || !component.key) {
+        return;
+      }
+      const options = Array.isArray(component.options) ? component.options : [];
+      if (!options.length) {
+        return;
+      }
+      const selectedId = selections[component.key];
+      const option = options.find((entry) => entry.id === selectedId) || options[0];
+      if (option) {
+        values[component.key] = clampChannelValue(option.value);
+      }
+    });
   }
   return values;
 }
@@ -485,11 +743,12 @@ function expandMasterAction(action, master, seconds, fade) {
     entries.push(entry);
   };
 
-  appendEntry(CHANNEL_COMPONENTS.BRIGHTNESS);
-  appendEntry(CHANNEL_COMPONENTS.RED);
-  appendEntry(CHANNEL_COMPONENTS.GREEN);
-  appendEntry(CHANNEL_COMPONENTS.BLUE);
-  appendEntry(CHANNEL_COMPONENTS.WHITE);
+  const componentKeys = Array.isArray(master.componentOrder)
+    ? master.componentOrder
+    : Object.keys(master.presets || {});
+  componentKeys.forEach((componentKey) => {
+    appendEntry(componentKey);
+  });
 
   return entries;
 }
@@ -499,7 +758,12 @@ function deriveMasterStateFromActions(componentActions, master) {
     return null;
   }
   const state = createDefaultMasterState(master);
-  const componentValues = {};
+  if (!state) {
+    return null;
+  }
+  const colorValues = {};
+  const sliderValues = {};
+  const dropdownSelections = {};
   componentActions.forEach((action) => {
     if (!action || typeof action !== "object") {
       return;
@@ -513,22 +777,51 @@ function deriveMasterStateFromActions(componentActions, master) {
     if (component === CHANNEL_COMPONENTS.NONE) {
       return;
     }
-    componentValues[component] = clampChannelValue(action.value);
+    const type = getPresetComponentType(preset);
+    const value = clampChannelValue(action.value);
+    if (type === CHANNEL_COMPONENT_TYPES.COLOR) {
+      colorValues[component] = value;
+    } else if (type === CHANNEL_COMPONENT_TYPES.SLIDER) {
+      sliderValues[component] = value;
+    } else if (type === CHANNEL_COMPONENT_TYPES.DROPDOWN) {
+      const options = Array.isArray(preset.values) ? preset.values : [];
+      const matching = options.find((option) => clampChannelValue(option.value) === value);
+      if (matching) {
+        dropdownSelections[component] = matching.id;
+      }
+    }
   });
 
-  const red = componentValues[CHANNEL_COMPONENTS.RED] ?? 0;
-  const green = componentValues[CHANNEL_COMPONENTS.GREEN] ?? 0;
-  const blue = componentValues[CHANNEL_COMPONENTS.BLUE] ?? 0;
-  state.color = rgbToHex(red, green, blue);
-  if (master.hasBrightness) {
-    state.brightness = clampChannelValue(
-      componentValues[CHANNEL_COMPONENTS.BRIGHTNESS] ?? state.brightness ?? 255,
-    );
+  if (master.hasColor) {
+    const red = colorValues[CHANNEL_COMPONENTS.RED] ?? 0;
+    const green = colorValues[CHANNEL_COMPONENTS.GREEN] ?? 0;
+    const blue = colorValues[CHANNEL_COMPONENTS.BLUE] ?? 0;
+    state.color = rgbToHex(red, green, blue);
   }
-  if (master.hasWhite) {
-    state.white = clampChannelValue(
-      componentValues[CHANNEL_COMPONENTS.WHITE] ?? state.white ?? 0,
-    );
+  if (Array.isArray(master.sliderComponents)) {
+    state.sliders = state.sliders || {};
+    master.sliderComponents.forEach((component) => {
+      const value = sliderValues[component.key];
+      if (typeof value === "number") {
+        state.sliders[component.key] = clampChannelValue(value);
+        if (component.key === CHANNEL_COMPONENTS.BRIGHTNESS) {
+          state.brightness = state.sliders[component.key];
+        }
+        if (component.key === CHANNEL_COMPONENTS.WHITE) {
+          state.white = state.sliders[component.key];
+        }
+      }
+    });
+  }
+  if (Array.isArray(master.dropdownComponents)) {
+    state.dropdownSelections = state.dropdownSelections || {};
+    master.dropdownComponents.forEach((component) => {
+      const selection = dropdownSelections[component.key];
+      const options = Array.isArray(component.options) ? component.options : [];
+      if (selection && options.some((option) => option.id === selection)) {
+        state.dropdownSelections[component.key] = selection;
+      }
+    });
   }
   return state;
 }
@@ -3337,7 +3630,10 @@ function createMasterValueField(action, index, actionId, master) {
     wrapper.append(colorContainer);
   }
 
-  const createSliderRow = (label, value, onChange, fieldKey) => {
+  const createSliderRow = (component, value) => {
+    const label = component.name || titleizeComponentKey(component.key) || "Level";
+    const fieldKey = `master-${component.key}`;
+    state.sliders = state.sliders || {};
     const row = document.createElement("div");
     row.className = "master-slider";
 
@@ -3365,50 +3661,102 @@ function createMasterValueField(action, index, actionId, master) {
     numberInput.classList.add("input--compact-number", "master-slider__number");
     setActionFieldMetadata(numberInput, actionId, `${fieldKey}-number`);
 
-    const updateValue = (newValue) => {
+    const updateValue = (newValue, shouldQueue = true) => {
       const clamped = clampChannelValue(newValue);
       slider.value = String(clamped);
       numberInput.value = String(clamped);
-      onChange(clamped);
+      state.sliders[component.key] = clamped;
+      if (component.key === CHANNEL_COMPONENTS.BRIGHTNESS) {
+        state.brightness = clamped;
+        action.value = clamped;
+      }
+      if (component.key === CHANNEL_COMPONENTS.WHITE) {
+        state.white = clamped;
+      }
+      if (shouldQueue) {
+        queuePreviewSync();
+      }
     };
 
     slider.addEventListener("input", (event) => {
-      updateValue(event.target.value);
-      queuePreviewSync();
+      updateValue(event.target.value, false);
     });
     slider.addEventListener("change", (event) => {
       updateValue(event.target.value);
-      queuePreviewSync();
     });
 
     numberInput.addEventListener("input", (event) => {
-      updateValue(event.target.value);
-      queuePreviewSync();
+      updateValue(event.target.value, false);
     });
     numberInput.addEventListener("change", (event) => {
       updateValue(event.target.value);
-      queuePreviewSync();
     });
 
     row.append(labelEl, slider, numberInput);
     return row;
   };
 
-  if (master.hasBrightness) {
-    const brightnessValue = clampChannelValue(state.brightness ?? 255);
-    const brightnessRow = createSliderRow("Brightness", brightnessValue, (newValue) => {
-      state.brightness = newValue;
-      action.value = newValue;
-    }, "masterBrightness");
-    wrapper.append(brightnessRow);
+  if (Array.isArray(master.sliderComponents) && master.sliderComponents.length) {
+    master.sliderComponents.forEach((component) => {
+      if (!component || !component.key) {
+        return;
+      }
+      const sliders = state.sliders || {};
+      const initial = clampChannelValue(
+        sliders[component.key] ?? component.defaultValue ?? 0,
+      );
+      state.sliders[component.key] = initial;
+      const row = createSliderRow(component, initial);
+      wrapper.append(row);
+    });
   }
 
-  if (master.hasWhite) {
-    const whiteValue = clampChannelValue(state.white ?? 0);
-    const whiteRow = createSliderRow("White", whiteValue, (newValue) => {
-      state.white = newValue;
-    }, "masterWhite");
-    wrapper.append(whiteRow);
+  if (Array.isArray(master.dropdownComponents) && master.dropdownComponents.length) {
+    state.dropdownSelections = state.dropdownSelections || {};
+    master.dropdownComponents.forEach((component) => {
+      if (!component || !component.key) {
+        return;
+      }
+      const options = Array.isArray(component.options) ? component.options : [];
+      if (!options.length) {
+        return;
+      }
+      const row = document.createElement("div");
+      row.className = "master-dropdown";
+
+      const labelEl = document.createElement("span");
+      labelEl.className = "master-dropdown__label";
+      labelEl.textContent = component.name || titleizeComponentKey(component.key) || "Mode";
+
+      const select = document.createElement("select");
+      select.className = "master-dropdown__select";
+      setActionFieldMetadata(select, actionId, `masterDropdown-${component.key}`);
+
+      const selections = state.dropdownSelections || {};
+      let selectedId = selections[component.key];
+      if (!selectedId || !options.some((option) => option.id === selectedId)) {
+        selectedId = options[0].id;
+      }
+
+      options.forEach((optionPreset) => {
+        const option = document.createElement("option");
+        option.value = optionPreset.id;
+        option.textContent = optionPreset.name || String(optionPreset.value);
+        select.append(option);
+      });
+
+      select.value = selectedId;
+      state.dropdownSelections[component.key] = selectedId;
+
+      select.addEventListener("change", (event) => {
+        const valueId = event.target.value;
+        state.dropdownSelections[component.key] = valueId;
+        queuePreviewSync();
+      });
+
+      row.append(labelEl, select);
+      wrapper.append(row);
+    });
   }
 
   return wrapper;
@@ -4122,22 +4470,61 @@ function renderChannelPresets() {
     const componentField = document.createElement("label");
     componentField.className = "preset-field";
     const componentLabel = document.createElement("span");
-    componentLabel.textContent = "Component";
-    const componentSelect = document.createElement("select");
-    Object.values(CHANNEL_COMPONENTS).forEach((valueKey) => {
-      const option = document.createElement("option");
-      option.value = valueKey;
-      option.textContent = CHANNEL_COMPONENT_LABELS[valueKey] || valueKey;
-      componentSelect.append(option);
-    });
-    const componentValue = getChannelPresetComponent(preset);
-    componentSelect.value = componentValue || CHANNEL_COMPONENTS.NONE;
-    componentSelect.addEventListener("change", (event) =>
-      handlePresetComponentChange(event, preset.id),
+    componentLabel.textContent = "Component key";
+    const componentInput = document.createElement("input");
+    componentInput.type = "text";
+    componentInput.placeholder = "red, brightness, strobe";
+    componentInput.value = getChannelPresetComponent(preset) || "";
+    const datalistId = `component-suggestions-${preset.id}`;
+    componentInput.setAttribute("list", datalistId);
+    componentInput.addEventListener("change", (event) =>
+      handlePresetComponentInput(event, preset.id),
     );
-    componentField.append(componentLabel, componentSelect);
+    const suggestionList = document.createElement("datalist");
+    suggestionList.id = datalistId;
+    CHANNEL_COMPONENT_SUGGESTIONS.forEach((suggestion) => {
+      const option = document.createElement("option");
+      option.value = suggestion;
+      suggestionList.append(option);
+    });
+    componentField.append(componentLabel, componentInput, suggestionList);
 
-    row.append(nameField, channelField, groupField, componentField);
+    const componentTypeField = document.createElement("label");
+    componentTypeField.className = "preset-field";
+    const componentTypeLabel = document.createElement("span");
+    componentTypeLabel.textContent = "Component type";
+    const componentTypeSelect = document.createElement("select");
+    const autoOption = document.createElement("option");
+    autoOption.value = "";
+    autoOption.textContent = "Auto";
+    componentTypeSelect.append(autoOption);
+    Object.values(CHANNEL_COMPONENT_TYPES).forEach((typeKey) => {
+      const option = document.createElement("option");
+      option.value = typeKey;
+      option.textContent = titleizeComponentKey(typeKey);
+      componentTypeSelect.append(option);
+    });
+    componentTypeSelect.value = normalizeChannelComponentType(preset.componentType) || "";
+    componentTypeSelect.addEventListener("change", (event) =>
+      handlePresetComponentTypeChange(event, preset.id),
+    );
+    componentTypeField.append(componentTypeLabel, componentTypeSelect);
+
+    const componentNameField = document.createElement("label");
+    componentNameField.className = "preset-field";
+    const componentNameLabel = document.createElement("span");
+    componentNameLabel.textContent = "Component name";
+    const componentNameInput = document.createElement("input");
+    componentNameInput.type = "text";
+    componentNameInput.placeholder = "Brightness";
+    componentNameInput.value =
+      typeof preset.componentName === "string" ? preset.componentName : "";
+    componentNameInput.addEventListener("input", (event) =>
+      handlePresetComponentNameInput(event, preset.id),
+    );
+    componentNameField.append(componentNameLabel, componentNameInput);
+
+    row.append(nameField, channelField, groupField, componentField, componentTypeField, componentNameField);
     content.append(row);
 
     const valuesSection = document.createElement("div");
@@ -4943,6 +5330,8 @@ function addChannelPreset() {
     group: "",
     channel: findNextAvailableChannel(),
     component: CHANNEL_COMPONENTS.NONE,
+    componentType: "",
+    componentName: "",
     values: [],
   };
   channelPresets.push(preset);
@@ -5020,13 +5409,34 @@ function handlePresetGroupInput(event, presetId) {
   renderChannelFilterControls();
 }
 
-function handlePresetComponentChange(event, presetId) {
+function handlePresetComponentInput(event, presetId) {
   const preset = getChannelPreset(presetId);
   if (!preset) return;
   const value = normalizeChannelComponent(event.target.value);
   preset.component = value === CHANNEL_COMPONENTS.NONE ? "" : value;
+  event.target.value = preset.component;
   saveChannelPresets();
   renderChannelPresets();
+  renderActions({ preserveFocus: true });
+  queuePreviewSync();
+}
+
+function handlePresetComponentTypeChange(event, presetId) {
+  const preset = getChannelPreset(presetId);
+  if (!preset) return;
+  const value = normalizeChannelComponentType(event.target.value);
+  preset.componentType = value;
+  saveChannelPresets();
+  renderChannelPresets();
+  renderActions({ preserveFocus: true });
+  queuePreviewSync();
+}
+
+function handlePresetComponentNameInput(event, presetId) {
+  const preset = getChannelPreset(presetId);
+  if (!preset) return;
+  preset.componentName = event.target.value;
+  saveChannelPresets();
   renderActions({ preserveFocus: true });
   queuePreviewSync();
 }
@@ -5117,6 +5527,9 @@ function buildChannelPresetPayload() {
       normalizeChannelComponent(preset.component) === CHANNEL_COMPONENTS.NONE
         ? ""
         : normalizeChannelComponent(preset.component),
+    componentType: normalizeChannelComponentType(preset.componentType || ""),
+    componentName:
+      typeof preset.componentName === "string" ? preset.componentName.trim() : "",
     values: Array.isArray(preset.values)
       ? preset.values.map((value) => ({
           id: value.id,
@@ -5182,17 +5595,34 @@ function sanitizeChannelPreset(raw) {
   const channelNumber = Number.parseInt(raw.channel, 10);
   const channel = Number.isFinite(channelNumber) ? clamp(channelNumber, 1, 512) : 1;
   const componentValue = normalizeChannelComponent(raw.component);
+  const componentTypeRaw = normalizeChannelComponentType(raw.componentType);
+  const componentNameRaw =
+    typeof raw.componentName === "string" ? raw.componentName.trim() : "";
   const values = Array.isArray(raw.values)
     ? raw.values.map((value) => sanitizeChannelValue(value)).filter(Boolean)
     : [];
-  return {
+  const sanitized = {
     id,
     name,
     group,
     channel,
     component: componentValue === CHANNEL_COMPONENTS.NONE ? "" : componentValue,
+    componentType: componentTypeRaw,
+    componentName: componentNameRaw,
     values,
   };
+  if (sanitized.component) {
+    if (!sanitized.componentType) {
+      sanitized.componentType = getPresetComponentType(sanitized);
+    }
+    if (!sanitized.componentName) {
+      sanitized.componentName = getPresetComponentName(sanitized);
+    }
+  } else {
+    sanitized.componentType = "";
+    sanitized.componentName = "";
+  }
+  return sanitized;
 }
 
 function sanitizeChannelValue(raw) {
@@ -5214,6 +5644,9 @@ function sanitizeTemplateMasterState(raw, channelMasterId) {
     color: DEFAULT_MASTER_COLOR,
   };
 
+  const sliders = {};
+  const dropdownSelections = {};
+
   if (raw && typeof raw === "object") {
     if (typeof raw.color === "string" && raw.color.trim()) {
       sanitized.color = normalizeHexColor(raw.color);
@@ -5223,6 +5656,7 @@ function sanitizeTemplateMasterState(raw, channelMasterId) {
       const numeric = Number.parseInt(raw.brightness, 10);
       if (Number.isFinite(numeric)) {
         sanitized.brightness = clampChannelValue(numeric);
+        sliders[CHANNEL_COMPONENTS.BRIGHTNESS] = sanitized.brightness;
       }
     }
 
@@ -5230,13 +5664,40 @@ function sanitizeTemplateMasterState(raw, channelMasterId) {
       const numeric = Number.parseInt(raw.white, 10);
       if (Number.isFinite(numeric)) {
         sanitized.white = clampChannelValue(numeric);
+        sliders[CHANNEL_COMPONENTS.WHITE] = sanitized.white;
       }
+    }
+
+    if (raw.sliders && typeof raw.sliders === "object") {
+      Object.entries(raw.sliders).forEach(([key, value]) => {
+        if (!key) return;
+        const numeric = Number.parseInt(value, 10);
+        if (Number.isFinite(numeric)) {
+          sliders[normalizeChannelComponent(key)] = clampChannelValue(numeric);
+        }
+      });
+    }
+
+    if (raw.dropdownSelections && typeof raw.dropdownSelections === "object") {
+      Object.entries(raw.dropdownSelections).forEach(([key, value]) => {
+        if (!key) return;
+        if (typeof value === "string" && value.trim()) {
+          dropdownSelections[normalizeChannelComponent(key)] = value.trim();
+        }
+      });
     }
   }
 
   sanitized.color = normalizeHexColor(sanitized.color);
+  if (Object.keys(sliders).length) {
+    sanitized.sliders = sliders;
+  }
+  if (Object.keys(dropdownSelections).length) {
+    sanitized.dropdownSelections = dropdownSelections;
+  }
   return sanitized;
 }
+
 
 function sanitizeLightTemplateRow(raw) {
   if (!raw || typeof raw !== "object") return null;
@@ -6310,7 +6771,33 @@ function createTemplateMasterValueField(templateId, row, master) {
     wrapper.append(colorContainer);
   }
 
-  const createSliderRow = (label, value, onInput, onCommit, fieldKey) => {
+  const ensureRowMaster = () => {
+    if (!row.master || typeof row.master !== "object") {
+      row.master = { id: master.id };
+    } else if (!row.master.id) {
+      row.master.id = master.id;
+    }
+  };
+
+  const getRowSliderState = () => {
+    ensureRowMaster();
+    if (!row.master.sliders || typeof row.master.sliders !== "object") {
+      row.master.sliders = {};
+    }
+    return row.master.sliders;
+  };
+
+  const getRowDropdownState = () => {
+    ensureRowMaster();
+    if (!row.master.dropdownSelections || typeof row.master.dropdownSelections !== "object") {
+      row.master.dropdownSelections = {};
+    }
+    return row.master.dropdownSelections;
+  };
+
+  const createSliderRow = (component, value) => {
+    const label = component.name || titleizeComponentKey(component.key) || "Level";
+    const fieldKey = `template-master-${component.key}`;
     const rowEl = document.createElement("div");
     rowEl.className = "master-slider";
 
@@ -6334,62 +6821,129 @@ function createTemplateMasterValueField(templateId, row, master) {
       const clamped = clampChannelValue(newValue);
       slider.value = String(clamped);
       numberInput.value = String(clamped);
-      onInput(clamped);
+      const sliders = getRowSliderState();
+      sliders[component.key] = clamped;
+      row.master = {
+        ...(row.master || {}),
+        id: master.id,
+        sliders,
+      };
+      if (component.key === CHANNEL_COMPONENTS.BRIGHTNESS) {
+        row.master.brightness = clamped;
+      }
+      if (component.key === CHANNEL_COMPONENTS.WHITE) {
+        row.master.white = clamped;
+      }
+      syncTemplateInstances(templateId);
     };
 
     slider.addEventListener("input", (event) => {
       updateValue(event.target.value);
-      syncTemplateInstances(templateId);
     });
     slider.addEventListener("change", () => {
-      onCommit();
+      saveLightTemplates();
     });
 
     numberInput.addEventListener("input", (event) => {
       updateValue(event.target.value);
-      syncTemplateInstances(templateId);
     });
     numberInput.addEventListener("change", () => {
-      onCommit();
+      saveLightTemplates();
     });
 
     rowEl.append(labelEl, slider, numberInput);
     return rowEl;
   };
 
-  if (master.hasBrightness) {
-    const brightnessValue = clampChannelValue(state.brightness ?? 255);
-    const brightnessRow = createSliderRow(
-      "Brightness",
-      brightnessValue,
-      (newValue) => {
-        state.brightness = newValue;
-        row.value = newValue;
-        row.master = { ...(row.master || {}), id: master.id, brightness: newValue };
-      },
-      () => saveLightTemplates(),
-      "template-master-brightness",
-    );
-    wrapper.append(brightnessRow);
+  if (Array.isArray(master.sliderComponents) && master.sliderComponents.length) {
+    const sliders = getRowSliderState();
+    master.sliderComponents.forEach((component) => {
+      if (!component || !component.key) {
+        return;
+      }
+      const initial = clampChannelValue(
+        sliders[component.key] ?? component.defaultValue ?? 0,
+      );
+      sliders[component.key] = initial;
+      row.master = {
+        ...(row.master || {}),
+        id: master.id,
+        sliders,
+      };
+      if (component.key === CHANNEL_COMPONENTS.BRIGHTNESS) {
+        row.master.brightness = initial;
+      }
+      if (component.key === CHANNEL_COMPONENTS.WHITE) {
+        row.master.white = initial;
+      }
+      const sliderRow = createSliderRow(component, initial);
+      wrapper.append(sliderRow);
+    });
   }
 
-  if (master.hasWhite) {
-    const whiteValue = clampChannelValue(state.white ?? 0);
-    const whiteRow = createSliderRow(
-      "White",
-      whiteValue,
-      (newValue) => {
-        state.white = newValue;
-        row.master = { ...(row.master || {}), id: master.id, white: newValue };
-      },
-      () => saveLightTemplates(),
-      "template-master-white",
-    );
-    wrapper.append(whiteRow);
+  if (Array.isArray(master.dropdownComponents) && master.dropdownComponents.length) {
+    const dropdownState = getRowDropdownState();
+    master.dropdownComponents.forEach((component) => {
+      if (!component || !component.key) {
+        return;
+      }
+      const options = Array.isArray(component.options) ? component.options : [];
+      if (!options.length) {
+        return;
+      }
+      const rowEl = document.createElement("div");
+      rowEl.className = "master-dropdown";
+
+      const labelEl = document.createElement("span");
+      labelEl.className = "master-dropdown__label";
+      labelEl.textContent = component.name || titleizeComponentKey(component.key) || "Mode";
+
+      const select = document.createElement("select");
+      select.className = "master-dropdown__select";
+      select.dataset.templateId = templateId;
+      select.dataset.rowId = row.id;
+      select.dataset.field = `template-master-dropdown-${component.key}`;
+
+      let selectedId = dropdownState[component.key];
+      if (!selectedId || !options.some((option) => option.id === selectedId)) {
+        selectedId = options[0].id;
+      }
+
+      options.forEach((optionPreset) => {
+        const option = document.createElement("option");
+        option.value = optionPreset.id;
+        option.textContent = optionPreset.name || String(optionPreset.value);
+        select.append(option);
+      });
+
+      select.value = selectedId;
+      dropdownState[component.key] = selectedId;
+      row.master = {
+        ...(row.master || {}),
+        id: master.id,
+        dropdownSelections: dropdownState,
+      };
+
+      select.addEventListener("change", (event) => {
+        const valueId = event.target.value;
+        dropdownState[component.key] = valueId;
+        row.master = {
+          ...(row.master || {}),
+          id: master.id,
+          dropdownSelections: dropdownState,
+        };
+        syncTemplateInstances(templateId);
+        saveLightTemplates();
+      });
+
+      rowEl.append(labelEl, select);
+      wrapper.append(rowEl);
+    });
   }
 
   return wrapper;
 }
+
 
 function createTemplateDelayField(templateId, row) {
   const wrapper = document.createElement("div");
@@ -6452,7 +7006,20 @@ function duplicateLightTemplate(templateId) {
       channelPresetId: row.channelPresetId,
       valuePresetId: row.valuePresetId,
       channelMasterId: row.channelMasterId,
-      master: row.master ? { ...row.master } : null,
+      master: row.master
+        ? {
+            ...row.master,
+            sliders:
+              row.master.sliders && typeof row.master.sliders === "object"
+                ? { ...row.master.sliders }
+                : undefined,
+            dropdownSelections:
+              row.master.dropdownSelections &&
+              typeof row.master.dropdownSelections === "object"
+                ? { ...row.master.dropdownSelections }
+                : undefined,
+          }
+        : null,
     });
   });
   const duplicateName = template.name ? `${template.name} Copy` : "Untitled Template Copy";
