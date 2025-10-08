@@ -41,6 +41,28 @@ DMX_BREAK_DURATION = float(os.environ.get("DMX_BREAK_DURATION", "0.00012"))
 DMX_MARK_AFTER_BREAK = float(os.environ.get("DMX_MARK_AFTER_BREAK", "0.000012"))
 DEFAULT_STARTUP_LEVELS = "1=255,2=255,3=255"
 
+
+def _parse_env_float(name: str, default: float, *, minimum: float = 0.0) -> float:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        LOGGER.warning(
+            "Invalid float value '%s' for %s. Using default %s.", raw, name, default
+        )
+        return default
+    return max(minimum, value)
+
+
+TEMPLATE_LOOP_INFINITE_DURATION_SECONDS = _parse_env_float(
+    "DMX_TEMPLATE_LOOP_INFINITE_DURATION",
+    600.0,
+    minimum=0.0,
+)
+TEMPLATE_LOOP_MAX_ITERATIONS = 9999
+
 def _clamp(value: int, low: int, high: int) -> int:
     return max(low, min(high, value))
 
@@ -822,7 +844,20 @@ class DMXShowManager:
 
             if loop_settings.infinite:
                 if available_iterations is None:
-                    total_iterations = 1
+                    fallback_iterations = max(loop_settings.count, 2)
+                    if (
+                        TEMPLATE_LOOP_INFINITE_DURATION_SECONDS > 0
+                        and duration > 0
+                    ):
+                        target_iterations = int(
+                            math.ceil(
+                                TEMPLATE_LOOP_INFINITE_DURATION_SECONDS / duration
+                            )
+                        )
+                        fallback_iterations = max(fallback_iterations, target_iterations)
+                    total_iterations = min(
+                        fallback_iterations, TEMPLATE_LOOP_MAX_ITERATIONS
+                    )
                 else:
                     total_iterations = available_iterations
             else:
