@@ -68,6 +68,45 @@ let channelFilterOpen = false;
 const activeChannelFilterIds = new Set();
 const channelFilterGroupMap = new Map();
 
+const CHANNEL_COMPONENTS = Object.freeze({
+  NONE: "none",
+  RED: "red",
+  GREEN: "green",
+  BLUE: "blue",
+  WHITE: "white",
+  BRIGHTNESS: "brightness",
+});
+
+const CHANNEL_COMPONENT_LABELS = Object.freeze({
+  [CHANNEL_COMPONENTS.NONE]: "None",
+  [CHANNEL_COMPONENTS.RED]: "Red",
+  [CHANNEL_COMPONENTS.GREEN]: "Green",
+  [CHANNEL_COMPONENTS.BLUE]: "Blue",
+  [CHANNEL_COMPONENTS.WHITE]: "White",
+  [CHANNEL_COMPONENTS.BRIGHTNESS]: "Brightness",
+});
+
+const CHANNEL_MASTER_PREFIX = "master:";
+
+const MASTER_COLOR_PRESETS = Object.freeze([
+  { name: "Red", color: "#ff3b30" },
+  { name: "Orange", color: "#ff9500" },
+  { name: "Amber", color: "#ffcc00" },
+  { name: "Yellow", color: "#ffd60a" },
+  { name: "Green", color: "#34c759" },
+  { name: "Teal", color: "#30d158" },
+  { name: "Cyan", color: "#32ade6" },
+  { name: "Blue", color: "#007aff" },
+  { name: "Purple", color: "#af52de" },
+  { name: "Pink", color: "#ff2d55" },
+  { name: "White", color: "#ffffff" },
+]);
+
+let channelMasters = [];
+const channelMasterMap = new Map();
+const CHANNEL_COMPONENT_VALUES = new Set(Object.values(CHANNEL_COMPONENTS));
+const DEFAULT_MASTER_COLOR = "#ffffff";
+
 const TEMPLATE_INSTANCE_PROPERTY = "__templateInstanceId";
 const TEMPLATE_ROW_PROPERTY = "__templateRowId";
 
@@ -94,6 +133,8 @@ const DEFAULT_ACTION = Object.freeze({
   fade: 0,
   channelPresetId: null,
   valuePresetId: null,
+  channelMasterId: null,
+  master: null,
   templateId: null,
   templateInstanceId: null,
   templateRowId: null,
@@ -149,6 +190,434 @@ function applyIconButton(button, type, label) {
     srText.textContent = label;
     button.append(srText);
   }
+}
+
+function normalizeChannelComponent(value) {
+  if (typeof value !== "string") {
+    return CHANNEL_COMPONENTS.NONE;
+  }
+  const normalized = value.trim().toLowerCase();
+  return CHANNEL_COMPONENT_VALUES.has(normalized)
+    ? normalized
+    : CHANNEL_COMPONENTS.NONE;
+}
+
+function getChannelPresetComponent(preset) {
+  if (!preset || typeof preset !== "object") {
+    return CHANNEL_COMPONENTS.NONE;
+  }
+  return normalizeChannelComponent(preset.component);
+}
+
+function getPresetGroupName(preset) {
+  if (!preset || typeof preset !== "object") {
+    return "";
+  }
+  return typeof preset.group === "string" ? preset.group.trim() : "";
+}
+
+function getPresetGroupKey(preset) {
+  const groupName = getPresetGroupName(preset);
+  if (groupName) {
+    return groupName.toLowerCase();
+  }
+  if (preset && typeof preset.id === "string" && preset.id) {
+    return `preset-${preset.id}`;
+  }
+  return null;
+}
+
+function getMasterIdForGroup(groupName, fallback = "master") {
+  const base = groupName ? slugify(groupName) : slugify(fallback);
+  return `${CHANNEL_MASTER_PREFIX}${base || fallback}`;
+}
+
+function refreshChannelMasters() {
+  const groups = new Map();
+
+  channelPresets.forEach((preset) => {
+    const component = getChannelPresetComponent(preset);
+    if (component === CHANNEL_COMPONENTS.NONE) {
+      return;
+    }
+    const groupKey = getPresetGroupKey(preset);
+    if (!groupKey) {
+      return;
+    }
+    let entry = groups.get(groupKey);
+    if (!entry) {
+      const groupName = getPresetGroupName(preset) || "";
+      entry = {
+        id: getMasterIdForGroup(groupName || preset.id || groupKey, groupKey),
+        key: groupKey,
+        name: groupName,
+        presets: {},
+      };
+      groups.set(groupKey, entry);
+    }
+    entry.presets[component] = preset;
+  });
+
+  const masters = [];
+  groups.forEach((entry) => {
+    const components = entry.presets;
+    const hasColor = Boolean(
+      components[CHANNEL_COMPONENTS.RED] ||
+        components[CHANNEL_COMPONENTS.GREEN] ||
+        components[CHANNEL_COMPONENTS.BLUE],
+    );
+    const componentCount = Object.keys(components).length;
+    if (!hasColor && componentCount < 2) {
+      return;
+    }
+    const channels = Object.values(components)
+      .map((preset) => Number.parseInt(preset.channel, 10))
+      .filter((channel) => Number.isFinite(channel))
+      .sort((a, b) => a - b);
+    masters.push({
+      id: entry.id,
+      key: entry.key,
+      name: entry.name,
+      label: entry.name ? `${entry.name} (MASTER)` : "Master",
+      presets: components,
+      channels,
+      hasColor,
+      hasWhite: Boolean(components[CHANNEL_COMPONENTS.WHITE]),
+      hasBrightness: Boolean(components[CHANNEL_COMPONENTS.BRIGHTNESS]),
+    });
+  });
+
+  masters.sort((a, b) => {
+    if (a.name && b.name) {
+      const compare = a.name.localeCompare(b.name, undefined, {
+        sensitivity: "base",
+        numeric: true,
+      });
+      if (compare !== 0) {
+        return compare;
+      }
+    }
+    return a.id.localeCompare(b.id);
+  });
+
+  channelMasters = masters;
+  channelMasterMap.clear();
+  masters.forEach((master) => {
+    channelMasterMap.set(master.id, master);
+  });
+
+  const validMasterIds = new Set(masters.map((entry) => entry.id));
+  actions.forEach((action) => {
+    if (action.channelMasterId && !validMasterIds.has(action.channelMasterId)) {
+      action.channelMasterId = null;
+      action.master = null;
+    }
+  });
+}
+
+function getChannelMaster(masterId) {
+  if (!masterId) {
+    return null;
+  }
+  return channelMasterMap.get(masterId) || null;
+}
+
+function getMasterPrimaryChannel(master) {
+  if (!master) {
+    return 1;
+  }
+  const brightnessChannel = master.presets[CHANNEL_COMPONENTS.BRIGHTNESS];
+  if (brightnessChannel) {
+    const channelNumber = Number.parseInt(brightnessChannel.channel, 10);
+    if (Number.isFinite(channelNumber)) {
+      return clamp(channelNumber, 1, 512);
+    }
+  }
+  if (Array.isArray(master.channels) && master.channels.length) {
+    return clamp(master.channels[0], 1, 512);
+  }
+  return 1;
+}
+
+function clampChannelValue(value) {
+  const numeric = Number.parseInt(value, 10);
+  if (Number.isNaN(numeric)) {
+    return 0;
+  }
+  return clamp(numeric, 0, 255);
+}
+
+function normalizeHexColor(value) {
+  if (typeof value !== "string") {
+    return DEFAULT_MASTER_COLOR;
+  }
+  const trimmed = value.trim().toLowerCase();
+  const hex = trimmed.startsWith("#") ? trimmed.slice(1) : trimmed;
+  if (/^[0-9a-f]{6}$/.test(hex)) {
+    return `#${hex}`;
+  }
+  return DEFAULT_MASTER_COLOR;
+}
+
+function hexToRgb(color) {
+  const normalized = normalizeHexColor(color);
+  const hex = normalized.slice(1);
+  return {
+    r: parseInt(hex.slice(0, 2), 16),
+    g: parseInt(hex.slice(2, 4), 16),
+    b: parseInt(hex.slice(4, 6), 16),
+  };
+}
+
+function rgbToHex(r, g, b) {
+  const toHex = (value) => clampChannelValue(value).toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function createDefaultMasterState(master, previous = null) {
+  if (!master) {
+    return null;
+  }
+  const previousState = previous && previous.id === master.id ? previous : null;
+  const state = {
+    id: master.id,
+    color: previousState ? normalizeHexColor(previousState.color) : DEFAULT_MASTER_COLOR,
+  };
+  if (master.hasBrightness) {
+    const fallback = previousState ? previousState.brightness : 255;
+    state.brightness = clampChannelValue(fallback ?? 255);
+  }
+  if (master.hasWhite) {
+    const fallback = previousState ? previousState.white : 0;
+    state.white = clampChannelValue(fallback ?? 0);
+  }
+  return state;
+}
+
+function ensureMasterState(action, master) {
+  if (!action || !master) {
+    return null;
+  }
+  const state = createDefaultMasterState(master, action.master);
+  action.master = state;
+  action.channelMasterId = master.id;
+  action.channelPresetId = null;
+  action.valuePresetId = null;
+  action.channel = getMasterPrimaryChannel(master);
+  if (master.hasBrightness && typeof state.brightness === "number") {
+    action.value = clampChannelValue(state.brightness);
+  }
+  return state;
+}
+
+function buildMasterChannelValues(master, state) {
+  const values = {};
+  const rgb = hexToRgb(state?.color);
+  values[CHANNEL_COMPONENTS.RED] = rgb.r;
+  values[CHANNEL_COMPONENTS.GREEN] = rgb.g;
+  values[CHANNEL_COMPONENTS.BLUE] = rgb.b;
+  if (master.hasWhite) {
+    values[CHANNEL_COMPONENTS.WHITE] = clampChannelValue(state?.white ?? 0);
+  }
+  if (master.hasBrightness) {
+    values[CHANNEL_COMPONENTS.BRIGHTNESS] = clampChannelValue(state?.brightness ?? 255);
+  }
+  return values;
+}
+
+function expandMasterAction(action, master, seconds, fade) {
+  const state = ensureMasterState(action, master);
+  if (!state) {
+    return [];
+  }
+  const componentValues = buildMasterChannelValues(master, state);
+  const baseFade = Number(Number.isFinite(fade) ? Number(fade.toFixed(3)) : 0);
+  const baseTime = secondsToTimecode(seconds);
+  const entries = [];
+
+  const appendEntry = (componentKey) => {
+    const preset = master.presets[componentKey];
+    if (!preset) {
+      return;
+    }
+    const channelNumber = Number.parseInt(preset.channel, 10);
+    if (!Number.isFinite(channelNumber)) {
+      return;
+    }
+    const entry = {
+      time: baseTime,
+      channel: clamp(channelNumber, 1, 512),
+      value: clampChannelValue(componentValues[componentKey] ?? 0),
+      fade: baseFade,
+      channelPresetId: preset.id,
+      channelMasterId: master.id,
+    };
+    if (action.templateId) {
+      entry.templateId = action.templateId;
+    }
+    if (action.templateInstanceId) {
+      entry.templateInstanceId = action.templateInstanceId;
+    }
+    if (action.templateRowId) {
+      entry.templateRowId = action.templateRowId;
+    }
+    if (action.templateLoop) {
+      const loopSettings = sanitizeTemplateLoop(action.templateLoop);
+      if (loopSettings && shouldSerializeTemplateLoop(loopSettings)) {
+        entry.templateLoop = loopSettings;
+      }
+    }
+    entries.push(entry);
+  };
+
+  appendEntry(CHANNEL_COMPONENTS.BRIGHTNESS);
+  appendEntry(CHANNEL_COMPONENTS.RED);
+  appendEntry(CHANNEL_COMPONENTS.GREEN);
+  appendEntry(CHANNEL_COMPONENTS.BLUE);
+  appendEntry(CHANNEL_COMPONENTS.WHITE);
+
+  return entries;
+}
+
+function deriveMasterStateFromActions(componentActions, master) {
+  if (!master) {
+    return null;
+  }
+  const state = createDefaultMasterState(master);
+  const componentValues = {};
+  componentActions.forEach((action) => {
+    if (!action || typeof action !== "object") {
+      return;
+    }
+    const presetId = action.channelPresetId;
+    if (!presetId) {
+      return;
+    }
+    const preset = getChannelPreset(presetId);
+    const component = getChannelPresetComponent(preset);
+    if (component === CHANNEL_COMPONENTS.NONE) {
+      return;
+    }
+    componentValues[component] = clampChannelValue(action.value);
+  });
+
+  const red = componentValues[CHANNEL_COMPONENTS.RED] ?? 0;
+  const green = componentValues[CHANNEL_COMPONENTS.GREEN] ?? 0;
+  const blue = componentValues[CHANNEL_COMPONENTS.BLUE] ?? 0;
+  state.color = rgbToHex(red, green, blue);
+  if (master.hasBrightness) {
+    state.brightness = clampChannelValue(
+      componentValues[CHANNEL_COMPONENTS.BRIGHTNESS] ?? state.brightness ?? 255,
+    );
+  }
+  if (master.hasWhite) {
+    state.white = clampChannelValue(
+      componentValues[CHANNEL_COMPONENTS.WHITE] ?? state.white ?? 0,
+    );
+  }
+  return state;
+}
+
+function getChannelSelectionOptions() {
+  const options = [];
+  const sortedPresets = getSortedChannelPresets();
+  const masterByGroup = new Map(channelMasters.map((entry) => [entry.key, entry]));
+  const seenGroups = new Set();
+
+  sortedPresets.forEach((preset) => {
+    const groupKey = getPresetGroupKey(preset);
+    if (groupKey && !seenGroups.has(groupKey)) {
+      const master = masterByGroup.get(groupKey);
+      if (master) {
+        options.push({
+          type: "master",
+          id: master.id,
+          label: master.label,
+          master,
+        });
+      }
+      seenGroups.add(groupKey);
+    }
+    options.push({
+      type: "preset",
+      id: preset.id,
+      label: formatChannelPresetLabel(preset),
+      preset,
+    });
+  });
+
+  return options;
+}
+
+function collapseMasterActions(list) {
+  if (!Array.isArray(list) || !list.length) {
+    return list;
+  }
+  refreshChannelMasters();
+  const grouped = new Map();
+  const remaining = [];
+
+  list.forEach((action) => {
+    if (!action || typeof action !== "object" || !action.channelMasterId) {
+      remaining.push(action);
+      return;
+    }
+    const master = getChannelMaster(action.channelMasterId);
+    if (!master) {
+      remaining.push(action);
+      return;
+    }
+    const timeKey = typeof action.time === "string" && action.time ? action.time : DEFAULT_ACTION.time;
+    const templateInstance = action.templateInstanceId || "";
+    const templateRow = action.templateRowId || "";
+    const templateId = action.templateId || "";
+    const key = [timeKey, action.channelMasterId, templateInstance, templateRow, templateId].join("|");
+    let group = grouped.get(key);
+    if (!group) {
+      group = {
+        master,
+        time: timeKey,
+        fade: Number.parseFloat(action.fade) || 0,
+        templateId: action.templateId || null,
+        templateInstanceId: action.templateInstanceId || null,
+        templateRowId: action.templateRowId || null,
+        templateLoop: action.templateLoop ? normalizeTemplateLoop(action.templateLoop) : null,
+        actions: [],
+      };
+      grouped.set(key, group);
+    }
+    group.actions.push(action);
+  });
+
+  const collapsed = [];
+  grouped.forEach((group) => {
+    const masterAction = { ...DEFAULT_ACTION };
+    masterAction.time = group.time;
+    masterAction.fade = group.fade;
+    masterAction.templateId = group.templateId;
+    masterAction.templateInstanceId = group.templateInstanceId;
+    masterAction.templateRowId = group.templateRowId;
+    if (group.templateLoop) {
+      masterAction.templateLoop = group.templateLoop;
+    }
+    masterAction.channelMasterId = group.master.id;
+    ensureMasterState(masterAction, group.master);
+    const derivedState =
+      deriveMasterStateFromActions(group.actions, group.master) || masterAction.master || null;
+    if (derivedState) {
+      masterAction.master = derivedState;
+      if (group.master.hasBrightness && typeof derivedState.brightness === "number") {
+        masterAction.value = clampChannelValue(derivedState.brightness);
+      }
+      if (group.master.hasWhite && typeof derivedState.white === "number") {
+        masterAction.master.white = clampChannelValue(derivedState.white);
+      }
+    }
+    masterAction.channel = getMasterPrimaryChannel(group.master);
+    collapsed.push(masterAction);
+  });
+
+  return [...remaining, ...collapsed];
 }
 
 function normalizeTemplateLoop(raw) {
@@ -1166,6 +1635,7 @@ async function loadTemplate(videoId) {
     stepInfoById.clear();
     draggingActionId = null;
     actions = (data.actions || []).map((action) => ({ ...DEFAULT_ACTION, ...action }));
+    actions = collapseMasterActions(actions);
     actions.forEach((action) => {
       if (action.templateLoop) {
         action.templateLoop = normalizeTemplateLoop(action.templateLoop);
@@ -1217,6 +1687,17 @@ function autoAssignPresetsToActions(list) {
   list.forEach((action) => {
     if (!action || typeof action !== "object") return;
 
+    if (action.channelMasterId) {
+      const master = getChannelMaster(action.channelMasterId);
+      if (master) {
+        ensureMasterState(action, master);
+      } else {
+        action.channelMasterId = null;
+        action.master = null;
+      }
+      return;
+    }
+
     let preset = null;
     if (action.channelPresetId) {
       preset = getChannelPreset(action.channelPresetId);
@@ -1257,6 +1738,7 @@ function renderActions(options = {}) {
   const focusDescriptor =
     options.preserveFocus || describeFocusedActionField(document.activeElement);
 
+  refreshChannelMasters();
   actions = sortActions(actions);
   if (!actionsBody) return;
   actionsBody.innerHTML = "";
@@ -2468,6 +2950,32 @@ function computeChannelStatesAtTime(targetSeconds) {
 
   const states = new Map();
   timeline.forEach(({ action }) => {
+    if (action.channelMasterId) {
+      const master = getChannelMaster(action.channelMasterId);
+      if (!master) {
+        return;
+      }
+      const state = ensureMasterState(action, master) || {};
+      const values = buildMasterChannelValues(master, state);
+      Object.values(master.presets).forEach((preset) => {
+        if (!preset) {
+          return;
+        }
+        const channelNumber = Number.parseInt(preset.channel, 10);
+        if (!Number.isFinite(channelNumber) || channelNumber < 1 || channelNumber > 512) {
+          return;
+        }
+        const value = clampChannelValue(values[getChannelPresetComponent(preset)] ?? 0);
+        states.set(channelNumber, {
+          channel: channelNumber,
+          value,
+          channelPresetId: preset.id,
+          valuePresetId: null,
+        });
+      });
+      return;
+    }
+
     const channel = Number.parseInt(action.channel, 10);
     const value = Number.parseInt(action.value, 10);
     if (!Number.isFinite(channel) || channel < 1 || channel > 512) return;
@@ -2591,30 +3099,50 @@ function createChannelField(action, index, actionId) {
   setActionFieldMetadata(select, actionId, "channelPreset");
   select.addEventListener("change", (event) => handleChannelPresetChange(event, index));
 
-  const sortedPresets = getSortedChannelPresets();
+  const optionData = getChannelSelectionOptions();
   let selectedPreset = null;
-  sortedPresets.forEach((preset) => {
+  let selectedMaster = null;
+
+  optionData.forEach((optionInfo) => {
     const option = document.createElement("option");
-    option.value = preset.id;
-    option.dataset.channelPresetId = preset.id;
-    option.textContent = formatChannelPresetLabel(preset);
-    select.append(option);
-    if (preset.id === action.channelPresetId) {
-      selectedPreset = preset;
+    option.value = optionInfo.id;
+    option.textContent = optionInfo.label;
+    if (optionInfo.type === "master") {
+      option.dataset.channelOptionType = "master";
+      option.dataset.channelMasterId = optionInfo.id;
+      if (
+        action.channelMasterId === optionInfo.id ||
+        (action.master && action.master.id === optionInfo.id)
+      ) {
+        selectedMaster = optionInfo.master;
+      }
+    } else {
+      option.dataset.channelOptionType = "preset";
+      option.dataset.channelPresetId = optionInfo.id;
+      if (optionInfo.preset.id === action.channelPresetId) {
+        selectedPreset = optionInfo.preset;
+      }
     }
+    select.append(option);
   });
 
-  if (action.channelPresetId && !selectedPreset) {
-    action.channelPresetId = null;
-  }
-
-  if (!selectedPreset && sortedPresets.length) {
-    selectedPreset = sortedPresets[0];
-    applyChannelPresetToAction(action, selectedPreset);
-  }
-
-  if (selectedPreset) {
+  if (selectedMaster) {
+    ensureMasterState(action, selectedMaster);
+    select.value = selectedMaster.id;
+  } else if (selectedPreset) {
     select.value = selectedPreset.id;
+  } else {
+    const fallbackPreset = optionData.find((option) => option.type === "preset");
+    if (fallbackPreset) {
+      applyChannelPresetToAction(action, fallbackPreset.preset);
+      select.value = fallbackPreset.id;
+    } else {
+      const fallbackMaster = optionData.find((option) => option.type === "master");
+      if (fallbackMaster) {
+        ensureMasterState(action, fallbackMaster.master);
+        select.value = fallbackMaster.id;
+      }
+    }
   }
 
   wrapper.append(select);
@@ -2624,6 +3152,11 @@ function createChannelField(action, index, actionId) {
 function createValueField(action, index, actionId) {
   const wrapper = document.createElement("div");
   wrapper.className = "preset-select";
+
+  const master = action.channelMasterId ? getChannelMaster(action.channelMasterId) : null;
+  if (master) {
+    return createMasterValueField(action, index, actionId, master);
+  }
 
   const select = document.createElement("select");
   setActionFieldMetadata(select, actionId, "valuePreset");
@@ -2726,6 +3259,142 @@ function createValueField(action, index, actionId) {
   }
 
   wrapper.append(select, slider, input);
+  return wrapper;
+}
+
+function createMasterValueField(action, index, actionId, master) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "preset-select preset-select--master";
+  const state = ensureMasterState(action, master) || {};
+
+  if (master.hasColor) {
+    const colorContainer = document.createElement("div");
+    colorContainer.className = "master-color-picker";
+
+    const colorInput = document.createElement("input");
+    colorInput.type = "color";
+    colorInput.value = normalizeHexColor(state.color);
+    colorInput.className = "preset-select__color";
+    setActionFieldMetadata(colorInput, actionId, "masterColor");
+
+    const swatchList = document.createElement("div");
+    swatchList.className = "master-color-swatches";
+
+    const updateSwatchSelection = (currentColor) => {
+      const normalized = normalizeHexColor(currentColor);
+      swatchList.querySelectorAll(".master-color-swatches__button").forEach((button) => {
+        const buttonColor = button.dataset.color;
+        if (buttonColor === normalized) {
+          button.classList.add("is-active");
+        } else {
+          button.classList.remove("is-active");
+        }
+      });
+    };
+
+    MASTER_COLOR_PRESETS.forEach((preset) => {
+      const normalizedColor = normalizeHexColor(preset.color);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "master-color-swatches__button";
+      button.style.color = normalizedColor;
+      button.title = preset.name;
+      button.dataset.color = normalizedColor;
+      button.addEventListener("click", () => {
+        state.color = normalizedColor;
+        colorInput.value = normalizedColor;
+        updateSwatchSelection(normalizedColor);
+        queuePreviewSync();
+      });
+      swatchList.append(button);
+    });
+
+    colorInput.addEventListener("input", (event) => {
+      const newColor = normalizeHexColor(event.target.value);
+      state.color = newColor;
+      updateSwatchSelection(newColor);
+      queuePreviewSync();
+    });
+
+    updateSwatchSelection(state.color);
+    colorContainer.append(colorInput, swatchList);
+    wrapper.append(colorContainer);
+  }
+
+  const createSliderRow = (label, value, onChange, fieldKey) => {
+    const row = document.createElement("div");
+    row.className = "master-slider";
+
+    const labelEl = document.createElement("span");
+    labelEl.className = "master-slider__label";
+    labelEl.textContent = label;
+
+    const slider = createInput({
+      type: "range",
+      value,
+      min: 0,
+      max: 255,
+      step: 1,
+    });
+    slider.classList.add("value-slider", "master-slider__range");
+    setActionFieldMetadata(slider, actionId, `${fieldKey}-slider`);
+
+    const numberInput = createInput({
+      type: "number",
+      value,
+      min: 0,
+      max: 255,
+      step: 1,
+    });
+    numberInput.classList.add("input--compact-number", "master-slider__number");
+    setActionFieldMetadata(numberInput, actionId, `${fieldKey}-number`);
+
+    const updateValue = (newValue) => {
+      const clamped = clampChannelValue(newValue);
+      slider.value = String(clamped);
+      numberInput.value = String(clamped);
+      onChange(clamped);
+    };
+
+    slider.addEventListener("input", (event) => {
+      updateValue(event.target.value);
+      queuePreviewSync();
+    });
+    slider.addEventListener("change", (event) => {
+      updateValue(event.target.value);
+      queuePreviewSync();
+    });
+
+    numberInput.addEventListener("input", (event) => {
+      updateValue(event.target.value);
+      queuePreviewSync();
+    });
+    numberInput.addEventListener("change", (event) => {
+      updateValue(event.target.value);
+      queuePreviewSync();
+    });
+
+    row.append(labelEl, slider, numberInput);
+    return row;
+  };
+
+  if (master.hasBrightness) {
+    const brightnessValue = clampChannelValue(state.brightness ?? 255);
+    const brightnessRow = createSliderRow("Brightness", brightnessValue, (newValue) => {
+      state.brightness = newValue;
+      action.value = newValue;
+    }, "masterBrightness");
+    wrapper.append(brightnessRow);
+  }
+
+  if (master.hasWhite) {
+    const whiteValue = clampChannelValue(state.white ?? 0);
+    const whiteRow = createSliderRow("White", whiteValue, (newValue) => {
+      state.white = newValue;
+    }, "masterWhite");
+    wrapper.append(whiteRow);
+  }
+
   return wrapper;
 }
 
@@ -2911,6 +3580,8 @@ function handleFadeChange(event, index) {
 function applyChannelPresetToAction(action, preset) {
   if (!action || !preset) return;
   action.channelPresetId = preset.id;
+  action.channelMasterId = null;
+  action.master = null;
   const presetChannel = Number.parseInt(preset.channel, 10);
   if (Number.isFinite(presetChannel)) {
     action.channel = clamp(presetChannel, 1, 512);
@@ -2939,6 +3610,8 @@ function applyChannelPresetToAction(action, preset) {
 function applyChannelPresetToTemplateRow(row, preset) {
   if (!row || !preset || row.type === TEMPLATE_ROW_TYPES.DELAY) return;
   row.channelPresetId = preset.id;
+  row.channelMasterId = null;
+  row.master = null;
   const presetChannel = Number.parseInt(preset.channel, 10);
   if (Number.isFinite(presetChannel)) {
     row.channel = clamp(presetChannel, 1, 512);
@@ -2965,10 +3638,26 @@ function applyChannelPresetToTemplateRow(row, preset) {
 }
 
 function handleChannelPresetChange(event, index) {
-  const selectedId = event.target.value;
+  const select = event.target;
   const action = actions[index];
-  if (!action) return;
+  if (!action || !(select instanceof HTMLSelectElement)) return;
 
+  const selectedOption = select.options[select.selectedIndex];
+  const optionType = selectedOption?.dataset?.channelOptionType;
+  if (optionType === "master") {
+    const masterId = selectedOption?.dataset?.channelMasterId || select.value;
+    const master = getChannelMaster(masterId);
+    if (master) {
+      ensureMasterState(action, master);
+      renderActions();
+      queuePreviewSync();
+      return;
+    }
+    action.channelMasterId = null;
+    action.master = null;
+  }
+
+  const selectedId = select.value;
   const preset = channelPresets.find((item) => item.id === selectedId);
   if (preset) {
     applyChannelPresetToAction(action, preset);
@@ -3036,11 +3725,25 @@ function addAction(action, options = {}) {
     if (preset) {
       applyChannelPresetToAction(newAction, preset);
     }
+  } else if (newAction.channelMasterId) {
+    const master = getChannelMaster(newAction.channelMasterId);
+    if (master) {
+      ensureMasterState(newAction, master);
+    } else {
+      newAction.channelMasterId = null;
+      newAction.master = null;
+    }
   }
-  if (!newAction.channelPresetId) {
-    const fallback = getSortedChannelPresets()[0];
-    if (fallback) {
-      applyChannelPresetToAction(newAction, fallback);
+  if (!newAction.channelPresetId && !newAction.channelMasterId) {
+    const optionsList = getChannelSelectionOptions();
+    const fallbackPreset = optionsList.find((option) => option.type === "preset");
+    if (fallbackPreset) {
+      applyChannelPresetToAction(newAction, fallbackPreset.preset);
+    } else {
+      const fallbackMaster = optionsList.find((option) => option.type === "master");
+      if (fallbackMaster) {
+        ensureMasterState(newAction, fallbackMaster.master);
+      }
     }
   }
   const actionId = getActionLocalId(newAction);
@@ -3081,6 +3784,12 @@ function duplicateAction(index) {
     fade: original.fade,
     channelPresetId: original.channelPresetId,
     valuePresetId: original.valuePresetId,
+    channelMasterId: original.channelMasterId,
+    master: original.master ? { ...original.master } : null,
+    templateId: original.templateId,
+    templateInstanceId: original.templateInstanceId,
+    templateRowId: original.templateRowId,
+    templateLoop: original.templateLoop ? { ...original.templateLoop } : null,
   };
   addAction(copy, { stepId, insertIndex: index + 1, focusField: "channelPreset" });
 }
@@ -3284,6 +3993,7 @@ async function initChannelPresetsUI() {
 function renderChannelPresets() {
   if (!channelPresetsContainer) return false;
 
+  refreshChannelMasters();
   const filterSelectionChanged = pruneChannelFilterSelection();
 
   pruneCollapsedChannelPresets();
@@ -3393,7 +4103,25 @@ function renderChannelPresets() {
     groupInput.addEventListener("input", (event) => handlePresetGroupInput(event, preset.id));
     groupField.append(groupLabel, groupInput);
 
-    row.append(nameField, channelField, groupField);
+    const componentField = document.createElement("label");
+    componentField.className = "preset-field";
+    const componentLabel = document.createElement("span");
+    componentLabel.textContent = "Component";
+    const componentSelect = document.createElement("select");
+    Object.values(CHANNEL_COMPONENTS).forEach((valueKey) => {
+      const option = document.createElement("option");
+      option.value = valueKey;
+      option.textContent = CHANNEL_COMPONENT_LABELS[valueKey] || valueKey;
+      componentSelect.append(option);
+    });
+    const componentValue = getChannelPresetComponent(preset);
+    componentSelect.value = componentValue || CHANNEL_COMPONENTS.NONE;
+    componentSelect.addEventListener("change", (event) =>
+      handlePresetComponentChange(event, preset.id),
+    );
+    componentField.append(componentLabel, componentSelect);
+
+    row.append(nameField, channelField, groupField, componentField);
     content.append(row);
 
     const valuesSection = document.createElement("div");
@@ -3688,6 +4416,17 @@ function doesActionMatchChannelFilter(action, channelLookup) {
   if (!isChannelFilterActive()) {
     return true;
   }
+  if (action.channelMasterId) {
+    const master = getChannelMaster(action.channelMasterId);
+    if (master) {
+      const componentIds = Object.values(master.presets)
+        .map((preset) => preset?.id)
+        .filter(Boolean);
+      if (componentIds.some((id) => activeChannelFilterIds.has(id))) {
+        return true;
+      }
+    }
+  }
   const presetId =
     typeof action.channelPresetId === "string" && action.channelPresetId
       ? action.channelPresetId
@@ -3775,6 +4514,7 @@ function addChannelPreset() {
     name: "",
     group: "",
     channel: findNextAvailableChannel(),
+    component: CHANNEL_COMPONENTS.NONE,
     values: [],
   };
   channelPresets.push(preset);
@@ -3850,6 +4590,17 @@ function handlePresetGroupInput(event, presetId) {
   preset.group = event.target.value;
   saveChannelPresets();
   renderChannelFilterControls();
+}
+
+function handlePresetComponentChange(event, presetId) {
+  const preset = getChannelPreset(presetId);
+  if (!preset) return;
+  const value = normalizeChannelComponent(event.target.value);
+  preset.component = value === CHANNEL_COMPONENTS.NONE ? "" : value;
+  saveChannelPresets();
+  renderChannelPresets();
+  renderActions({ preserveFocus: true });
+  queuePreviewSync();
 }
 
 function handlePresetChannelInput(event, presetId) {
@@ -3934,6 +4685,10 @@ function buildChannelPresetPayload() {
     name: preset.name || "",
     group: typeof preset.group === "string" ? preset.group : "",
     channel: clamp(Number.parseInt(preset.channel, 10) || 1, 1, 512),
+    component:
+      normalizeChannelComponent(preset.component) === CHANNEL_COMPONENTS.NONE
+        ? ""
+        : normalizeChannelComponent(preset.component),
     values: Array.isArray(preset.values)
       ? preset.values.map((value) => ({
           id: value.id,
@@ -3998,10 +4753,18 @@ function sanitizeChannelPreset(raw) {
   const group = typeof raw.group === "string" ? raw.group : "";
   const channelNumber = Number.parseInt(raw.channel, 10);
   const channel = Number.isFinite(channelNumber) ? clamp(channelNumber, 1, 512) : 1;
+  const componentValue = normalizeChannelComponent(raw.component);
   const values = Array.isArray(raw.values)
     ? raw.values.map((value) => sanitizeChannelValue(value)).filter(Boolean)
     : [];
-  return { id, name, group, channel, values };
+  return {
+    id,
+    name,
+    group,
+    channel,
+    component: componentValue === CHANNEL_COMPONENTS.NONE ? "" : componentValue,
+    values,
+  };
 }
 
 function sanitizeChannelValue(raw) {
@@ -4011,6 +4774,40 @@ function sanitizeChannelValue(raw) {
   const rawValue = Number.parseInt(raw.value, 10);
   const value = Number.isFinite(rawValue) ? clamp(rawValue, 0, 255) : 0;
   return { id, name, value };
+}
+
+function sanitizeTemplateMasterState(raw, channelMasterId) {
+  if (typeof channelMasterId !== "string" || !channelMasterId) {
+    return null;
+  }
+
+  const sanitized = {
+    id: channelMasterId,
+    color: DEFAULT_MASTER_COLOR,
+  };
+
+  if (raw && typeof raw === "object") {
+    if (typeof raw.color === "string" && raw.color.trim()) {
+      sanitized.color = normalizeHexColor(raw.color);
+    }
+
+    if (Object.prototype.hasOwnProperty.call(raw, "brightness")) {
+      const numeric = Number.parseInt(raw.brightness, 10);
+      if (Number.isFinite(numeric)) {
+        sanitized.brightness = clampChannelValue(numeric);
+      }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(raw, "white")) {
+      const numeric = Number.parseInt(raw.white, 10);
+      if (Number.isFinite(numeric)) {
+        sanitized.white = clampChannelValue(numeric);
+      }
+    }
+  }
+
+  sanitized.color = normalizeHexColor(sanitized.color);
+  return sanitized;
 }
 
 function sanitizeLightTemplateRow(raw) {
@@ -4037,7 +4834,20 @@ function sanitizeLightTemplateRow(raw) {
     typeof raw.channelPresetId === "string" && raw.channelPresetId ? raw.channelPresetId : null;
   const valuePresetId =
     typeof raw.valuePresetId === "string" && raw.valuePresetId ? raw.valuePresetId : null;
-  return { id, type, channel, value, fade, channelPresetId, valuePresetId };
+  const channelMasterId =
+    typeof raw.channelMasterId === "string" && raw.channelMasterId ? raw.channelMasterId : null;
+  const master = sanitizeTemplateMasterState(raw.master, channelMasterId);
+  return {
+    id,
+    type,
+    channel,
+    value,
+    fade,
+    channelPresetId: channelMasterId ? null : channelPresetId,
+    valuePresetId: channelMasterId ? null : valuePresetId,
+    channelMasterId,
+    master,
+  };
 }
 
 function sanitizeLightTemplate(raw) {
@@ -4123,6 +4933,8 @@ function buildLightTemplatePayload() {
               fade: row.fade,
               channelPresetId: row.channelPresetId,
               valuePresetId: row.valuePresetId,
+              channelMasterId: row.channelMasterId,
+              master: row.master,
             };
           })
       : [],
@@ -4243,6 +5055,14 @@ function createTemplateRowDefaults(overrides = {}) {
       typeof overrides.valuePresetId === "string" && overrides.valuePresetId
         ? overrides.valuePresetId
         : null,
+    channelMasterId:
+      typeof overrides.channelMasterId === "string" && overrides.channelMasterId
+        ? overrides.channelMasterId
+        : null,
+    master:
+      overrides.master && typeof overrides.master === "object"
+        ? { ...overrides.master }
+        : null,
   };
 
   if (row.channelPresetId) {
@@ -4250,12 +5070,26 @@ function createTemplateRowDefaults(overrides = {}) {
     if (preset) {
       applyChannelPresetToTemplateRow(row, preset);
     }
+  } else if (row.channelMasterId) {
+    const master = getChannelMaster(row.channelMasterId);
+    if (master) {
+      ensureMasterState(row, master);
+    } else {
+      row.channelMasterId = null;
+      row.master = null;
+    }
   }
 
-  if (!row.channelPresetId) {
-    const fallback = getSortedChannelPresets()[0];
-    if (fallback) {
-      applyChannelPresetToTemplateRow(row, fallback);
+  if (!row.channelPresetId && !row.channelMasterId) {
+    const optionsList = getChannelSelectionOptions();
+    const fallbackPreset = optionsList.find((option) => option.type === "preset");
+    if (fallbackPreset) {
+      applyChannelPresetToTemplateRow(row, fallbackPreset.preset);
+    } else {
+      const fallbackMaster = optionsList.find((option) => option.type === "master");
+      if (fallbackMaster) {
+        ensureMasterState(row, fallbackMaster.master);
+      }
     }
   }
 
@@ -4831,26 +5665,50 @@ function createTemplateChannelField(templateId, row) {
     handleTemplateRowChannelPresetChange(templateId, row.id, event),
   );
 
-  const presets = getSortedChannelPresets();
+  const optionData = getChannelSelectionOptions();
   let selectedPreset = null;
-  presets.forEach((preset) => {
+  let selectedMaster = null;
+
+  optionData.forEach((optionInfo) => {
     const option = document.createElement("option");
-    option.value = preset.id;
-    option.dataset.channelPresetId = preset.id;
-    option.textContent = formatChannelPresetLabel(preset);
-    select.append(option);
-    if (preset.id === row.channelPresetId) {
-      selectedPreset = preset;
+    option.value = optionInfo.id;
+    option.textContent = optionInfo.label;
+    if (optionInfo.type === "master") {
+      option.dataset.channelOptionType = "master";
+      option.dataset.channelMasterId = optionInfo.id;
+      if (
+        row.channelMasterId === optionInfo.id ||
+        (row.master && row.master.id === optionInfo.id)
+      ) {
+        selectedMaster = optionInfo.master;
+      }
+    } else {
+      option.dataset.channelOptionType = "preset";
+      option.dataset.channelPresetId = optionInfo.id;
+      if (optionInfo.preset.id === row.channelPresetId) {
+        selectedPreset = optionInfo.preset;
+      }
     }
+    select.append(option);
   });
 
-  if (!selectedPreset && presets.length) {
-    selectedPreset = presets[0];
-    applyChannelPresetToTemplateRow(row, selectedPreset);
-  }
-
-  if (selectedPreset) {
+  if (selectedMaster) {
+    ensureMasterState(row, selectedMaster);
+    select.value = selectedMaster.id;
+  } else if (selectedPreset) {
     select.value = selectedPreset.id;
+  } else {
+    const fallbackPreset = optionData.find((option) => option.type === "preset");
+    if (fallbackPreset) {
+      applyChannelPresetToTemplateRow(row, fallbackPreset.preset);
+      select.value = fallbackPreset.id;
+    } else {
+      const fallbackMaster = optionData.find((option) => option.type === "master");
+      if (fallbackMaster) {
+        ensureMasterState(row, fallbackMaster.master);
+        select.value = fallbackMaster.id;
+      }
+    }
   }
 
   wrapper.append(select);
@@ -4860,6 +5718,11 @@ function createTemplateChannelField(templateId, row) {
 function createTemplateValueField(templateId, row) {
   const wrapper = document.createElement("div");
   wrapper.className = "preset-select";
+
+  const master = row.channelMasterId ? getChannelMaster(row.channelMasterId) : null;
+  if (master) {
+    return createTemplateMasterValueField(templateId, row, master);
+  }
 
   const select = document.createElement("select");
   select.dataset.templateId = templateId;
@@ -4952,6 +5815,152 @@ function createTemplateValueField(templateId, row) {
   return wrapper;
 }
 
+function createTemplateMasterValueField(templateId, row, master) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "preset-select preset-select--master";
+  const state = ensureMasterState(row, master) || {};
+
+  if (master.hasColor) {
+    const colorContainer = document.createElement("div");
+    colorContainer.className = "master-color-picker";
+
+    const colorInput = document.createElement("input");
+    colorInput.type = "color";
+    colorInput.value = normalizeHexColor(state.color);
+    colorInput.className = "preset-select__color";
+    colorInput.dataset.templateId = templateId;
+    colorInput.dataset.rowId = row.id;
+    colorInput.dataset.field = "template-master-color";
+
+    const swatchList = document.createElement("div");
+    swatchList.className = "master-color-swatches";
+
+    const updateSwatchSelection = (currentColor) => {
+      const normalized = normalizeHexColor(currentColor);
+      swatchList.querySelectorAll(".master-color-swatches__button").forEach((button) => {
+        const buttonColor = button.dataset.color;
+        if (buttonColor === normalized) {
+          button.classList.add("is-active");
+        } else {
+          button.classList.remove("is-active");
+        }
+      });
+    };
+
+    MASTER_COLOR_PRESETS.forEach((preset) => {
+      const normalizedColor = normalizeHexColor(preset.color);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "master-color-swatches__button";
+      button.style.color = normalizedColor;
+      button.title = preset.name;
+      button.dataset.color = normalizedColor;
+      button.addEventListener("click", () => {
+        state.color = normalizedColor;
+        row.master = { ...(row.master || {}), id: master.id, color: normalizedColor };
+        colorInput.value = normalizedColor;
+        updateSwatchSelection(normalizedColor);
+        syncTemplateInstances(templateId);
+        saveLightTemplates();
+      });
+      swatchList.append(button);
+    });
+
+    colorInput.addEventListener("input", (event) => {
+      const newColor = normalizeHexColor(event.target.value);
+      state.color = newColor;
+      row.master = { ...(row.master || {}), id: master.id, color: newColor };
+      updateSwatchSelection(newColor);
+      syncTemplateInstances(templateId);
+      saveLightTemplates();
+    });
+
+    updateSwatchSelection(state.color);
+    colorContainer.append(colorInput, swatchList);
+    wrapper.append(colorContainer);
+  }
+
+  const createSliderRow = (label, value, onInput, onCommit, fieldKey) => {
+    const rowEl = document.createElement("div");
+    rowEl.className = "master-slider";
+
+    const labelEl = document.createElement("span");
+    labelEl.className = "master-slider__label";
+    labelEl.textContent = label;
+
+    const slider = createInput({ type: "range", value, min: 0, max: 255, step: 1 });
+    slider.classList.add("value-slider", "master-slider__range");
+    slider.dataset.templateId = templateId;
+    slider.dataset.rowId = row.id;
+    slider.dataset.field = `${fieldKey}-slider`;
+
+    const numberInput = createInput({ type: "number", value, min: 0, max: 255, step: 1 });
+    numberInput.classList.add("input--compact-number", "master-slider__number");
+    numberInput.dataset.templateId = templateId;
+    numberInput.dataset.rowId = row.id;
+    numberInput.dataset.field = `${fieldKey}-number`;
+
+    const updateValue = (newValue) => {
+      const clamped = clampChannelValue(newValue);
+      slider.value = String(clamped);
+      numberInput.value = String(clamped);
+      onInput(clamped);
+    };
+
+    slider.addEventListener("input", (event) => {
+      updateValue(event.target.value);
+      syncTemplateInstances(templateId);
+    });
+    slider.addEventListener("change", () => {
+      onCommit();
+    });
+
+    numberInput.addEventListener("input", (event) => {
+      updateValue(event.target.value);
+      syncTemplateInstances(templateId);
+    });
+    numberInput.addEventListener("change", () => {
+      onCommit();
+    });
+
+    rowEl.append(labelEl, slider, numberInput);
+    return rowEl;
+  };
+
+  if (master.hasBrightness) {
+    const brightnessValue = clampChannelValue(state.brightness ?? 255);
+    const brightnessRow = createSliderRow(
+      "Brightness",
+      brightnessValue,
+      (newValue) => {
+        state.brightness = newValue;
+        row.value = newValue;
+        row.master = { ...(row.master || {}), id: master.id, brightness: newValue };
+      },
+      () => saveLightTemplates(),
+      "template-master-brightness",
+    );
+    wrapper.append(brightnessRow);
+  }
+
+  if (master.hasWhite) {
+    const whiteValue = clampChannelValue(state.white ?? 0);
+    const whiteRow = createSliderRow(
+      "White",
+      whiteValue,
+      (newValue) => {
+        state.white = newValue;
+        row.master = { ...(row.master || {}), id: master.id, white: newValue };
+      },
+      () => saveLightTemplates(),
+      "template-master-white",
+    );
+    wrapper.append(whiteRow);
+  }
+
+  return wrapper;
+}
+
 function createTemplateDelayField(templateId, row) {
   const wrapper = document.createElement("div");
   wrapper.className = "template-delay-field";
@@ -5012,6 +6021,8 @@ function duplicateLightTemplate(templateId) {
       fade: row.fade,
       channelPresetId: row.channelPresetId,
       valuePresetId: row.valuePresetId,
+      channelMasterId: row.channelMasterId,
+      master: row.master ? { ...row.master } : null,
     });
   });
   const duplicateName = template.name ? `${template.name} Copy` : "Untitled Template Copy";
@@ -5185,6 +6196,8 @@ function duplicateTemplateRow(templateId, rowId) {
           fade: source.fade,
           channelPresetId: source.channelPresetId,
           valuePresetId: source.valuePresetId,
+          channelMasterId: source.channelMasterId,
+          master: source.master ? { ...source.master } : null,
         });
   template.rows.splice(index + 1, 0, clone);
   saveLightTemplates();
@@ -5242,20 +6255,44 @@ function handleTemplateRowChannelPresetChange(templateId, rowId, event) {
   if (!template) return;
   const row = getTemplateRow(templateId, rowId);
   if (!row || row.type === TEMPLATE_ROW_TYPES.DELAY) return;
-  const selectedId = event.target.value;
+  const select = event.target;
+  const selectedOption = select.options[select.selectedIndex];
+  const optionType = selectedOption?.dataset?.channelOptionType;
+  if (optionType === "master") {
+    const masterId = selectedOption?.dataset?.channelMasterId || select.value;
+    const master = getChannelMaster(masterId);
+    if (master) {
+      ensureMasterState(row, master);
+      const focusDescriptor = describeFocusedTemplateField(select);
+      saveLightTemplates();
+      renderLightTemplates({ preserveFocus: focusDescriptor });
+      syncTemplateInstances(templateId);
+      return;
+    }
+    row.channelMasterId = null;
+    row.master = null;
+  }
+
+  const selectedId = select.value;
   const preset = getChannelPreset(selectedId);
   if (preset) {
     applyChannelPresetToTemplateRow(row, preset);
   } else {
-    const fallback = getSortedChannelPresets()[0];
-    if (fallback) {
-      applyChannelPresetToTemplateRow(row, fallback);
+    const optionsList = getChannelSelectionOptions();
+    const fallbackPreset = optionsList.find((option) => option.type === "preset");
+    if (fallbackPreset) {
+      applyChannelPresetToTemplateRow(row, fallbackPreset.preset);
     } else {
-      row.channelPresetId = null;
-      row.valuePresetId = null;
+      const fallbackMaster = optionsList.find((option) => option.type === "master");
+      if (fallbackMaster) {
+        ensureMasterState(row, fallbackMaster.master);
+      } else {
+        row.channelPresetId = null;
+        row.valuePresetId = null;
+      }
     }
   }
-  const focusDescriptor = describeFocusedTemplateField(event.target);
+  const focusDescriptor = describeFocusedTemplateField(select);
   saveLightTemplates();
   renderLightTemplates({ preserveFocus: focusDescriptor });
   syncTemplateInstances(templateId);
@@ -5266,6 +6303,9 @@ function handleTemplateRowValuePresetChange(templateId, rowId, event) {
   if (!template) return;
   const row = getTemplateRow(templateId, rowId);
   if (!row || row.type === TEMPLATE_ROW_TYPES.DELAY) return;
+  if (row.channelMasterId) {
+    return;
+  }
   const selectedId = event.target.value;
   const focusDescriptor = describeFocusedTemplateField(event.target);
   if (selectedId && selectedId !== "custom" && row.channelPresetId) {
@@ -5295,6 +6335,12 @@ function handleTemplateRowValueChange(templateId, rowId, event) {
   if (!template) return;
   const row = getTemplateRow(templateId, rowId);
   if (!row || row.type === TEMPLATE_ROW_TYPES.DELAY) return;
+  if (row.channelMasterId) {
+    event.target.value = row.value;
+    event.target.classList.remove("invalid");
+    event.target.setCustomValidity("");
+    return;
+  }
   const raw = Number.parseInt(event.target.value, 10);
   if (Number.isNaN(raw)) {
     event.target.classList.add("invalid");
@@ -5803,6 +6849,22 @@ function prepareActionsForSave() {
     if (seconds === null) {
       throw new Error(`Row ${index + 1}: invalid time format.`);
     }
+    const fade = Number.parseFloat(action.fade) || 0;
+    if (fade < 0) {
+      throw new Error(`Row ${index + 1}: fade cannot be negative.`);
+    }
+    if (action.channelMasterId) {
+      const master = getChannelMaster(action.channelMasterId);
+      if (!master) {
+        throw new Error(`Row ${index + 1}: master controller is no longer available.`);
+      }
+      const expanded = expandMasterAction(action, master, seconds, fade);
+      if (!expanded.length) {
+        throw new Error(`Row ${index + 1}: master controller has no valid channels.`);
+      }
+      expanded.forEach((entry) => prepared.push(entry));
+      return;
+    }
     const channel = Number.parseInt(action.channel, 10);
     if (Number.isNaN(channel) || channel < 1 || channel > 512) {
       throw new Error(`Row ${index + 1}: channel must be between 1 and 512.`);
@@ -5810,10 +6872,6 @@ function prepareActionsForSave() {
     const value = Number.parseInt(action.value, 10);
     if (Number.isNaN(value) || value < 0 || value > 255) {
       throw new Error(`Row ${index + 1}: value must be between 0 and 255.`);
-    }
-    const fade = Number.parseFloat(action.fade) || 0;
-    if (fade < 0) {
-      throw new Error(`Row ${index + 1}: fade cannot be negative.`);
     }
     const entry = {
       time: secondsToTimecode(seconds),
