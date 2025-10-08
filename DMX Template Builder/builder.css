@@ -160,6 +160,9 @@ input::-webkit-inner-spin-button {
   padding: 1rem clamp(1rem, 3vw, 2.5rem);
   background: #0f172a;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0px;
+  z-index: 200;
 }
 
 .system-actions {
@@ -957,7 +960,7 @@ input::-webkit-inner-spin-button {
 
 .preview-panel {
   position: sticky;
-  top: 1.5rem;
+  top: 7.5rem;
   align-self: start;
 }
 
@@ -1044,6 +1047,7 @@ input::-webkit-inner-spin-button {
   display: grid;
   grid-template-columns: 35px minmax(0, 1fr) minmax(6.5rem, max-content);
   align-items: stretch;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.35);
 }
 
 .actions-grid__header {
@@ -1409,7 +1413,7 @@ input::-webkit-inner-spin-button {
 
 
 .action-group-template {
-  background: rgba(59, 130, 246, 0.08);
+ //background: rgba(59, 130, 246, 0.08);
 }
 
 .action-group-template [data-column="content"] {
@@ -1514,7 +1518,7 @@ input::-webkit-inner-spin-button {
 }
 
 .action-group-item--template {
-  background: rgba(30, 64, 175, 0.12);
+  //background: rgba(30, 64, 175, 0.12);
 }
 
 .timeline-empty {
