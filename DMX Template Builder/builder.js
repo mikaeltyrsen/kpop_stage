@@ -33,6 +33,12 @@ const templateRowTemplate = document.getElementById("template-row-template");
 const systemUpdateButton = document.getElementById("system-update");
 const systemRestartButton = document.getElementById("system-restart");
 const systemShutdownButton = document.getElementById("system-shutdown");
+const channelFilterContainer = document.getElementById("channel-filter");
+const channelFilterButton = document.getElementById("channel-filter-button");
+const channelFilterDropdown = document.getElementById("channel-filter-dropdown");
+const channelFilterGroupsContainer = document.getElementById("channel-filter-groups");
+const channelFilterCountEl = document.getElementById("channel-filter-count");
+const channelFilterClearButton = document.getElementById("channel-filter-clear");
 
 let videos = [];
 let currentVideo = null;
@@ -58,6 +64,9 @@ let activeLightTemplateId = null;
 let templatePickerStepId = null;
 let templateInstanceCounter = 0;
 let lightTemplateFilterQuery = "";
+let channelFilterOpen = false;
+const activeChannelFilterIds = new Set();
+const channelFilterGroupMap = new Map();
 
 const TEMPLATE_INSTANCE_PROPERTY = "__templateInstanceId";
 const TEMPLATE_ROW_PROPERTY = "__templateRowId";
@@ -202,11 +211,115 @@ function shouldSerializeTemplateLoop(loop) {
   return Boolean(normalized.enabled || normalized.infinite);
 }
 
+function initChannelFilterUI() {
+  if (channelFilterButton instanceof HTMLButtonElement) {
+    channelFilterButton.addEventListener("click", () => {
+      toggleChannelFilter();
+    });
+    channelFilterButton.addEventListener("pointerenter", (event) => {
+      if (
+        event &&
+        typeof event.pointerType === "string" &&
+        event.pointerType === "mouse" &&
+        !channelFilterOpen
+      ) {
+        openChannelFilter();
+      }
+    });
+  }
+
+  if (channelFilterClearButton instanceof HTMLButtonElement) {
+    channelFilterClearButton.addEventListener("click", () => {
+      clearChannelFilter();
+    });
+  }
+
+  document.addEventListener("pointerdown", handleChannelFilterPointerDown);
+  document.addEventListener("keydown", handleChannelFilterKeydown);
+  renderChannelFilterControls();
+}
+
+function openChannelFilter() {
+  if (channelFilterOpen) {
+    return;
+  }
+  channelFilterOpen = true;
+  renderChannelFilterControls();
+  if (channelFilterDropdown instanceof HTMLElement) {
+    channelFilterDropdown.hidden = false;
+    channelFilterDropdown.setAttribute("aria-hidden", "false");
+  }
+  if (channelFilterButton instanceof HTMLButtonElement) {
+    channelFilterButton.setAttribute("aria-expanded", "true");
+  }
+  if (channelFilterContainer instanceof HTMLElement) {
+    channelFilterContainer.classList.add("is-open");
+  }
+}
+
+function closeChannelFilter() {
+  if (!channelFilterOpen) {
+    return;
+  }
+  channelFilterOpen = false;
+  if (channelFilterDropdown instanceof HTMLElement) {
+    channelFilterDropdown.hidden = true;
+    channelFilterDropdown.setAttribute("aria-hidden", "true");
+  }
+  if (channelFilterButton instanceof HTMLButtonElement) {
+    channelFilterButton.setAttribute("aria-expanded", "false");
+  }
+  if (channelFilterContainer instanceof HTMLElement) {
+    channelFilterContainer.classList.remove("is-open");
+  }
+}
+
+function toggleChannelFilter(forceOpen) {
+  const shouldOpen = typeof forceOpen === "boolean" ? forceOpen : !channelFilterOpen;
+  if (shouldOpen) {
+    openChannelFilter();
+  } else {
+    closeChannelFilter();
+  }
+}
+
+function handleChannelFilterPointerDown(event) {
+  if (!channelFilterOpen) {
+    return;
+  }
+  if (!(channelFilterContainer instanceof HTMLElement)) {
+    return;
+  }
+  const target = event?.target;
+  if (target instanceof Node && channelFilterContainer.contains(target)) {
+    return;
+  }
+  closeChannelFilter();
+}
+
+function handleChannelFilterKeydown(event) {
+  if (!channelFilterOpen) {
+    return;
+  }
+  if (!event || event.key !== "Escape") {
+    return;
+  }
+  closeChannelFilter();
+  if (channelFilterButton instanceof HTMLButtonElement) {
+    try {
+      channelFilterButton.focus({ preventScroll: true });
+    } catch (error) {
+      channelFilterButton.focus();
+    }
+  }
+}
+
 init();
 
 async function init() {
   initTabs();
   initSystemControls();
+  initChannelFilterUI();
   try {
     await initChannelPresetsUI();
   } catch (error) {
@@ -1160,6 +1273,9 @@ function renderActions(options = {}) {
     return;
   }
 
+  const channelLookup = buildChannelFilterLookup();
+  const filterActive = isChannelFilterActive();
+
   const groupsInOrder = [];
   const groupLookup = new Map();
 
@@ -1189,17 +1305,27 @@ function renderActions(options = {}) {
   });
 
   const activeGroups = new Set();
+  let displayedGroupCount = 0;
 
   groupsInOrder.forEach((group) => {
     activeGroups.add(group.id);
+    const itemsToRender = filterActive
+      ? group.items.filter(({ action }) => doesActionMatchChannelFilter(action, channelLookup))
+      : group.items;
+
+    if (filterActive && !itemsToRender.length) {
+      return;
+    }
+
+    displayedGroupCount += 1;
     const collapsed = collapsedStepIds.has(group.id);
-    const visibleCount = getGroupDisplayCount(group);
-    const headerRow = createGroupHeaderRow(group, collapsed, visibleCount);
+    const visibleCount = getGroupDisplayCount(itemsToRender);
+    const headerRow = createGroupHeaderRow(group, collapsed, visibleCount, itemsToRender);
     actionsBody.append(headerRow);
 
     if (!collapsed) {
       const templateCounts = new Map();
-      group.items.forEach(({ action }) => {
+      itemsToRender.forEach(({ action }) => {
         if (action.templateInstanceId) {
           const key = action.templateInstanceId;
           templateCounts.set(key, (templateCounts.get(key) || 0) + 1);
@@ -1207,7 +1333,7 @@ function renderActions(options = {}) {
       });
 
       let lastTemplateInstanceId = null;
-      group.items.forEach(({ action, index }) => {
+      itemsToRender.forEach(({ action, index }) => {
         if (action.templateId && action.templateInstanceId) {
           if (action.templateInstanceId !== lastTemplateInstanceId) {
             const templateRow = createTemplateInstanceRow(
@@ -1228,6 +1354,25 @@ function renderActions(options = {}) {
     }
   });
 
+  if (displayedGroupCount === 0 && actions.length) {
+    const emptyRow = document.createElement("div");
+    emptyRow.className = "actions-grid__empty empty-state channel-filter__no-results";
+    const message = document.createElement("span");
+    message.textContent = "No steps match the current channel filter.";
+    emptyRow.append(message);
+    if (filterActive) {
+      const clearButton = document.createElement("button");
+      clearButton.type = "button";
+      clearButton.className = "secondary channel-filter__empty-button";
+      clearButton.textContent = "Clear filter";
+      clearButton.addEventListener("click", () => {
+        clearChannelFilter();
+      });
+      emptyRow.append(clearButton);
+    }
+    actionsBody.append(emptyRow);
+  }
+
   for (const stepId of [...collapsedStepIds]) {
     if (!activeGroups.has(stepId)) {
       collapsedStepIds.delete(stepId);
@@ -1241,13 +1386,13 @@ function renderActions(options = {}) {
   updateActiveActionHighlight();
 }
 
-function getGroupDisplayCount(group) {
-  if (!group || !Array.isArray(group.items)) {
+function getGroupDisplayCount(items) {
+  if (!Array.isArray(items)) {
     return 0;
   }
   const seenInstances = new Set();
   let total = 0;
-  group.items.forEach(({ action }) => {
+  items.forEach(({ action }) => {
     if (action && action.templateId && action.templateInstanceId) {
       if (!seenInstances.has(action.templateInstanceId)) {
         seenInstances.add(action.templateInstanceId);
@@ -1260,7 +1405,7 @@ function getGroupDisplayCount(group) {
   return total;
 }
 
-function createGroupHeaderRow(group, collapsed, displayCount) {
+function createGroupHeaderRow(group, collapsed, displayCount, itemsForHeader = group.items) {
   const row = document.createElement("div");
   row.className = "actions-grid__row action-group-header";
   row.setAttribute("role", "row");
@@ -1279,9 +1424,13 @@ function createGroupHeaderRow(group, collapsed, displayCount) {
   toggleButton.className = "action-group-header__toggle";
   toggleButton.setAttribute("aria-expanded", String(!collapsed));
   toggleButton.dataset.groupId = group.id;
+  const referenceItems = Array.isArray(itemsForHeader) && itemsForHeader.length
+    ? itemsForHeader
+    : group.items;
+
   toggleButton.addEventListener("click", () => toggleGroupCollapsed(group.id));
   toggleButton.addEventListener("focus", () => {
-    const firstIndex = group.items[0]?.index;
+    const firstIndex = referenceItems[0]?.index;
     if (Number.isInteger(firstIndex)) {
       setHighlightedAction(firstIndex);
     } else {
@@ -1310,7 +1459,7 @@ function createGroupHeaderRow(group, collapsed, displayCount) {
   timeInput.dataset.field = "step-time";
   timeInput.addEventListener("change", (event) => handleStepTimeChange(event, group.id));
   timeInput.addEventListener("focus", () => {
-    const firstIndex = group.items[0]?.index;
+    const firstIndex = referenceItems[0]?.index;
     if (Number.isInteger(firstIndex)) {
       setHighlightedAction(firstIndex);
     } else {
@@ -1323,7 +1472,9 @@ function createGroupHeaderRow(group, collapsed, displayCount) {
 
   const countEl = document.createElement("span");
   countEl.className = "action-group-header__count";
-  const count = Number.isFinite(displayCount) ? displayCount : group.items.length;
+  const count = Number.isFinite(displayCount)
+    ? displayCount
+    : referenceItems.length;
   countEl.textContent = `${count} row${count === 1 ? "" : "s"}`;
 
   const addRowButton = document.createElement("button");
@@ -3098,7 +3249,10 @@ function exportTemplate(preparedActions, options = {}) {
 async function initChannelPresetsUI() {
   if (!channelPresetsContainer) return;
   channelPresets = await loadChannelPresets();
-  renderChannelPresets();
+  const filterChanged = renderChannelPresets();
+  if (filterChanged && Array.isArray(actions) && actions.length) {
+    renderActions({ preserveFocus: true });
+  }
   if (addChannelPresetButton) {
     addChannelPresetButton.addEventListener("click", () => {
       addChannelPreset();
@@ -3107,7 +3261,9 @@ async function initChannelPresetsUI() {
 }
 
 function renderChannelPresets() {
-  if (!channelPresetsContainer) return;
+  if (!channelPresetsContainer) return false;
+
+  const filterSelectionChanged = pruneChannelFilterSelection();
 
   pruneCollapsedChannelPresets();
   channelPresetsContainer.innerHTML = "";
@@ -3117,7 +3273,8 @@ function renderChannelPresets() {
     emptyState.className = "preset-settings__empty";
     emptyState.textContent = "No channel presets yet. Use “Add Channel Preset” to create one.";
     channelPresetsContainer.append(emptyState);
-    return;
+    renderChannelFilterControls();
+    return filterSelectionChanged;
   }
 
   const sorted = getSortedChannelPresets();
@@ -3204,7 +3361,18 @@ function renderChannelPresets() {
     channelInput.addEventListener("change", (event) => handlePresetChannelInput(event, preset.id));
     channelField.append(channelLabel, channelInput);
 
-    row.append(nameField, channelField);
+    const groupField = document.createElement("label");
+    groupField.className = "preset-field";
+    const groupLabel = document.createElement("span");
+    groupLabel.textContent = "Group";
+    const groupInput = document.createElement("input");
+    groupInput.type = "text";
+    groupInput.placeholder = "Left Light";
+    groupInput.value = preset.group || "";
+    groupInput.addEventListener("input", (event) => handlePresetGroupInput(event, preset.id));
+    groupField.append(groupLabel, groupInput);
+
+    row.append(nameField, channelField, groupField);
     content.append(row);
 
     const valuesSection = document.createElement("div");
@@ -3266,6 +3434,254 @@ function renderChannelPresets() {
     card.append(content);
     channelPresetsContainer.append(card);
   });
+
+  renderChannelFilterControls();
+  return filterSelectionChanged;
+}
+
+function renderChannelFilterControls() {
+  if (!(channelFilterGroupsContainer instanceof HTMLElement)) {
+    return;
+  }
+
+  channelFilterGroupMap.clear();
+  channelFilterGroupsContainer.innerHTML = "";
+
+  const groups = buildChannelFilterGroups();
+  if (!groups.length) {
+    const empty = document.createElement("p");
+    empty.className = "channel-filter__empty";
+    empty.textContent = channelPresets.length
+      ? "No channel presets available."
+      : "No channel presets yet.";
+    channelFilterGroupsContainer.append(empty);
+  } else {
+    groups.forEach((group) => {
+      channelFilterGroupMap.set(
+        group.datasetKey,
+        group.presets.map((preset) => preset.id),
+      );
+
+      const groupEl = document.createElement("div");
+      groupEl.className = "channel-filter__group";
+
+      const groupLabel = document.createElement("label");
+      groupLabel.className = "channel-filter__group-label";
+
+      const groupCheckbox = document.createElement("input");
+      groupCheckbox.type = "checkbox";
+      groupCheckbox.className = "channel-filter__checkbox";
+      groupCheckbox.dataset.filterGroupKey = group.datasetKey;
+      const selectedCount = group.presets.filter((preset) =>
+        activeChannelFilterIds.has(preset.id),
+      ).length;
+      if (activeChannelFilterIds.size > 0 && group.presets.length > 0) {
+        groupCheckbox.checked = selectedCount === group.presets.length;
+        groupCheckbox.indeterminate =
+          selectedCount > 0 && selectedCount < group.presets.length;
+      } else {
+        groupCheckbox.checked = false;
+        groupCheckbox.indeterminate = false;
+      }
+      groupCheckbox.addEventListener("change", handleChannelFilterGroupChange);
+
+      const groupName = document.createElement("span");
+      groupName.className = "channel-filter__group-name";
+      groupName.textContent = group.name;
+
+      groupLabel.append(groupCheckbox, groupName);
+      groupEl.append(groupLabel);
+
+      if (group.presets.length) {
+        const list = document.createElement("ul");
+        list.className = "channel-filter__options";
+        group.presets.forEach((preset) => {
+          const option = document.createElement("li");
+          option.className = "channel-filter__option";
+
+          const optionLabel = document.createElement("label");
+          optionLabel.className = "channel-filter__option-label";
+
+          const optionCheckbox = document.createElement("input");
+          optionCheckbox.type = "checkbox";
+          optionCheckbox.className = "channel-filter__checkbox";
+          optionCheckbox.dataset.channelPresetId = preset.id;
+          optionCheckbox.checked =
+            activeChannelFilterIds.size > 0 && activeChannelFilterIds.has(preset.id);
+          optionCheckbox.addEventListener("change", handleChannelFilterChannelChange);
+
+          const optionName = document.createElement("span");
+          optionName.className = "channel-filter__option-name";
+          optionName.textContent = formatChannelFilterOptionLabel(preset, group);
+
+          optionLabel.append(optionCheckbox, optionName);
+          option.append(optionLabel);
+          list.append(option);
+        });
+        groupEl.append(list);
+      }
+
+      channelFilterGroupsContainer.append(groupEl);
+    });
+  }
+
+  updateChannelFilterButtonLabel();
+  updateChannelFilterClearButtonState();
+  updateChannelFilterActiveState();
+}
+
+function buildChannelFilterGroups() {
+  const ordered = [];
+  const map = new Map();
+  const sorted = getSortedChannelPresets();
+  sorted.forEach((preset) => {
+    const rawGroup = typeof preset.group === "string" ? preset.group.trim() : "";
+    const isUngrouped = rawGroup === "";
+    const key = isUngrouped ? "__ungrouped__" : rawGroup.toLowerCase();
+    let entry = map.get(key);
+    if (!entry) {
+      entry = {
+        key,
+        datasetKey: `group-${map.size}`,
+        name: rawGroup || "Ungrouped",
+        isUngrouped,
+        presets: [],
+      };
+      map.set(key, entry);
+      ordered.push(entry);
+    }
+    entry.presets.push(preset);
+  });
+  return ordered;
+}
+
+function formatChannelFilterOptionLabel(preset, group) {
+  if (!preset) return "";
+  let label = formatChannelPresetLabel(preset);
+  const hyphenIndex = label.indexOf(" - ");
+  if (hyphenIndex !== -1) {
+    label = label.slice(hyphenIndex + 3);
+  }
+  const channelNumber = Number.isFinite(preset.channel)
+    ? preset.channel
+    : Number.parseInt(preset.channel, 10);
+  if (Number.isFinite(channelNumber)) {
+    label = `${label} (Ch ${channelNumber})`;
+  }
+  return label;
+}
+
+function updateChannelFilterButtonLabel() {
+  if (!(channelFilterButton instanceof HTMLButtonElement)) {
+    return;
+  }
+  const count = activeChannelFilterIds.size;
+  if (channelFilterCountEl instanceof HTMLElement) {
+    if (count > 0) {
+      channelFilterCountEl.textContent = String(count);
+      channelFilterCountEl.hidden = false;
+    } else {
+      channelFilterCountEl.textContent = "";
+      channelFilterCountEl.hidden = true;
+    }
+  }
+  channelFilterButton.classList.toggle("is-active", count > 0);
+}
+
+function updateChannelFilterClearButtonState() {
+  if (!(channelFilterClearButton instanceof HTMLButtonElement)) {
+    return;
+  }
+  channelFilterClearButton.disabled = activeChannelFilterIds.size === 0;
+}
+
+function updateChannelFilterActiveState() {
+  if (!(channelFilterContainer instanceof HTMLElement)) {
+    return;
+  }
+  channelFilterContainer.classList.toggle("is-active", activeChannelFilterIds.size > 0);
+}
+
+function clearChannelFilter() {
+  if (!activeChannelFilterIds.size) {
+    return;
+  }
+  activeChannelFilterIds.clear();
+  renderChannelFilterControls();
+  renderActions({ preserveFocus: true });
+}
+
+function handleChannelFilterGroupChange(event) {
+  const target = event?.target;
+  if (!(target instanceof HTMLInputElement)) {
+    return;
+  }
+  const { filterGroupKey } = target.dataset || {};
+  if (!filterGroupKey) {
+    return;
+  }
+  const presetIds = channelFilterGroupMap.get(filterGroupKey) || [];
+  if (target.checked) {
+    presetIds.forEach((id) => activeChannelFilterIds.add(id));
+  } else {
+    presetIds.forEach((id) => activeChannelFilterIds.delete(id));
+  }
+  renderChannelFilterControls();
+  renderActions({ preserveFocus: true });
+}
+
+function handleChannelFilterChannelChange(event) {
+  const target = event?.target;
+  if (!(target instanceof HTMLInputElement)) {
+    return;
+  }
+  const { channelPresetId } = target.dataset || {};
+  if (!channelPresetId) {
+    return;
+  }
+  if (target.checked) {
+    activeChannelFilterIds.add(channelPresetId);
+  } else {
+    activeChannelFilterIds.delete(channelPresetId);
+  }
+  renderChannelFilterControls();
+  renderActions({ preserveFocus: true });
+}
+
+function isChannelFilterActive() {
+  return activeChannelFilterIds.size > 0;
+}
+
+function buildChannelFilterLookup() {
+  const lookup = new Map();
+  channelPresets.forEach((preset) => {
+    const channelNumber = Number.parseInt(preset.channel, 10);
+    if (Number.isFinite(channelNumber) && !lookup.has(channelNumber)) {
+      lookup.set(channelNumber, preset.id);
+    }
+  });
+  return lookup;
+}
+
+function doesActionMatchChannelFilter(action, channelLookup) {
+  if (!isChannelFilterActive()) {
+    return true;
+  }
+  const presetId =
+    typeof action.channelPresetId === "string" && action.channelPresetId
+      ? action.channelPresetId
+      : null;
+  if (presetId && activeChannelFilterIds.has(presetId)) {
+    return true;
+  }
+  const channelNumber = Number.parseInt(action.channel, 10);
+  if (Number.isFinite(channelNumber)) {
+    const lookupId = channelLookup.get(channelNumber);
+    if (lookupId && activeChannelFilterIds.has(lookupId)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function updateWorkspaceVisibility() {
@@ -3317,10 +3733,26 @@ function pruneCollapsedChannelPresets() {
   });
 }
 
+function pruneChannelFilterSelection() {
+  if (!activeChannelFilterIds.size) {
+    return false;
+  }
+  const validIds = new Set(channelPresets.map((preset) => preset.id));
+  let changed = false;
+  Array.from(activeChannelFilterIds).forEach((presetId) => {
+    if (!validIds.has(presetId)) {
+      activeChannelFilterIds.delete(presetId);
+      changed = true;
+    }
+  });
+  return changed;
+}
+
 function addChannelPreset() {
   const preset = {
     id: generateId("preset"),
     name: "",
+    group: "",
     channel: findNextAvailableChannel(),
     values: [],
   };
@@ -3333,6 +3765,7 @@ function addChannelPreset() {
 function removeChannelPreset(presetId) {
   const index = channelPresets.findIndex((preset) => preset.id === presetId);
   if (index === -1) return;
+  activeChannelFilterIds.delete(presetId);
   channelPresets.splice(index, 1);
   collapsedChannelPresetIds.delete(presetId);
   saveChannelPresets();
@@ -3388,6 +3821,14 @@ function handlePresetNameInput(event, presetId) {
   saveChannelPresets();
   updatePresetCardTitle(event.target.closest(".preset-card"), preset);
   refreshChannelPresetOptions(preset);
+}
+
+function handlePresetGroupInput(event, presetId) {
+  const preset = getChannelPreset(presetId);
+  if (!preset) return;
+  preset.group = event.target.value;
+  saveChannelPresets();
+  renderChannelFilterControls();
 }
 
 function handlePresetChannelInput(event, presetId) {
@@ -3470,6 +3911,7 @@ function buildChannelPresetPayload() {
   return channelPresets.map((preset) => ({
     id: preset.id,
     name: preset.name || "",
+    group: typeof preset.group === "string" ? preset.group : "",
     channel: clamp(Number.parseInt(preset.channel, 10) || 1, 1, 512),
     values: Array.isArray(preset.values)
       ? preset.values.map((value) => ({
@@ -3532,12 +3974,13 @@ function sanitizeChannelPreset(raw) {
   if (!raw || typeof raw !== "object") return null;
   const id = typeof raw.id === "string" && raw.id ? raw.id : generateId("preset");
   const name = typeof raw.name === "string" ? raw.name : "";
+  const group = typeof raw.group === "string" ? raw.group : "";
   const channelNumber = Number.parseInt(raw.channel, 10);
   const channel = Number.isFinite(channelNumber) ? clamp(channelNumber, 1, 512) : 1;
   const values = Array.isArray(raw.values)
     ? raw.values.map((value) => sanitizeChannelValue(value)).filter(Boolean)
     : [];
-  return { id, name, channel, values };
+  return { id, name, group, channel, values };
 }
 
 function sanitizeChannelValue(raw) {

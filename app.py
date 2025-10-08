@@ -180,6 +180,7 @@ def sanitize_channel_preset(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if not isinstance(preset_id, str) or not preset_id:
         preset_id = _generate_channel_preset_id("preset")
     name = raw.get("name") if isinstance(raw.get("name"), str) else ""
+    group = raw.get("group") if isinstance(raw.get("group"), str) else ""
     try:
         channel_value = int(raw.get("channel", 1))
     except (TypeError, ValueError):
@@ -191,7 +192,13 @@ def sanitize_channel_preset(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         values = filter(None, (sanitize_channel_value(entry) for entry in values_raw))
     else:
         values = []
-    return {"id": preset_id, "name": name, "channel": channel, "values": list(values)}
+    return {
+        "id": preset_id,
+        "name": name,
+        "group": group,
+        "channel": channel,
+        "values": list(values),
+    }
 
 
 def load_channel_presets_from_disk() -> List[Dict[str, Any]]:
