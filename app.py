@@ -10,6 +10,7 @@ import sys
 import threading
 import time
 import uuid
+import re
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
@@ -32,12 +33,14 @@ DMX_TEMPLATE_DIR = BASE_DIR / "dmx_templates"
 DMX_BUILDER_DIR = BASE_DIR / "DMX Template Builder"
 CHANNEL_PRESETS_FILE = BASE_DIR / "channel_presets.json"
 LIGHT_TEMPLATES_FILE = BASE_DIR / "light_templates.json"
+COLOR_PRESETS_FILE = BASE_DIR / "color_presets.json"
 
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 (MEDIA_DIR / "videos").mkdir(parents=True, exist_ok=True)
 DMX_TEMPLATE_DIR.mkdir(parents=True, exist_ok=True)
 DMX_BUILDER_DIR.mkdir(parents=True, exist_ok=True)
 LIGHT_TEMPLATES_FILE.parent.mkdir(parents=True, exist_ok=True)
+COLOR_PRESETS_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 LOGGER = logging.getLogger("kpop_stage")
@@ -164,6 +167,100 @@ CHANNEL_COMPONENT_VALUES = {
 }
 
 
+COLOR_PRESET_HEX_RE = re.compile(r"^#?[0-9a-fA-F]{6}$")
+
+DEFAULT_COLOR_PRESETS: List[Dict[str, Any]] = [
+    {
+        "id": "color_red",
+        "name": "Red",
+        "iconColor": "#ff3b30",
+        "red": 255,
+        "green": 0,
+        "blue": 0,
+    },
+    {
+        "id": "color_orange",
+        "name": "Orange",
+        "iconColor": "#ff9500",
+        "red": 255,
+        "green": 87,
+        "blue": 0,
+    },
+    {
+        "id": "color_amber",
+        "name": "Amber",
+        "iconColor": "#ffcc00",
+        "red": 255,
+        "green": 170,
+        "blue": 0,
+    },
+    {
+        "id": "color_yellow",
+        "name": "Yellow",
+        "iconColor": "#ffd60a",
+        "red": 255,
+        "green": 214,
+        "blue": 10,
+    },
+    {
+        "id": "color_green",
+        "name": "Green",
+        "iconColor": "#34c759",
+        "red": 0,
+        "green": 255,
+        "blue": 0,
+    },
+    {
+        "id": "color_teal",
+        "name": "Teal",
+        "iconColor": "#30d158",
+        "red": 0,
+        "green": 209,
+        "blue": 88,
+    },
+    {
+        "id": "color_cyan",
+        "name": "Cyan",
+        "iconColor": "#32ade6",
+        "red": 0,
+        "green": 173,
+        "blue": 230,
+    },
+    {
+        "id": "color_blue",
+        "name": "Blue",
+        "iconColor": "#007aff",
+        "red": 0,
+        "green": 122,
+        "blue": 255,
+    },
+    {
+        "id": "color_purple",
+        "name": "Purple",
+        "iconColor": "#af52de",
+        "red": 175,
+        "green": 82,
+        "blue": 222,
+    },
+    {
+        "id": "color_pink",
+        "name": "Pink",
+        "iconColor": "#ff2d55",
+        "red": 255,
+        "green": 45,
+        "blue": 85,
+    },
+    {
+        "id": "color_white",
+        "name": "White",
+        "iconColor": "#ffffff",
+        "red": 255,
+        "green": 255,
+        "blue": 255,
+    },
+]
+
+
 def _normalize_channel_component(value: object) -> str:
     if not isinstance(value, str):
         return ""
@@ -175,6 +272,27 @@ def _normalize_channel_component(value: object) -> str:
 
 def _clamp(value: int, minimum: int, maximum: int) -> int:
     return max(minimum, min(maximum, value))
+
+
+def _normalize_hex_color(value: object, fallback: str = "#ffffff") -> str:
+    if not isinstance(value, str):
+        return fallback
+    candidate = value.strip()
+    if COLOR_PRESET_HEX_RE.match(candidate):
+        hex_value = candidate[1:] if candidate.startswith("#") else candidate
+        return f"#{hex_value.lower()}"
+    return fallback
+
+
+def _auto_detect_channel_component(name: str, group: str) -> str:
+    combined = f"{name} {group}".lower()
+    for keyword in ("dimmer", "brightness", "intensity"):
+        if re.search(rf"\\b{re.escape(keyword)}\\b", combined):
+            return "brightness"
+    for keyword, component in {"red": "red", "green": "green", "blue": "blue", "white": "white"}.items():
+        if re.search(rf"\\b{re.escape(keyword)}\\b", combined):
+            return component
+    return ""
 
 
 def sanitize_channel_value(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
@@ -201,6 +319,8 @@ def sanitize_channel_preset(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     name = raw.get("name") if isinstance(raw.get("name"), str) else ""
     group = raw.get("group") if isinstance(raw.get("group"), str) else ""
     component = _normalize_channel_component(raw.get("component"))
+    if not component:
+        component = _auto_detect_channel_component(name, group)
 
     try:
         channel_value = int(raw.get("channel", 1))
@@ -262,6 +382,106 @@ def save_channel_presets_to_disk(presets: Iterable[Dict[str, Any]]) -> None:
             json.dump({"presets": sanitized}, fh, indent=2)
     except OSError:
         LOGGER.exception("Unable to write channel presets file")
+        raise
+
+
+def sanitize_color_preset(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    if not isinstance(raw, dict):
+        return None
+
+    preset_id = raw.get("id")
+    if not isinstance(preset_id, str) or not preset_id:
+        preset_id = _generate_channel_preset_id("color")
+
+    name = raw.get("name") if isinstance(raw.get("name"), str) else ""
+
+    red = raw.get("red")
+    green = raw.get("green")
+    blue = raw.get("blue")
+
+    if isinstance(raw.get("rgb"), dict):
+        rgb = raw["rgb"]
+        red = rgb.get("r", red)
+        green = rgb.get("g", green)
+        blue = rgb.get("b", blue)
+
+    try:
+        red_value = int(red)
+    except (TypeError, ValueError):
+        red_value = 255
+
+    try:
+        green_value = int(green)
+    except (TypeError, ValueError):
+        green_value = 255
+
+    try:
+        blue_value = int(blue)
+    except (TypeError, ValueError):
+        blue_value = 255
+
+    fallback_hex = f"#{red_value:02x}{green_value:02x}{blue_value:02x}"
+    icon_source = raw.get("iconColor") if isinstance(raw.get("iconColor"), str) else raw.get("color")
+    icon_color = _normalize_hex_color(icon_source, fallback_hex)
+
+    return {
+        "id": preset_id,
+        "name": name,
+        "iconColor": icon_color,
+        "red": _clamp(red_value, 0, 255),
+        "green": _clamp(green_value, 0, 255),
+        "blue": _clamp(blue_value, 0, 255),
+    }
+
+
+def load_color_presets_from_disk() -> List[Dict[str, Any]]:
+    if not COLOR_PRESETS_FILE.exists():
+        return [preset for preset in (sanitize_color_preset(entry) for entry in DEFAULT_COLOR_PRESETS) if preset]
+
+    try:
+        with COLOR_PRESETS_FILE.open("r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, json.JSONDecodeError):
+        LOGGER.exception("Unable to read color presets file")
+        return [preset for preset in (sanitize_color_preset(entry) for entry in DEFAULT_COLOR_PRESETS) if preset]
+
+    if isinstance(data, dict):
+        raw_presets = data.get("presets", [])
+    else:
+        raw_presets = data
+
+    if not isinstance(raw_presets, list):
+        LOGGER.warning("Color presets file did not contain a list of presets")
+        return [preset for preset in (sanitize_color_preset(entry) for entry in DEFAULT_COLOR_PRESETS) if preset]
+
+    sanitized: List[Dict[str, Any]] = []
+    for entry in raw_presets:
+        preset = sanitize_color_preset(entry)
+        if preset:
+            sanitized.append(preset)
+
+    if not sanitized:
+        return [preset for preset in (sanitize_color_preset(entry) for entry in DEFAULT_COLOR_PRESETS) if preset]
+    return sanitized
+
+
+def save_color_presets_to_disk(presets: Iterable[Dict[str, Any]]) -> None:
+    sanitized: List[Dict[str, Any]] = []
+    for entry in presets:
+        preset = sanitize_color_preset(entry)
+        if preset:
+            sanitized.append(preset)
+
+    if not sanitized:
+        sanitized = [
+            preset for preset in (sanitize_color_preset(entry) for entry in DEFAULT_COLOR_PRESETS) if preset
+        ]
+
+    try:
+        with COLOR_PRESETS_FILE.open("w", encoding="utf-8") as fh:
+            json.dump({"presets": sanitized}, fh, indent=2)
+    except OSError:
+        LOGGER.exception("Unable to write color presets file")
         raise
 
 
@@ -885,6 +1105,35 @@ def api_put_channel_presets() -> Any:
         return jsonify({"error": "Unable to save channel presets"}), 500
 
     presets = load_channel_presets_from_disk()
+    return jsonify({"presets": presets})
+
+
+@app.route("/api/color-presets", methods=["GET"])
+def api_get_color_presets() -> Any:
+    presets = load_color_presets_from_disk()
+    return jsonify({"presets": presets})
+
+
+@app.route("/api/color-presets", methods=["PUT"])
+def api_put_color_presets() -> Any:
+    data = request.get_json(silent=True)  # type: ignore[no-untyped-call]
+    if data is None:
+        return jsonify({"error": "Request body must be JSON"}), 400
+
+    if isinstance(data, list):
+        raw_presets = data
+    else:
+        raw_presets = data.get("presets")
+
+    if not isinstance(raw_presets, list):
+        return jsonify({"error": "Request must include a list of presets"}), 400
+
+    try:
+        save_color_presets_to_disk(raw_presets)
+    except OSError:
+        return jsonify({"error": "Unable to save color presets"}), 500
+
+    presets = load_color_presets_from_disk()
     return jsonify({"presets": presets})
 
 
