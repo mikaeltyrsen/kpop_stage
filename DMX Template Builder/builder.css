@@ -1078,7 +1078,7 @@ input::-webkit-inner-spin-button {
 }
 
 .actions-grid__cell--fade {
-  width: 50px;
+  width: 70px;
 }
 
 .actions-grid__cell--template {
@@ -1290,7 +1290,7 @@ input::-webkit-inner-spin-button {
 .preset-select {
   display: grid;
   //grid-template-columns: minmax(max-content, 1fr) minmax(4.5rem, max-content) minmax(6rem, 1fr);
-  grid-template-columns: auto 1fr 50px;
+  grid-template-columns: 180px 1fr 50px;
   gap: 0.45rem;
   align-items: center;
 }
@@ -1300,7 +1300,7 @@ input::-webkit-inner-spin-button {
 }
 
 .preset-select select {
-  width: auto;
+  width: 100%;
   min-width: max-content;
   font-size: 0.8em;
 }
