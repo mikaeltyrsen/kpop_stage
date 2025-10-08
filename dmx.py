@@ -821,6 +821,19 @@ class DMXShowManager:
             if not relative_offsets:
                 continue
 
+            forward_offsets = sorted(relative_offsets, key=lambda item: item[0])
+            reverse_offsets: Optional[List[tuple[float, DMXAction]]]
+            if loop_settings.mode == "pingpong":
+                reverse_offsets = [
+                    (
+                        max(0.0, min(duration, duration - offset)),
+                        action,
+                    )
+                    for offset, action in reversed(forward_offsets)
+                ]
+            else:
+                reverse_offsets = None
+
             conflict_time: Optional[float] = None
             for channel in channels:
                 for entry_info in channel_times.get(channel, []):
@@ -875,7 +888,12 @@ class DMXShowManager:
                 if conflict_time is not None and iteration_start >= conflict_time - epsilon:
                     break
                 stop_iteration = False
-                for offset, base_action in relative_offsets:
+                if loop_settings.mode == "pingpong" and iteration % 2 == 1:
+                    offsets_iterable = reverse_offsets or forward_offsets
+                else:
+                    offsets_iterable = forward_offsets
+
+                for offset, base_action in offsets_iterable:
                     new_time = iteration_start + offset
                     if conflict_time is not None and new_time >= conflict_time - epsilon:
                         stop_iteration = True

@@ -304,6 +304,63 @@ def test_expand_actions_with_template_loop_infinite_without_conflict(
     assert times == pytest.approx([0.0, 0.5, 1.0, 1.5, 2.0, 2.5])
 
 
+def test_expand_actions_with_template_loop_pingpong(tmp_path: Path) -> None:
+    output = DummyOutput(channel_count=4)
+    manager = create_manager(tmp_path, output)
+
+    raw_actions = [
+        {
+            "time": "00:00:00",
+            "channel": 1,
+            "value": 10,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+            "templateLoop": {
+                "enabled": True,
+                "count": 4,
+                "mode": "pingpong",
+                "duration": 1.0,
+                "channels": [1],
+            },
+        },
+        {
+            "time": "00:00:00.500",
+            "channel": 1,
+            "value": 20,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+        },
+        {
+            "time": "00:00:01.000",
+            "channel": 1,
+            "value": 30,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+        },
+    ]
+
+    expanded = manager._expand_actions_with_loops(raw_actions)
+    times = [round(action.time_seconds, 6) for action in expanded]
+    values = [action.value for action in expanded]
+    assert times == pytest.approx(
+        [
+            0.0,
+            0.5,
+            1.0,
+            1.0,
+            1.5,
+            2.0,
+            2.0,
+            2.5,
+            3.0,
+            3.0,
+            3.5,
+            4.0,
+        ]
+    )
+    assert values == [10, 20, 30, 30, 20, 10, 10, 20, 30, 30, 20, 10]
+
+
 def test_template_loop_stops_when_same_instance_changes_channel(tmp_path: Path) -> None:
     output = DummyOutput(channel_count=4)
     manager = create_manager(tmp_path, output)
