@@ -607,7 +607,12 @@ def sanitize_template_master_state(raw: Any, channel_master_id: str) -> Optional
                     numeric_value = int(value)
                 except (TypeError, ValueError):
                     continue
-                sliders[component] = _clamp(numeric_value, 0, 255)
+                clamped = _clamp(numeric_value, 0, 255)
+                sliders[component] = clamped
+                if component == "brightness" and "brightness" not in state:
+                    state["brightness"] = clamped
+                if component == "white" and "white" not in state:
+                    state["white"] = clamped
 
         dropdown_raw = raw.get("dropdownSelections")
         if isinstance(dropdown_raw, dict):
