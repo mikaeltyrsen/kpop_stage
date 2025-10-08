@@ -157,17 +157,26 @@ def _generate_channel_preset_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex}"
 
 
-CHANNEL_COMPONENT_VALUES = {
-    "red",
-    "green",
-    "blue",
-    "white",
-    "brightness",
-    "none",
+CHANNEL_COMPONENT_COLOR_KEYS = {"red", "green", "blue"}
+CHANNEL_COMPONENT_TYPE_VALUES = {"color", "slider", "dropdown"}
+CHANNEL_COMPONENT_DEFAULT_TYPE = "slider"
+CHANNEL_COMPONENT_DEFAULT_NAMES = {
+    "red": "Red",
+    "green": "Green",
+    "blue": "Blue",
+    "white": "White",
+    "brightness": "Brightness",
 }
 
 
+def _slugify_component(value: str) -> str:
+    slug = re.sub(r"[^a-z0-9]+", "_", value.strip().lower()).strip("_")
+    return re.sub(r"_{2,}", "_", slug)
+
+
 COLOR_PRESET_HEX_RE = re.compile(r"^#?[0-9a-fA-F]{6}$")
+
+DEFAULT_MASTER_COLOR = "#ffffff"
 
 DEFAULT_COLOR_PRESETS: List[Dict[str, Any]] = [
     {
@@ -264,9 +273,25 @@ DEFAULT_COLOR_PRESETS: List[Dict[str, Any]] = [
 def _normalize_channel_component(value: object) -> str:
     if not isinstance(value, str):
         return ""
-    normalized = value.strip().lower()
-    if normalized in CHANNEL_COMPONENT_VALUES:
-        return "" if normalized == "none" else normalized
+    normalized = value.strip()
+    if not normalized:
+        return ""
+    if normalized.lower() == "none":
+        return ""
+    return _slugify_component(normalized)
+
+
+def _normalize_channel_component_type(value: object, default: str = "") -> str:
+    if isinstance(value, str):
+        candidate = value.strip().lower()
+        if candidate in CHANNEL_COMPONENT_TYPE_VALUES:
+            return candidate
+    return default
+
+
+def _sanitize_component_name(value: object) -> str:
+    if isinstance(value, str):
+        return value.strip()
     return ""
 
 
@@ -292,6 +317,30 @@ def _auto_detect_channel_component(name: str, group: str) -> str:
     for keyword, component in {"red": "red", "green": "green", "blue": "blue", "white": "white"}.items():
         if re.search(rf"\\b{re.escape(keyword)}\\b", combined):
             return component
+    return ""
+
+
+def _default_component_type(component: str, values: Iterable[Any]) -> str:
+    if component in CHANNEL_COMPONENT_COLOR_KEYS:
+        return "color"
+    if component in {"white", "brightness"}:
+        return "slider"
+    if any(True for _ in values):
+        return "dropdown"
+    return CHANNEL_COMPONENT_DEFAULT_TYPE
+
+
+def _default_component_name(component: str, component_type: str) -> str:
+    if component in CHANNEL_COMPONENT_DEFAULT_NAMES:
+        return CHANNEL_COMPONENT_DEFAULT_NAMES[component]
+    if component:
+        words = component.replace("_", " ").split()
+        if words:
+            return " ".join(word.capitalize() for word in words)
+    if component_type == "dropdown":
+        return "Mode"
+    if component_type == "slider":
+        return "Level"
     return ""
 
 
@@ -328,18 +377,30 @@ def sanitize_channel_preset(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         channel_value = 1
     channel = _clamp(channel_value, 1, 512)
     values_raw = raw.get("values")
-    values: Iterable[Dict[str, Any]]
     if isinstance(values_raw, list):
-        values = filter(None, (sanitize_channel_value(entry) for entry in values_raw))
+        values = [entry for entry in (sanitize_channel_value(item) for item in values_raw) if entry]
     else:
         values = []
+
+    if component:
+        component_type = _normalize_channel_component_type(raw.get("componentType"))
+        if not component_type:
+            component_type = _default_component_type(component, values)
+        component_name = _sanitize_component_name(raw.get("componentName"))
+        if not component_name:
+            component_name = _default_component_name(component, component_type)
+    else:
+        component_type = ""
+        component_name = ""
     return {
         "id": preset_id,
         "name": name,
         "group": group,
         "channel": channel,
         "component": component,
-        "values": list(values),
+        "componentType": component_type,
+        "componentName": component_name,
+        "values": values,
     }
 
 
@@ -505,6 +566,70 @@ def _determine_row_type(raw: Dict[str, Any]) -> str:
     return "action"
 
 
+def sanitize_template_master_state(raw: Any, channel_master_id: str) -> Optional[Dict[str, Any]]:
+    if not channel_master_id:
+        return None
+
+    state: Dict[str, Any] = {"id": channel_master_id}
+    sliders: Dict[str, int] = {}
+    dropdowns: Dict[str, str] = {}
+
+    if isinstance(raw, dict):
+        color = raw.get("color")
+        if isinstance(color, str) and color.strip():
+            state["color"] = _normalize_hex_color(color, DEFAULT_MASTER_COLOR)
+
+        if "brightness" in raw:
+            try:
+                brightness_value = int(raw.get("brightness", 0))
+            except (TypeError, ValueError):
+                brightness_value = 0
+            clamped = _clamp(brightness_value, 0, 255)
+            state["brightness"] = clamped
+            sliders["brightness"] = clamped
+
+        if "white" in raw:
+            try:
+                white_value = int(raw.get("white", 0))
+            except (TypeError, ValueError):
+                white_value = 0
+            clamped = _clamp(white_value, 0, 255)
+            state["white"] = clamped
+            sliders["white"] = clamped
+
+        sliders_raw = raw.get("sliders")
+        if isinstance(sliders_raw, dict):
+            for key, value in sliders_raw.items():
+                component = _normalize_channel_component(key)
+                if not component:
+                    continue
+                try:
+                    numeric_value = int(value)
+                except (TypeError, ValueError):
+                    continue
+                sliders[component] = _clamp(numeric_value, 0, 255)
+
+        dropdown_raw = raw.get("dropdownSelections")
+        if isinstance(dropdown_raw, dict):
+            for key, value in dropdown_raw.items():
+                component = _normalize_channel_component(key)
+                if not component:
+                    continue
+                if isinstance(value, str) and value.strip():
+                    dropdowns[component] = value.strip()
+
+    if "color" not in state:
+        state["color"] = DEFAULT_MASTER_COLOR
+
+    if sliders:
+        state["sliders"] = sliders
+
+    if dropdowns:
+        state["dropdownSelections"] = dropdowns
+
+    return state
+
+
 def sanitize_template_row(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if not isinstance(raw, dict):
         return None
@@ -549,6 +674,13 @@ def sanitize_template_row(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if not isinstance(value_preset_id, str) or not value_preset_id:
         value_preset_id = None
 
+    channel_master_id = raw.get("channelMasterId")
+    if not isinstance(channel_master_id, str) or not channel_master_id:
+        channel_master_id = None
+        master_state = None
+    else:
+        master_state = sanitize_template_master_state(raw.get("master"), channel_master_id)
+
     return {
         "id": row_id,
         "type": "action",
@@ -557,6 +689,8 @@ def sanitize_template_row(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "fade": fade,
         "channelPresetId": channel_preset_id,
         "valuePresetId": value_preset_id,
+        "channelMasterId": channel_master_id,
+        "master": master_state,
     }
 
 
