@@ -602,14 +602,14 @@ class DMXOutput:
             self.set_channel(channel, value)
             return
 
-        start_value = self.get_channel(channel)
-        steps = max(int(duration * DMX_FPS), 1)
-        step_duration = duration / steps
-
         cancel_event = threading.Event()
         with self._transition_lock:
             self._cancel_channel_transition_locked(channel)
+            start_value = self.get_channel(channel)
             self._channel_transitions[channel] = cancel_event
+
+        steps = max(int(duration * DMX_FPS), 1)
+        step_duration = duration / steps
 
         def _worker() -> None:
             try:

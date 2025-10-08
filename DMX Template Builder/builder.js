@@ -2751,13 +2751,34 @@ function handleStepTimeChange(event, stepId) {
   const formatted = secondsToTimecode(seconds);
   input.value = formatted;
 
+  const groupInfo = stepInfoById.get(stepId);
+  const previousSeconds = groupInfo ? parseTimeString(groupInfo.time) : null;
+
   let updated = false;
-  actions.forEach((action) => {
-    if (getActionStepId(action) === stepId) {
-      action.time = formatted;
+  if (previousSeconds === null) {
+    actions.forEach((action) => {
+      if (getActionStepId(action) === stepId) {
+        action.time = formatted;
+        updated = true;
+      }
+    });
+  } else {
+    const delta = seconds - previousSeconds;
+    actions.forEach((action) => {
+      if (getActionStepId(action) !== stepId) {
+        return;
+      }
+      const actionSeconds = parseTimeString(action.time);
+      if (actionSeconds === null) {
+        action.time = formatted;
+        updated = true;
+        return;
+      }
+      const shifted = Math.max(0, Number((actionSeconds + delta).toFixed(6)));
+      action.time = secondsToTimecode(shifted);
       updated = true;
-    }
-  });
+    });
+  }
 
   const focusDescriptor = {
     kind: "group",
