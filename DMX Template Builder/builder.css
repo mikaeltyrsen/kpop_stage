@@ -1404,6 +1404,7 @@ input::-webkit-inner-spin-button {
   min-width: 3.5ch;
   flex: 0 0 auto;
   text-align: center;
+  width: 100%;
 }
 
 
