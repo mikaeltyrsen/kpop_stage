@@ -876,6 +876,20 @@ input::-webkit-inner-spin-button {
   border-color: rgba(129, 140, 248, 0.85);
 }
 
+.preset-field select {
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: rgba(30, 41, 59, 0.6);
+  color: inherit;
+  font-size: 0.95rem;
+}
+
+.preset-field select:focus {
+  outline: 2px solid rgba(129, 140, 248, 0.55);
+  border-color: rgba(129, 140, 248, 0.85);
+}
+
 .preset-values {
   display: flex;
   flex-direction: column;
@@ -1577,6 +1591,92 @@ input::-webkit-inner-spin-button {
 .preset-select .value-slider:disabled {
   opacity: 0.75;
   cursor: not-allowed;
+}
+
+.preset-select--master {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.preset-select__color {
+  appearance: none;
+  width: 3rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 0.5rem;
+  background: transparent;
+  cursor: pointer;
+}
+
+.preset-select__color:focus-visible {
+  outline: 2px solid rgba(129, 140, 248, 0.6);
+  outline-offset: 2px;
+}
+
+.master-color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.master-color-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.master-color-swatches__button {
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+}
+
+.master-color-swatches__button::after {
+  content: "";
+  position: absolute;
+  inset: 0.15rem;
+  border-radius: inherit;
+  background: currentColor;
+}
+
+.master-color-swatches__button:focus-visible {
+  outline: 2px solid rgba(129, 140, 248, 0.6);
+  outline-offset: 2px;
+}
+
+.master-color-swatches__button.is-active {
+  border-color: rgba(148, 163, 184, 0.9);
+}
+
+.master-slider {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.master-slider__label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  min-width: 4.5rem;
+  text-transform: uppercase;
+}
+
+.master-slider__range {
+  flex: 1 1 10rem;
+}
+
+.master-slider__number {
+  width: 4.5ch;
+  min-width: 3.5ch;
 }
 
 .row-tools,

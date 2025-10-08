@@ -154,6 +154,25 @@ def _generate_channel_preset_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex}"
 
 
+CHANNEL_COMPONENT_VALUES = {
+    "red",
+    "green",
+    "blue",
+    "white",
+    "brightness",
+    "none",
+}
+
+
+def _normalize_channel_component(value: object) -> str:
+    if not isinstance(value, str):
+        return ""
+    normalized = value.strip().lower()
+    if normalized in CHANNEL_COMPONENT_VALUES:
+        return "" if normalized == "none" else normalized
+    return ""
+
+
 def _clamp(value: int, minimum: int, maximum: int) -> int:
     return max(minimum, min(maximum, value))
 
@@ -181,6 +200,8 @@ def sanitize_channel_preset(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         preset_id = _generate_channel_preset_id("preset")
     name = raw.get("name") if isinstance(raw.get("name"), str) else ""
     group = raw.get("group") if isinstance(raw.get("group"), str) else ""
+    component = _normalize_channel_component(raw.get("component"))
+
     try:
         channel_value = int(raw.get("channel", 1))
     except (TypeError, ValueError):
@@ -197,6 +218,7 @@ def sanitize_channel_preset(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "name": name,
         "group": group,
         "channel": channel,
+        "component": component,
         "values": list(values),
     }
 

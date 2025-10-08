@@ -1104,6 +1104,7 @@ class DMXShowManager:
                     "templateId",
                     "templateInstanceId",
                     "templateRowId",
+                    "channelMasterId",
                 ):
                     value = raw.get(key)
                     if isinstance(value, str) and value:

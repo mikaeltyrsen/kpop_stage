@@ -5,6 +5,7 @@
       "name": "Left Light - Dimmer",
       "group": "Left Light",
       "channel": 1,
+      "component": "brightness",
       "values": [
         {
           "id": "left-light-dimmer-off",
@@ -38,6 +39,7 @@
       "name": "Left Light - Red",
       "group": "Left Light",
       "channel": 2,
+      "component": "red",
       "values": [
         {
           "id": "left-light-red-off",
@@ -56,6 +58,7 @@
       "name": "Left Light - Green",
       "group": "Left Light",
       "channel": 3,
+      "component": "green",
       "values": [
         {
           "id": "left-light-green-off",
@@ -74,6 +77,7 @@
       "name": "Left Light - Blue",
       "group": "Left Light",
       "channel": 4,
+      "component": "blue",
       "values": [
         {
           "id": "left-light-blue-off",
@@ -92,6 +96,7 @@
       "name": "Left Light - White",
       "group": "Left Light",
       "channel": 5,
+      "component": "white",
       "values": [
         {
           "id": "left-light-white-off",
