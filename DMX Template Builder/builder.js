@@ -18,6 +18,10 @@ const tabPanels = Array.from(document.querySelectorAll("[data-tab-panel]"));
 const timelinePanel = document.getElementById("timeline-panel");
 const presetsPanel = document.getElementById("presets-panel");
 const templatesPanel = document.getElementById("templates-panel");
+const colorPresetsPanel = document.getElementById("color-presets-panel");
+const colorPresetsList = document.getElementById("color-presets");
+const addColorPresetButton = document.getElementById("add-color-preset");
+const resetColorPresetsButton = document.getElementById("reset-color-presets");
 const timelineEmptyState = document.getElementById("timeline-empty-state");
 const lightTemplatesContainer = document.getElementById("light-templates");
 const templateDetailContainer = document.getElementById("template-detail");
@@ -50,6 +54,7 @@ let previewSyncHandle = null;
 let previewActivationPromise = null;
 let suppressPreviewPause = false;
 let channelPresets = [];
+let colorPresets = [];
 let activeTab = "timeline";
 const collapsedChannelPresetIds = new Set();
 const collapsedStepIds = new Set();
@@ -88,18 +93,18 @@ const CHANNEL_COMPONENT_LABELS = Object.freeze({
 
 const CHANNEL_MASTER_PREFIX = "master:";
 
-const MASTER_COLOR_PRESETS = Object.freeze([
-  { name: "Red", color: "#ff3b30" },
-  { name: "Orange", color: "#ff9500" },
-  { name: "Amber", color: "#ffcc00" },
-  { name: "Yellow", color: "#ffd60a" },
-  { name: "Green", color: "#34c759" },
-  { name: "Teal", color: "#30d158" },
-  { name: "Cyan", color: "#32ade6" },
-  { name: "Blue", color: "#007aff" },
-  { name: "Purple", color: "#af52de" },
-  { name: "Pink", color: "#ff2d55" },
-  { name: "White", color: "#ffffff" },
+const DEFAULT_COLOR_PRESETS = Object.freeze([
+  { id: "color_red", name: "Red", iconColor: "#ff3b30", red: 255, green: 0, blue: 0 },
+  { id: "color_orange", name: "Orange", iconColor: "#ff9500", red: 255, green: 87, blue: 0 },
+  { id: "color_amber", name: "Amber", iconColor: "#ffcc00", red: 255, green: 170, blue: 0 },
+  { id: "color_yellow", name: "Yellow", iconColor: "#ffd60a", red: 255, green: 214, blue: 10 },
+  { id: "color_green", name: "Green", iconColor: "#34c759", red: 0, green: 255, blue: 0 },
+  { id: "color_teal", name: "Teal", iconColor: "#30d158", red: 0, green: 209, blue: 88 },
+  { id: "color_cyan", name: "Cyan", iconColor: "#32ade6", red: 0, green: 173, blue: 230 },
+  { id: "color_blue", name: "Blue", iconColor: "#007aff", red: 0, green: 122, blue: 255 },
+  { id: "color_purple", name: "Purple", iconColor: "#af52de", red: 175, green: 82, blue: 222 },
+  { id: "color_pink", name: "Pink", iconColor: "#ff2d55", red: 255, green: 45, blue: 85 },
+  { id: "color_white", name: "White", iconColor: "#ffffff", red: 255, green: 255, blue: 255 },
 ]);
 
 let channelMasters = [];
@@ -123,6 +128,8 @@ const API_BASE_CANDIDATES = [
 ];
 
 const CHANNEL_PRESET_STORAGE_KEY = "dmxTemplateBuilder.channelPresets";
+
+const COLOR_PRESET_STORAGE_KEY = "dmxTemplateBuilder.colorPresets";
 
 const LIGHT_TEMPLATE_STORAGE_KEY = "dmxTemplateBuilder.lightTemplates";
 
@@ -528,24 +535,18 @@ function deriveMasterStateFromActions(componentActions, master) {
 
 function getChannelSelectionOptions() {
   const options = [];
-  const sortedPresets = getSortedChannelPresets();
-  const masterByGroup = new Map(channelMasters.map((entry) => [entry.key, entry]));
-  const seenGroups = new Set();
+  const masters = Array.isArray(channelMasters) ? [...channelMasters] : [];
+  masters.forEach((master) => {
+    options.push({
+      type: "master",
+      id: master.id,
+      label: master.label,
+      master,
+    });
+  });
 
+  const sortedPresets = getSortedChannelPresets();
   sortedPresets.forEach((preset) => {
-    const groupKey = getPresetGroupKey(preset);
-    if (groupKey && !seenGroups.has(groupKey)) {
-      const master = masterByGroup.get(groupKey);
-      if (master) {
-        options.push({
-          type: "master",
-          id: master.id,
-          label: master.label,
-          master,
-        });
-      }
-      seenGroups.add(groupKey);
-    }
     options.push({
       type: "preset",
       id: preset.id,
@@ -797,6 +798,11 @@ async function init() {
   initTabs();
   initSystemControls();
   initChannelFilterUI();
+  try {
+    await initColorPresetsUI();
+  } catch (error) {
+    console.error("Unable to initialize color presets", error);
+  }
   try {
     await initChannelPresetsUI();
   } catch (error) {
@@ -3300,18 +3306,20 @@ function createMasterValueField(action, index, actionId, master) {
       });
     };
 
-    MASTER_COLOR_PRESETS.forEach((preset) => {
-      const normalizedColor = normalizeHexColor(preset.color);
+    getColorPresets().forEach((preset) => {
+      const hexColor = normalizeHexColor(colorPresetToHex(preset));
+      const iconColor = normalizeHexColor(colorPresetIconColor(preset));
       const button = document.createElement("button");
       button.type = "button";
       button.className = "master-color-swatches__button";
-      button.style.color = normalizedColor;
-      button.title = preset.name;
-      button.dataset.color = normalizedColor;
+      button.style.color = iconColor;
+      button.title = preset.name ? `${preset.name} (${hexColor.toUpperCase()})` : hexColor.toUpperCase();
+      button.dataset.color = hexColor;
+      button.dataset.colorPresetId = preset.id;
       button.addEventListener("click", () => {
-        state.color = normalizedColor;
-        colorInput.value = normalizedColor;
-        updateSwatchSelection(normalizedColor);
+        state.color = hexColor;
+        colorInput.value = hexColor;
+        updateSwatchSelection(hexColor);
         queuePreviewSync();
       });
       swatchList.append(button);
@@ -4194,6 +4202,418 @@ function renderChannelPresets() {
 
   renderChannelFilterControls();
   return filterSelectionChanged;
+}
+
+function sanitizeColorComponent(value, fallback = 255) {
+  if (value === null || value === undefined || value === "") {
+    return clampChannelValue(fallback);
+  }
+  const numeric = Number.parseInt(value, 10);
+  if (Number.isNaN(numeric)) {
+    return clampChannelValue(fallback);
+  }
+  return clampChannelValue(numeric);
+}
+
+function normalizeColorPresetIcon(source, fallback) {
+  if (typeof source !== "string") {
+    return fallback;
+  }
+  const trimmed = source.trim();
+  if (!trimmed) {
+    return fallback;
+  }
+  const normalized = normalizeHexColor(trimmed);
+  const lower = trimmed.toLowerCase();
+  const isExplicitWhite = lower === "#ffffff" || lower === "ffffff" || lower === "#fff" || lower === "fff";
+  if (!isExplicitWhite && normalized === DEFAULT_MASTER_COLOR && normalized !== normalizeHexColor(fallback)) {
+    return fallback;
+  }
+  return normalized;
+}
+
+function sanitizeColorPreset(raw) {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+  const id = typeof raw.id === "string" && raw.id ? raw.id : generateId("color");
+  const name = typeof raw.name === "string" ? raw.name : "";
+
+  let red = sanitizeColorComponent(raw.red, 255);
+  let green = sanitizeColorComponent(raw.green, 255);
+  let blue = sanitizeColorComponent(raw.blue, 255);
+
+  if (raw.rgb && typeof raw.rgb === "object") {
+    red = sanitizeColorComponent(raw.rgb.r, red);
+    green = sanitizeColorComponent(raw.rgb.g, green);
+    blue = sanitizeColorComponent(raw.rgb.b, blue);
+  }
+
+  const fallbackHex = rgbToHex(red, green, blue);
+  let iconColor = normalizeColorPresetIcon(raw.iconColor, fallbackHex);
+  if (iconColor === fallbackHex) {
+    iconColor = normalizeColorPresetIcon(raw.color, fallbackHex);
+  }
+
+  return { id, name, iconColor, red, green, blue };
+}
+
+function getDefaultColorPresets() {
+  return DEFAULT_COLOR_PRESETS.map((preset) => sanitizeColorPreset(preset)).filter(Boolean);
+}
+
+function getColorPreset(presetId) {
+  if (!presetId) {
+    return null;
+  }
+  return colorPresets.find((preset) => preset.id === presetId) || null;
+}
+
+function getColorPresets() {
+  if (Array.isArray(colorPresets) && colorPresets.length) {
+    return colorPresets;
+  }
+  return getDefaultColorPresets();
+}
+
+function colorPresetToHex(preset) {
+  if (!preset) {
+    return DEFAULT_MASTER_COLOR;
+  }
+  return rgbToHex(preset.red, preset.green, preset.blue);
+}
+
+function colorPresetIconColor(preset) {
+  if (!preset) {
+    return DEFAULT_MASTER_COLOR;
+  }
+  return normalizeColorPresetIcon(preset.iconColor, colorPresetToHex(preset));
+}
+
+function formatColorPresetTitle(preset) {
+  if (!preset) {
+    return "Color Preset";
+  }
+  if (preset.name) {
+    return preset.name;
+  }
+  return colorPresetToHex(preset).toUpperCase();
+}
+
+function updateColorPresetCardTitle(card, preset) {
+  if (!card) return;
+  const title = card.querySelector(".color-card__title");
+  if (title) {
+    title.textContent = formatColorPresetTitle(preset);
+  }
+}
+
+function updateColorPresetPreview(card, preset) {
+  if (!card) return;
+  const preview = card.querySelector("[data-color-preset-preview]");
+  if (!preview) return;
+  const hex = colorPresetToHex(preset);
+  preview.style.backgroundColor = hex;
+  preview.title = `RGB ${preset.red}/${preset.green}/${preset.blue}`;
+}
+
+function renderColorPresets() {
+  if (!colorPresetsList) return;
+
+  const presets = getColorPresets();
+  colorPresetsList.innerHTML = "";
+
+  if (!presets.length) {
+    const empty = document.createElement("p");
+    empty.className = "color-settings__empty";
+    empty.textContent = "No color presets yet. Use “Add Color Preset” to create one.";
+    colorPresetsList.append(empty);
+    return;
+  }
+
+  presets.forEach((preset) => {
+    const card = document.createElement("article");
+    card.className = "color-card";
+    card.dataset.colorPresetId = preset.id;
+
+    const header = document.createElement("div");
+    header.className = "color-card__header";
+
+    const title = document.createElement("h3");
+    title.className = "color-card__title";
+    title.textContent = formatColorPresetTitle(preset);
+    header.append(title);
+
+    const actionsEl = document.createElement("div");
+    actionsEl.className = "color-card__actions";
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.addEventListener("click", () => removeColorPreset(preset.id));
+    applyIconButton(removeButton, "delete", "Remove color preset");
+    actionsEl.append(removeButton);
+    header.append(actionsEl);
+
+    const body = document.createElement("div");
+    body.className = "color-card__body";
+
+    const nameField = document.createElement("label");
+    nameField.className = "color-field";
+    const nameLabel = document.createElement("span");
+    nameLabel.textContent = "Name";
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.placeholder = "Warm Amber";
+    nameInput.value = preset.name || "";
+    nameInput.addEventListener("input", (event) => handleColorPresetNameInput(event, preset.id));
+    nameField.append(nameLabel, nameInput);
+
+    const swatchRow = document.createElement("div");
+    swatchRow.className = "color-card__swatch";
+
+    const iconField = document.createElement("label");
+    iconField.className = "color-field color-field--icon";
+    const iconLabel = document.createElement("span");
+    iconLabel.textContent = "Icon color";
+    const iconInput = document.createElement("input");
+    iconInput.type = "color";
+    iconInput.value = normalizeHexColor(colorPresetIconColor(preset));
+    iconInput.addEventListener("input", (event) => handleColorPresetIconInput(event, preset.id));
+    iconField.append(iconLabel, iconInput);
+
+    const preview = document.createElement("div");
+    preview.className = "color-card__preview";
+    preview.dataset.colorPresetPreview = "";
+    swatchRow.append(iconField, preview);
+
+    const valuesRow = document.createElement("div");
+    valuesRow.className = "color-card__values";
+
+    [
+      { key: "red", label: "Red" },
+      { key: "green", label: "Green" },
+      { key: "blue", label: "Blue" },
+    ].forEach(({ key, label }) => {
+      const valueField = document.createElement("label");
+      valueField.className = "color-field color-field--value";
+      const valueLabel = document.createElement("span");
+      valueLabel.textContent = label;
+      const valueInput = document.createElement("input");
+      valueInput.type = "number";
+      valueInput.min = 0;
+      valueInput.max = 255;
+      valueInput.step = 1;
+      valueInput.value = preset[key];
+      valueInput.addEventListener("input", (event) =>
+        handleColorPresetValueInput(event, preset.id, key, { commit: false }),
+      );
+      valueInput.addEventListener("change", (event) =>
+        handleColorPresetValueInput(event, preset.id, key, { commit: true }),
+      );
+      valueField.append(valueLabel, valueInput);
+      valuesRow.append(valueField);
+    });
+
+    body.append(nameField, swatchRow, valuesRow);
+    card.append(header, body);
+    colorPresetsList.append(card);
+    updateColorPresetPreview(card, preset);
+  });
+}
+
+function handleColorPresetNameInput(event, presetId) {
+  const preset = getColorPreset(presetId);
+  if (!preset) return;
+  preset.name = event.target.value;
+  saveColorPresets();
+  updateColorPresetCardTitle(event.target.closest(".color-card"), preset);
+  notifyColorPresetChange();
+}
+
+function handleColorPresetIconInput(event, presetId) {
+  const preset = getColorPreset(presetId);
+  if (!preset) return;
+  const value = normalizeHexColor(event.target.value);
+  preset.iconColor = value;
+  event.target.value = value;
+  saveColorPresets();
+  notifyColorPresetChange();
+}
+
+function handleColorPresetValueInput(event, presetId, channelKey, options = {}) {
+  const preset = getColorPreset(presetId);
+  if (!preset) return;
+  const commit = Boolean(options.commit);
+  const raw = Number.parseInt(event.target.value, 10);
+  if (Number.isNaN(raw)) {
+    event.target.classList.add("invalid");
+    if (commit) {
+      event.target.setCustomValidity("Value must be between 0 and 255.");
+      event.target.reportValidity();
+    }
+    return;
+  }
+  const clamped = clampChannelValue(raw);
+  event.target.value = String(clamped);
+  event.target.classList.remove("invalid");
+  event.target.setCustomValidity("");
+  preset[channelKey] = clamped;
+  const card = event.target.closest(".color-card");
+  updateColorPresetPreview(card, preset);
+  updateColorPresetCardTitle(card, preset);
+  if (commit) {
+    saveColorPresets();
+    notifyColorPresetChange();
+  }
+}
+
+function addColorPreset() {
+  const preset = {
+    id: generateId("color"),
+    name: "",
+    iconColor: "#ffffff",
+    red: 255,
+    green: 255,
+    blue: 255,
+  };
+  colorPresets.push(preset);
+  renderColorPresets();
+  saveColorPresets();
+  notifyColorPresetChange();
+}
+
+function removeColorPreset(presetId) {
+  const index = colorPresets.findIndex((preset) => preset.id === presetId);
+  if (index === -1) return;
+  colorPresets.splice(index, 1);
+  renderColorPresets();
+  saveColorPresets();
+  notifyColorPresetChange();
+}
+
+function resetColorPresetsToDefaults() {
+  colorPresets = getDefaultColorPresets();
+  renderColorPresets();
+  saveColorPresets();
+  notifyColorPresetChange();
+}
+
+function buildColorPresetPayload() {
+  return getColorPresets().map((preset) => ({
+    id: preset.id,
+    name: preset.name || "",
+    iconColor: colorPresetIconColor(preset),
+    red: clampChannelValue(preset.red ?? 255),
+    green: clampChannelValue(preset.green ?? 255),
+    blue: clampChannelValue(preset.blue ?? 255),
+  }));
+}
+
+function loadColorPresetsFromLocalStorage() {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return getDefaultColorPresets();
+  }
+  try {
+    const raw = window.localStorage.getItem(COLOR_PRESET_STORAGE_KEY);
+    if (!raw) return getDefaultColorPresets();
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return getDefaultColorPresets();
+    const sanitized = parsed.map((item) => sanitizeColorPreset(item)).filter(Boolean);
+    return sanitized.length ? sanitized : getDefaultColorPresets();
+  } catch (error) {
+    console.error("Unable to load color presets from local storage", error);
+    return getDefaultColorPresets();
+  }
+}
+
+function saveColorPresetsToLocalStorage(presets) {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return;
+  }
+  try {
+    const sanitized = presets.map((item) => sanitizeColorPreset(item)).filter(Boolean);
+    window.localStorage.setItem(COLOR_PRESET_STORAGE_KEY, JSON.stringify(sanitized));
+  } catch (error) {
+    console.error("Unable to cache color presets locally", error);
+  }
+}
+
+async function loadColorPresets() {
+  const fallback = loadColorPresetsFromLocalStorage();
+  try {
+    const { payload } = await fetchFromApiCandidates("/color-presets");
+    const presets = Array.isArray(payload?.presets) ? payload.presets : [];
+    const sanitized = presets.map((item) => sanitizeColorPreset(item)).filter(Boolean);
+    if (sanitized.length) {
+      saveColorPresetsToLocalStorage(sanitized);
+      return sanitized;
+    }
+    if (!presets.length) {
+      saveColorPresetsToLocalStorage([]);
+      return [];
+    }
+    return fallback;
+  } catch (error) {
+    console.error("Unable to load color presets from server", error);
+    return fallback;
+  }
+}
+
+async function persistColorPresets(presets) {
+  const response = await fetchApi("/color-presets", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ presets }),
+  });
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+  try {
+    const payload = await response.json();
+    if (payload && Array.isArray(payload.presets)) {
+      const sanitized = payload.presets.map((item) => sanitizeColorPreset(item)).filter(Boolean);
+      saveColorPresetsToLocalStorage(sanitized);
+    }
+  } catch (error) {
+    console.error("Unable to parse color preset save response", error);
+  }
+}
+
+function saveColorPresets() {
+  const payload = buildColorPresetPayload();
+  saveColorPresetsToLocalStorage(payload);
+  persistColorPresets(payload).catch((error) => {
+    console.error("Unable to save color presets", error);
+  });
+}
+
+function notifyColorPresetChange() {
+  if (Array.isArray(actions) && actions.length) {
+    renderActions({ preserveFocus: true });
+  }
+  renderLightTemplates({ preserveFocus: true });
+  queuePreviewSync();
+}
+
+async function initColorPresetsUI() {
+  if (!colorPresetsPanel) {
+    colorPresets = getDefaultColorPresets();
+    return;
+  }
+
+  colorPresets = await loadColorPresets();
+  if (!colorPresets.length) {
+    colorPresets = getDefaultColorPresets();
+  }
+  renderColorPresets();
+
+  if (addColorPresetButton) {
+    addColorPresetButton.addEventListener("click", () => addColorPreset());
+  }
+  if (resetColorPresetsButton) {
+    resetColorPresetsButton.addEventListener("click", () => resetColorPresetsToDefaults());
+  }
+
+  notifyColorPresetChange();
 }
 
 function renderChannelFilterControls() {
@@ -5855,19 +6275,21 @@ function createTemplateMasterValueField(templateId, row, master) {
       });
     };
 
-    MASTER_COLOR_PRESETS.forEach((preset) => {
-      const normalizedColor = normalizeHexColor(preset.color);
+    getColorPresets().forEach((preset) => {
+      const hexColor = normalizeHexColor(colorPresetToHex(preset));
+      const iconColor = normalizeHexColor(colorPresetIconColor(preset));
       const button = document.createElement("button");
       button.type = "button";
       button.className = "master-color-swatches__button";
-      button.style.color = normalizedColor;
-      button.title = preset.name;
-      button.dataset.color = normalizedColor;
+      button.style.color = iconColor;
+      button.title = preset.name ? `${preset.name} (${hexColor.toUpperCase()})` : hexColor.toUpperCase();
+      button.dataset.color = hexColor;
+      button.dataset.colorPresetId = preset.id;
       button.addEventListener("click", () => {
-        state.color = normalizedColor;
-        row.master = { ...(row.master || {}), id: master.id, color: normalizedColor };
-        colorInput.value = normalizedColor;
-        updateSwatchSelection(normalizedColor);
+        state.color = hexColor;
+        row.master = { ...(row.master || {}), id: master.id, color: hexColor };
+        colorInput.value = hexColor;
+        updateSwatchSelection(hexColor);
         syncTemplateInstances(templateId);
         saveLightTemplates();
       });

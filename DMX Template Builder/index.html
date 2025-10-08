@@ -38,6 +38,15 @@
         class="builder-tab"
         role="tab"
         aria-selected="false"
+        data-tab="colors"
+      >
+        Color Presets
+      </button>
+      <button
+        type="button"
+        class="builder-tab"
+        role="tab"
+        aria-selected="false"
         data-tab="templates"
       >
         Light Templates
@@ -198,6 +207,34 @@
         </div>
       </header>
       <div id="channel-presets" class="preset-settings__list" aria-live="polite"></div>
+    </section>
+
+    <section
+      id="color-presets-panel"
+      class="color-settings tab-panel"
+      data-tab-panel="colors"
+      aria-labelledby="color-presets-heading"
+      hidden
+      aria-hidden="true"
+    >
+      <header class="color-settings__header">
+        <div>
+          <h2 id="color-presets-heading">Color Presets</h2>
+          <p>
+            Configure the quick select swatches for master controls, including their
+            display color and DMX RGB values.
+          </p>
+        </div>
+        <div class="color-settings__actions">
+          <button id="add-color-preset" type="button" class="secondary">
+            Add Color Preset
+          </button>
+          <button id="reset-color-presets" type="button" class="secondary">
+            Reset to Defaults
+          </button>
+        </div>
+      </header>
+      <div id="color-presets" class="color-settings__list" aria-live="polite"></div>
     </section>
 
     <section

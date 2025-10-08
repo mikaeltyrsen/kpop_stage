@@ -1,5 +1,7 @@
 import json
 
+import json
+
 import pytest
 
 pytest.importorskip("flask")
@@ -43,6 +45,11 @@ def test_put_channel_presets_saves_and_returns_sanitized(channel_presets_tempfil
                 "channel": 20,
                 "values": [],
             },
+            {
+                "name": "Back Light - Red",
+                "group": "Back Light",
+                "channel": 21,
+            },
         ]
     }
 
@@ -53,18 +60,19 @@ def test_put_channel_presets_saves_and_returns_sanitized(channel_presets_tempfil
     assert "presets" in body
     returned = body["presets"]
     assert isinstance(returned, list)
-    assert len(returned) == 2
+    assert len(returned) == 3
     first = returned[0]
     assert first["id"] == "preset_custom"
     assert first["channel"] == 1  # clamped
     assert first["values"][0]["id"] == "value_custom"
     assert first["values"][0]["value"] == 255
     assert 0 <= first["values"][1]["value"] <= 255
+    assert returned[2]["component"] == "red"
 
     assert channel_presets_tempfile.exists()
     stored = json.loads(channel_presets_tempfile.read_text(encoding="utf-8"))
     assert "presets" in stored
-    assert len(stored["presets"]) == 2
+    assert len(stored["presets"]) == 3
 
 
 def test_put_channel_presets_rejects_invalid_payload():

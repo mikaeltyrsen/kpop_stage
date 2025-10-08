@@ -255,7 +255,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "brightness"
     },
     {
       "id": "right-light-red",
@@ -273,7 +274,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "red"
     },
     {
       "id": "right-light-green",
@@ -291,7 +293,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "green"
     },
     {
       "id": "right-light-blue",
@@ -309,7 +312,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "blue"
     },
     {
       "id": "right-light-white",
@@ -327,7 +331,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "white"
     },
     {
       "id": "right-light-strobe",
@@ -474,7 +479,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "brightness"
     },
     {
       "id": "back-light-red",
@@ -492,7 +498,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "red"
     },
     {
       "id": "back-light-green",
@@ -510,7 +517,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "green"
     },
     {
       "id": "back-light-blue",
@@ -528,7 +536,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "blue"
     },
     {
       "id": "back-light-white",
@@ -546,7 +555,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "white"
     },
     {
       "id": "back-light-strobe",
@@ -693,7 +703,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "brightness"
     },
     {
       "id": "front-light-red",
@@ -711,7 +722,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "red"
     },
     {
       "id": "front-light-green",
@@ -729,7 +741,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "green"
     },
     {
       "id": "front-light-blue",
@@ -747,7 +760,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "blue"
     },
     {
       "id": "front-light-white",
@@ -765,7 +779,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "white"
     },
     {
       "id": "front-light-strobe",
@@ -1213,7 +1228,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "brightness"
     },
     {
       "id": "mover-light-strobe",
@@ -1269,7 +1285,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "red"
     },
     {
       "id": "mover-light-beam-green",
@@ -1287,7 +1304,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "green"
     },
     {
       "id": "mover-light-beam-blue",
@@ -1305,7 +1323,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "blue"
     },
     {
       "id": "mover-light-beam-white",
@@ -1323,7 +1342,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "white"
     },
     {
       "id": "mover-light-laser-pattern",
@@ -1348,7 +1368,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "red"
     },
     {
       "id": "mover-light-laser-green",
@@ -1366,7 +1387,8 @@
           "name": "Full",
           "value": 255
         }
-      ]
+      ],
+      "component": "green"
     },
     {
       "id": "mover-light-white-flash",
@@ -1404,7 +1426,8 @@
           "name": "Super Fast",
           "value": 255
         }
-      ]
+      ],
+      "component": "white"
     },
     {
       "id": "mover-light-strip",
