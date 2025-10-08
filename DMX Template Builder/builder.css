@@ -1623,7 +1623,7 @@ input::-webkit-inner-spin-button {
 
 .master-color-picker {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.6rem;
   align-items: center;
 }
@@ -1656,10 +1656,11 @@ input::-webkit-inner-spin-button {
 }
 
 .master-slider {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 100px 1fr 80px;
   gap: 0.5rem;
   align-items: center;
+  width: 100%;
 }
 
 .master-slider__label {
