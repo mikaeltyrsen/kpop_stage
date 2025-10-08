@@ -1332,22 +1332,22 @@ function renderActions(options = {}) {
         }
       });
 
-      let lastTemplateInstanceId = null;
+      const renderedTemplateInstances = new Set();
       itemsToRender.forEach(({ action, index }) => {
         if (action.templateId && action.templateInstanceId) {
-          if (action.templateInstanceId !== lastTemplateInstanceId) {
-            const templateRow = createTemplateInstanceRow(
-              group,
-              action,
-              index,
-              templateCounts.get(action.templateInstanceId) || 0,
-            );
-            actionsBody.append(templateRow);
+          if (renderedTemplateInstances.has(action.templateInstanceId)) {
+            return;
           }
-          lastTemplateInstanceId = action.templateInstanceId;
+          const templateRow = createTemplateInstanceRow(
+            group,
+            action,
+            index,
+            templateCounts.get(action.templateInstanceId) || 0,
+          );
+          actionsBody.append(templateRow);
+          renderedTemplateInstances.add(action.templateInstanceId);
           return;
         }
-        lastTemplateInstanceId = null;
         const row = createActionRow(action, index, group);
         actionsBody.append(row);
       });
