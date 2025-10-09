@@ -4354,7 +4354,7 @@ async function initChannelPresetsUI() {
   }
 }
 
-function renderChannelPresets() {
+function renderChannelPresets(options = {}) {
   if (!channelPresetsContainer) return false;
 
   refreshChannelMasters();
@@ -4362,6 +4362,13 @@ function renderChannelPresets() {
 
   pruneCollapsedChannelPresets();
   channelPresetsContainer.innerHTML = "";
+
+  const { focusPresetId = null, expandPresetId = null } = options;
+  if (expandPresetId) {
+    collapsedChannelPresetIds.delete(expandPresetId);
+  }
+
+  const postRenderTasks = [];
 
   if (!channelPresets.length) {
     const emptyState = document.createElement("div");
@@ -4378,6 +4385,10 @@ function renderChannelPresets() {
     card.className = "preset-card";
     card.dataset.presetId = preset.id;
 
+    const forceExpand = expandPresetId === preset.id;
+    if (forceExpand) {
+      collapsedChannelPresetIds.delete(preset.id);
+    }
     const isCollapsed = collapsedChannelPresetIds.has(preset.id);
     if (isCollapsed) {
       card.classList.add("is-collapsed");
@@ -4427,7 +4438,13 @@ function renderChannelPresets() {
     const content = document.createElement("div");
     content.className = "preset-card__content";
     content.id = contentId;
-    content.hidden = isCollapsed;
+    if (isCollapsed) {
+      content.hidden = true;
+    } else {
+      content.hidden = false;
+      content.removeAttribute("hidden");
+      card.classList.remove("is-collapsed");
+    }
 
     const row = document.createElement("div");
     row.className = "preset-card__row";
@@ -4585,9 +4602,36 @@ function renderChannelPresets() {
     content.append(valuesSection);
     card.append(content);
     channelPresetsContainer.append(card);
+
+    if (!isCollapsed && focusPresetId === preset.id) {
+      postRenderTasks.push(() => {
+        try {
+          nameInput.focus({ preventScroll: true });
+        } catch (error) {
+          nameInput.focus();
+        }
+        nameInput.select();
+        try {
+          card.scrollIntoView({ block: "center", behavior: "smooth" });
+        } catch (error) {
+          card.scrollIntoView({ block: "center" });
+        }
+      });
+    }
   });
 
   renderChannelFilterControls();
+  if (postRenderTasks.length) {
+    requestAnimationFrame(() => {
+      postRenderTasks.forEach((task) => {
+        try {
+          task();
+        } catch (error) {
+          console.error("Unable to run post render task", error);
+        }
+      });
+    });
+  }
   return filterSelectionChanged;
 }
 
@@ -5336,7 +5380,7 @@ function addChannelPreset() {
   };
   channelPresets.push(preset);
   saveChannelPresets();
-  renderChannelPresets();
+  renderChannelPresets({ focusPresetId: preset.id, expandPresetId: preset.id });
   renderActions();
 }
 
