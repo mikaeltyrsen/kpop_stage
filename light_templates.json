@@ -62,6 +62,513 @@
       ]
     },
     {
+      "id": "template_wv4n9g7d",
+      "name": "Mover Beams Ripple Spin",
+      "rows": [
+        {
+          "id": "templateRow_m5x3p2sa",
+          "type": "action",
+          "channel": 41,
+          "value": 100,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation-speed",
+          "valuePresetId": "mover-light-rotation-speed-slow",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_jtq6u1fb",
+          "type": "action",
+          "channel": 40,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation",
+          "valuePresetId": "mover-light-rotation-0",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_c3yr7l0v",
+          "type": "action",
+          "channel": 43,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam1-rotation",
+          "valuePresetId": "mover-light-beam-rotation-0",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_kk7tv1we",
+          "type": "delay",
+          "duration": 0.25
+        },
+        {
+          "id": "templateRow_k8cohnrp",
+          "type": "action",
+          "channel": 44,
+          "value": 127,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam2-rotation",
+          "valuePresetId": "mover-light-beam2-rotation-90",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q8g3z2ns",
+          "type": "delay",
+          "duration": 0.25
+        },
+        {
+          "id": "templateRow_7l9dqv2r",
+          "type": "action",
+          "channel": 45,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam3-rotation",
+          "valuePresetId": "mover-light-beam3-rotation-180",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_r4us5k1b",
+          "type": "delay",
+          "duration": 0.25
+        },
+        {
+          "id": "templateRow_hm5xs7tu",
+          "type": "action",
+          "channel": 46,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam4-rotation",
+          "valuePresetId": "mover-light-beam4-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_wq9dnv4m",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "templateRow_tn9z4y1e",
+          "type": "action",
+          "channel": 41,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation-speed",
+          "valuePresetId": "mover-light-rotation-speed-fast",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_s5hdu8mr",
+          "type": "action",
+          "channel": 40,
+          "value": 138,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation",
+          "valuePresetId": "mover-light-rotation-270",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_n1y6gk4c",
+          "type": "delay",
+          "duration": 0.5
+        }
+      ]
+    },
+    {
+      "id": "template_d9s2m4xf",
+      "name": "Mover Beams Zigzag Burst",
+      "rows": [
+        {
+          "id": "templateRow_f6z9vd0s",
+          "type": "action",
+          "channel": 41,
+          "value": 150,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation-speed",
+          "valuePresetId": "mover-light-rotation-speed-medium",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_uy3mcs0k",
+          "type": "action",
+          "channel": 40,
+          "value": 23,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation",
+          "valuePresetId": "mover-light-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_p7hz3b4n",
+          "type": "action",
+          "channel": 43,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam1-rotation",
+          "valuePresetId": "mover-light-beam-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m0r9qk2e",
+          "type": "action",
+          "channel": 44,
+          "value": 192,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam2-rotation",
+          "valuePresetId": "mover-light-beam2-rotation-135",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_c1nz5x8q",
+          "type": "action",
+          "channel": 45,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam3-rotation",
+          "valuePresetId": "mover-light-beam3-rotation-0",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_v3e8ls9a",
+          "type": "action",
+          "channel": 46,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam4-rotation",
+          "valuePresetId": "mover-light-beam4-rotation-180",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_y2t8p1sm",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "templateRow_w1b7n0le",
+          "type": "action",
+          "channel": 41,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation-speed",
+          "valuePresetId": "mover-light-rotation-speed-super-fast",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_x4g6d2qp",
+          "type": "action",
+          "channel": 40,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation",
+          "valuePresetId": "mover-light-rotation-540",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_d5s1c8vr",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "templateRow_n8l4w5qc",
+          "type": "action",
+          "channel": 41,
+          "value": 100,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation-speed",
+          "valuePresetId": "mover-light-rotation-speed-slow",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_z7p3t1yd",
+          "type": "action",
+          "channel": 40,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation",
+          "valuePresetId": "mover-light-rotation-0",
+          "channelMasterId": null,
+          "master": null
+        }
+      ]
+    },
+    {
+      "id": "template_r6y5k2nb",
+      "name": "Mover Beams Ping Pong",
+      "rows": [
+        {
+          "id": "templateRow_v9m3c2ld",
+          "type": "action",
+          "channel": 41,
+          "value": 50,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation-speed",
+          "valuePresetId": "mover-light-rotation-speed-super-slow",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_s4h1k7pe",
+          "type": "action",
+          "channel": 40,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation",
+          "valuePresetId": "mover-light-rotation-0",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m6r2t5qx",
+          "type": "action",
+          "channel": 43,
+          "value": 127,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam1-rotation",
+          "valuePresetId": "mover-light-beam-rotation-90",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_b4k9s8ue",
+          "type": "action",
+          "channel": 44,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam2-rotation",
+          "valuePresetId": "mover-light-beam2-rotation-0",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_p2n7x5wa",
+          "type": "action",
+          "channel": 45,
+          "value": 127,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam3-rotation",
+          "valuePresetId": "mover-light-beam3-rotation-90",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_u1k6m4yz",
+          "type": "action",
+          "channel": 46,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam4-rotation",
+          "valuePresetId": "mover-light-beam4-rotation-0",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_j3h7v5lc",
+          "type": "delay",
+          "duration": 0.75
+        },
+        {
+          "id": "templateRow_k5q8r1nd",
+          "type": "action",
+          "channel": 40,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation",
+          "valuePresetId": "mover-light-rotation-540",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_w8d2s6qm",
+          "type": "action",
+          "channel": 41,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation-speed",
+          "valuePresetId": "mover-light-rotation-speed-fast",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_c7n4p2xs",
+          "type": "delay",
+          "duration": 0.75
+        },
+        {
+          "id": "templateRow_d1s8k5mv",
+          "type": "action",
+          "channel": 40,
+          "value": 23,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation",
+          "valuePresetId": "mover-light-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_p6y3v9tw",
+          "type": "action",
+          "channel": 41,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation-speed",
+          "valuePresetId": "mover-light-rotation-speed-none",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_h8m2c7rk",
+          "type": "delay",
+          "duration": 0.5
+        }
+      ]
+    },
+    {
+      "id": "template_q8f3z7yl",
+      "name": "Mover Beams Swirl Drop",
+      "rows": [
+        {
+          "id": "templateRow_r2s5c8mv",
+          "type": "action",
+          "channel": 41,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation-speed",
+          "valuePresetId": "mover-light-rotation-speed-fast",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_l4v8n1ps",
+          "type": "action",
+          "channel": 40,
+          "value": 138,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation",
+          "valuePresetId": "mover-light-rotation-270",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_t5m1k8vd",
+          "type": "action",
+          "channel": 43,
+          "value": 192,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam1-rotation",
+          "valuePresetId": "mover-light-beam-rotation-135",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_w7c3p5ns",
+          "type": "action",
+          "channel": 44,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam2-rotation",
+          "valuePresetId": "mover-light-beam2-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_n9s2v4qd",
+          "type": "action",
+          "channel": 45,
+          "value": 192,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam3-rotation",
+          "valuePresetId": "mover-light-beam3-rotation-135",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_p4h7x2ml",
+          "type": "action",
+          "channel": 46,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam4-rotation",
+          "valuePresetId": "mover-light-beam4-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_y5d9t1kw",
+          "type": "delay",
+          "duration": 0.4
+        },
+        {
+          "id": "templateRow_b6l3p8vs",
+          "type": "action",
+          "channel": 41,
+          "value": 150,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation-speed",
+          "valuePresetId": "mover-light-rotation-speed-medium",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m8q2s5dx",
+          "type": "action",
+          "channel": 40,
+          "value": 161,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation",
+          "valuePresetId": "mover-light-rotation-360",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_s3n6k9tp",
+          "type": "delay",
+          "duration": 0.4
+        },
+        {
+          "id": "templateRow_d8l1y4vw",
+          "type": "action",
+          "channel": 41,
+          "value": 50,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation-speed",
+          "valuePresetId": "mover-light-rotation-speed-super-slow",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_k2p7x4sm",
+          "type": "action",
+          "channel": 40,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation",
+          "valuePresetId": "mover-light-rotation-0",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_v1z5t8qw",
+          "type": "delay",
+          "duration": 0.4
+        }
+      ]
+    },
+    {
       "id": "template_xggx28i6",
       "name": "Mover Beams 45 deg",
       "rows": [
@@ -156,6 +663,17 @@
           "fade": 0.0,
           "channelPresetId": "left-light-blue",
           "valuePresetId": "left-light-blue-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m2f0x4un",
+          "type": "action",
+          "channel": 5,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-white",
+          "valuePresetId": "left-light-white-off",
           "channelMasterId": null,
           "master": null
         }
@@ -528,6 +1046,17 @@
           "fade": 0.0,
           "channelPresetId": "right-light-blue",
           "valuePresetId": "right-light-blue-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q2lz1v7g",
+          "type": "action",
+          "channel": 14,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-white",
+          "valuePresetId": "right-light-white-off",
           "channelMasterId": null,
           "master": null
         }
@@ -1257,6 +1786,17 @@
           "master": null
         },
         {
+          "id": "templateRow_d9n1ju2y",
+          "type": "action",
+          "channel": 5,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-white",
+          "valuePresetId": "left-light-white-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
           "id": "templateRow_fpe3g9y8",
           "type": "action",
           "channel": 1,
@@ -1389,6 +1929,17 @@
           "fade": 0.0,
           "channelPresetId": "right-light-green",
           "valuePresetId": "right-light-green-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_cw8rn7ts",
+          "type": "action",
+          "channel": 14,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-white",
+          "valuePresetId": "right-light-white-off",
           "channelMasterId": null,
           "master": null
         },
@@ -2307,6 +2858,1610 @@
               "white": 0
             }
           }
+        }
+      ]
+    },
+    {
+      "id": "template_6m2l6v4k",
+      "name": "Left Right Color Strobe Slow",
+      "rows": [
+        {
+          "id": "template_6m2l6v4k_left_dimmer",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "left-light-dimmer",
+          "valuePresetId": "left-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_right_dimmer",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "right-light-dimmer",
+          "valuePresetId": "right-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_left_white_off",
+          "type": "action",
+          "channel": 5,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-white",
+          "valuePresetId": "left-light-white-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_right_white_off",
+          "type": "action",
+          "channel": 14,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-white",
+          "valuePresetId": "right-light-white-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_left_strobe",
+          "type": "action",
+          "channel": 6,
+          "value": 100,
+          "fade": 0.0,
+          "channelPresetId": "left-light-strobe",
+          "valuePresetId": "left-light-strobe-slow",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_right_strobe",
+          "type": "action",
+          "channel": 15,
+          "value": 100,
+          "fade": 0.0,
+          "channelPresetId": "right-light-strobe",
+          "valuePresetId": "right-light-strobe-slow",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_red_left_red",
+          "type": "action",
+          "channel": 2,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "left-light-red",
+          "valuePresetId": "left-light-red-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_red_left_green",
+          "type": "action",
+          "channel": 3,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-green",
+          "valuePresetId": "left-light-green-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_red_left_blue",
+          "type": "action",
+          "channel": 4,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-blue",
+          "valuePresetId": "left-light-blue-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_red_right_red",
+          "type": "action",
+          "channel": 11,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "right-light-red",
+          "valuePresetId": "right-light-red-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_red_right_green",
+          "type": "action",
+          "channel": 12,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-green",
+          "valuePresetId": "right-light-green-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_red_right_blue",
+          "type": "action",
+          "channel": 13,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-blue",
+          "valuePresetId": "right-light-blue-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_delay_red",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "template_6m2l6v4k_purple_left_red",
+          "type": "action",
+          "channel": 2,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "left-light-red",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_purple_left_green",
+          "type": "action",
+          "channel": 3,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-green",
+          "valuePresetId": "left-light-green-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_purple_left_blue",
+          "type": "action",
+          "channel": 4,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "left-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_purple_right_red",
+          "type": "action",
+          "channel": 11,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "right-light-red",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_purple_right_green",
+          "type": "action",
+          "channel": 12,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-green",
+          "valuePresetId": "right-light-green-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_purple_right_blue",
+          "type": "action",
+          "channel": 13,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "right-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_delay_purple",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "template_6m2l6v4k_cyan_left_red",
+          "type": "action",
+          "channel": 2,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-red",
+          "valuePresetId": "left-light-red-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_cyan_left_green",
+          "type": "action",
+          "channel": 3,
+          "value": 173,
+          "fade": 0.0,
+          "channelPresetId": "left-light-green",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_cyan_left_blue",
+          "type": "action",
+          "channel": 4,
+          "value": 230,
+          "fade": 0.0,
+          "channelPresetId": "left-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_cyan_right_red",
+          "type": "action",
+          "channel": 11,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-red",
+          "valuePresetId": "right-light-red-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_cyan_right_green",
+          "type": "action",
+          "channel": 12,
+          "value": 173,
+          "fade": 0.0,
+          "channelPresetId": "right-light-green",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_cyan_right_blue",
+          "type": "action",
+          "channel": 13,
+          "value": 230,
+          "fade": 0.0,
+          "channelPresetId": "right-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_delay_cyan",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "template_6m2l6v4k_pink_left_red",
+          "type": "action",
+          "channel": 2,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "left-light-red",
+          "valuePresetId": "left-light-red-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_pink_left_green",
+          "type": "action",
+          "channel": 3,
+          "value": 45,
+          "fade": 0.0,
+          "channelPresetId": "left-light-green",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_pink_left_blue",
+          "type": "action",
+          "channel": 4,
+          "value": 85,
+          "fade": 0.0,
+          "channelPresetId": "left-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_pink_right_red",
+          "type": "action",
+          "channel": 11,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "right-light-red",
+          "valuePresetId": "right-light-red-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_pink_right_green",
+          "type": "action",
+          "channel": 12,
+          "value": 45,
+          "fade": 0.0,
+          "channelPresetId": "right-light-green",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_pink_right_blue",
+          "type": "action",
+          "channel": 13,
+          "value": 85,
+          "fade": 0.0,
+          "channelPresetId": "right-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_6m2l6v4k_delay_pink",
+          "type": "delay",
+          "duration": 0.5
+        }
+      ]
+    },
+    {
+      "id": "template_h2s8q0y1",
+      "name": "Left Right Color Strobe Pulse",
+      "rows": [
+        {
+          "id": "template_h2s8q0y1_left_dimmer",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "left-light-dimmer",
+          "valuePresetId": "left-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_right_dimmer",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "right-light-dimmer",
+          "valuePresetId": "right-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_left_white_off",
+          "type": "action",
+          "channel": 5,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-white",
+          "valuePresetId": "left-light-white-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_right_white_off",
+          "type": "action",
+          "channel": 14,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-white",
+          "valuePresetId": "right-light-white-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_left_strobe",
+          "type": "action",
+          "channel": 6,
+          "value": 150,
+          "fade": 0.0,
+          "channelPresetId": "left-light-strobe",
+          "valuePresetId": "left-light-strobe-medium",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_right_strobe",
+          "type": "action",
+          "channel": 15,
+          "value": 150,
+          "fade": 0.0,
+          "channelPresetId": "right-light-strobe",
+          "valuePresetId": "right-light-strobe-medium",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_red_left_red",
+          "type": "action",
+          "channel": 2,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "left-light-red",
+          "valuePresetId": "left-light-red-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_red_left_green",
+          "type": "action",
+          "channel": 3,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-green",
+          "valuePresetId": "left-light-green-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_red_left_blue",
+          "type": "action",
+          "channel": 4,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-blue",
+          "valuePresetId": "left-light-blue-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_red_right_red",
+          "type": "action",
+          "channel": 11,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "right-light-red",
+          "valuePresetId": "right-light-red-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_red_right_green",
+          "type": "action",
+          "channel": 12,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-green",
+          "valuePresetId": "right-light-green-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_red_right_blue",
+          "type": "action",
+          "channel": 13,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-blue",
+          "valuePresetId": "right-light-blue-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_delay_red",
+          "type": "delay",
+          "duration": 0.35
+        },
+        {
+          "id": "template_h2s8q0y1_purple_left_red",
+          "type": "action",
+          "channel": 2,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "left-light-red",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_purple_left_green",
+          "type": "action",
+          "channel": 3,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-green",
+          "valuePresetId": "left-light-green-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_purple_left_blue",
+          "type": "action",
+          "channel": 4,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "left-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_purple_right_red",
+          "type": "action",
+          "channel": 11,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "right-light-red",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_purple_right_green",
+          "type": "action",
+          "channel": 12,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-green",
+          "valuePresetId": "right-light-green-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_purple_right_blue",
+          "type": "action",
+          "channel": 13,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "right-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_delay_purple",
+          "type": "delay",
+          "duration": 0.35
+        },
+        {
+          "id": "template_h2s8q0y1_cyan_left_red",
+          "type": "action",
+          "channel": 2,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-red",
+          "valuePresetId": "left-light-red-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_cyan_left_green",
+          "type": "action",
+          "channel": 3,
+          "value": 173,
+          "fade": 0.0,
+          "channelPresetId": "left-light-green",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_cyan_left_blue",
+          "type": "action",
+          "channel": 4,
+          "value": 230,
+          "fade": 0.0,
+          "channelPresetId": "left-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_cyan_right_red",
+          "type": "action",
+          "channel": 11,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-red",
+          "valuePresetId": "right-light-red-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_cyan_right_green",
+          "type": "action",
+          "channel": 12,
+          "value": 173,
+          "fade": 0.0,
+          "channelPresetId": "right-light-green",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_cyan_right_blue",
+          "type": "action",
+          "channel": 13,
+          "value": 230,
+          "fade": 0.0,
+          "channelPresetId": "right-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_delay_cyan",
+          "type": "delay",
+          "duration": 0.35
+        },
+        {
+          "id": "template_h2s8q0y1_pink_left_red",
+          "type": "action",
+          "channel": 2,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "left-light-red",
+          "valuePresetId": "left-light-red-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_pink_left_green",
+          "type": "action",
+          "channel": 3,
+          "value": 45,
+          "fade": 0.0,
+          "channelPresetId": "left-light-green",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_pink_left_blue",
+          "type": "action",
+          "channel": 4,
+          "value": 85,
+          "fade": 0.0,
+          "channelPresetId": "left-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_pink_right_red",
+          "type": "action",
+          "channel": 11,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "right-light-red",
+          "valuePresetId": "right-light-red-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_pink_right_green",
+          "type": "action",
+          "channel": 12,
+          "value": 45,
+          "fade": 0.0,
+          "channelPresetId": "right-light-green",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_pink_right_blue",
+          "type": "action",
+          "channel": 13,
+          "value": 85,
+          "fade": 0.0,
+          "channelPresetId": "right-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_h2s8q0y1_delay_pink",
+          "type": "delay",
+          "duration": 0.35
+        }
+      ]
+    },
+    {
+      "id": "template_0vnyq9r5",
+      "name": "Left Right Color Strobe Sprint",
+      "rows": [
+        {
+          "id": "template_0vnyq9r5_left_dimmer",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "left-light-dimmer",
+          "valuePresetId": "left-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_right_dimmer",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "right-light-dimmer",
+          "valuePresetId": "right-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_left_white_off",
+          "type": "action",
+          "channel": 5,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-white",
+          "valuePresetId": "left-light-white-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_right_white_off",
+          "type": "action",
+          "channel": 14,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-white",
+          "valuePresetId": "right-light-white-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_left_strobe",
+          "type": "action",
+          "channel": 6,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "left-light-strobe",
+          "valuePresetId": "left-light-strobe-fast",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_right_strobe",
+          "type": "action",
+          "channel": 15,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "right-light-strobe",
+          "valuePresetId": "right-light-strobe-fast",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_red_left_red",
+          "type": "action",
+          "channel": 2,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "left-light-red",
+          "valuePresetId": "left-light-red-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_red_left_green",
+          "type": "action",
+          "channel": 3,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-green",
+          "valuePresetId": "left-light-green-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_red_left_blue",
+          "type": "action",
+          "channel": 4,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-blue",
+          "valuePresetId": "left-light-blue-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_red_right_red",
+          "type": "action",
+          "channel": 11,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "right-light-red",
+          "valuePresetId": "right-light-red-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_red_right_green",
+          "type": "action",
+          "channel": 12,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-green",
+          "valuePresetId": "right-light-green-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_red_right_blue",
+          "type": "action",
+          "channel": 13,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-blue",
+          "valuePresetId": "right-light-blue-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_delay_red",
+          "type": "delay",
+          "duration": 0.2
+        },
+        {
+          "id": "template_0vnyq9r5_purple_left_red",
+          "type": "action",
+          "channel": 2,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "left-light-red",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_purple_left_green",
+          "type": "action",
+          "channel": 3,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-green",
+          "valuePresetId": "left-light-green-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_purple_left_blue",
+          "type": "action",
+          "channel": 4,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "left-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_purple_right_red",
+          "type": "action",
+          "channel": 11,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "right-light-red",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_purple_right_green",
+          "type": "action",
+          "channel": 12,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-green",
+          "valuePresetId": "right-light-green-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_purple_right_blue",
+          "type": "action",
+          "channel": 13,
+          "value": 200,
+          "fade": 0.0,
+          "channelPresetId": "right-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_delay_purple",
+          "type": "delay",
+          "duration": 0.2
+        },
+        {
+          "id": "template_0vnyq9r5_cyan_left_red",
+          "type": "action",
+          "channel": 2,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-red",
+          "valuePresetId": "left-light-red-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_cyan_left_green",
+          "type": "action",
+          "channel": 3,
+          "value": 173,
+          "fade": 0.0,
+          "channelPresetId": "left-light-green",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_cyan_left_blue",
+          "type": "action",
+          "channel": 4,
+          "value": 230,
+          "fade": 0.0,
+          "channelPresetId": "left-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_cyan_right_red",
+          "type": "action",
+          "channel": 11,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-red",
+          "valuePresetId": "right-light-red-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_cyan_right_green",
+          "type": "action",
+          "channel": 12,
+          "value": 173,
+          "fade": 0.0,
+          "channelPresetId": "right-light-green",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_cyan_right_blue",
+          "type": "action",
+          "channel": 13,
+          "value": 230,
+          "fade": 0.0,
+          "channelPresetId": "right-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_delay_cyan",
+          "type": "delay",
+          "duration": 0.2
+        },
+        {
+          "id": "template_0vnyq9r5_pink_left_red",
+          "type": "action",
+          "channel": 2,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "left-light-red",
+          "valuePresetId": "left-light-red-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_pink_left_green",
+          "type": "action",
+          "channel": 3,
+          "value": 45,
+          "fade": 0.0,
+          "channelPresetId": "left-light-green",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_pink_left_blue",
+          "type": "action",
+          "channel": 4,
+          "value": 85,
+          "fade": 0.0,
+          "channelPresetId": "left-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_pink_right_red",
+          "type": "action",
+          "channel": 11,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "right-light-red",
+          "valuePresetId": "right-light-red-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_pink_right_green",
+          "type": "action",
+          "channel": 12,
+          "value": 45,
+          "fade": 0.0,
+          "channelPresetId": "right-light-green",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_pink_right_blue",
+          "type": "action",
+          "channel": 13,
+          "value": 85,
+          "fade": 0.0,
+          "channelPresetId": "right-light-blue",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "template_0vnyq9r5_delay_pink",
+          "type": "delay",
+          "duration": 0.2
+        }
+      ]
+    },
+    {
+      "id": "template_t3b7x9q2",
+      "name": "Stage Brightness Cascade",
+      "rows": [
+        {
+          "id": "templateRow_t3b7x9q2_left_dimmed",
+          "type": "action",
+          "channel": 1,
+          "value": 127,
+          "fade": 0.0,
+          "channelPresetId": "left-light-dimmer",
+          "valuePresetId": "left-light-dimmer-normal",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_t3b7x9q2_right_dimmed",
+          "type": "action",
+          "channel": 10,
+          "value": 127,
+          "fade": 0.0,
+          "channelPresetId": "right-light-dimmer",
+          "valuePresetId": "right-light-dimmer-normal",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_t3b7x9q2_back_full",
+          "type": "action",
+          "channel": 20,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "back-light-dimmer",
+          "valuePresetId": "back-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_t3b7x9q2_front_off",
+          "type": "action",
+          "channel": 30,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "front-light-dimmer",
+          "valuePresetId": "front-light-dimmer-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_t3b7x9q2_delay_step1",
+          "type": "delay",
+          "duration": 0.4
+        },
+        {
+          "id": "templateRow_t3b7x9q2_left_full",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "left-light-dimmer",
+          "valuePresetId": "left-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_t3b7x9q2_right_full",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "right-light-dimmer",
+          "valuePresetId": "right-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_t3b7x9q2_front_bright",
+          "type": "action",
+          "channel": 30,
+          "value": 192,
+          "fade": 0.0,
+          "channelPresetId": "front-light-dimmer",
+          "valuePresetId": "front-light-dimmer-bright",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_t3b7x9q2_delay_step2",
+          "type": "delay",
+          "duration": 0.4
+        },
+        {
+          "id": "templateRow_t3b7x9q2_back_dimmed",
+          "type": "action",
+          "channel": 20,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "back-light-dimmer",
+          "valuePresetId": "back-light-dimmer-dimmed",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_t3b7x9q2_front_off2",
+          "type": "action",
+          "channel": 30,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "front-light-dimmer",
+          "valuePresetId": "front-light-dimmer-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_t3b7x9q2_delay_step3",
+          "type": "delay",
+          "duration": 0.4
+        },
+        {
+          "id": "templateRow_t3b7x9q2_left_off",
+          "type": "action",
+          "channel": 1,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-dimmer",
+          "valuePresetId": "left-light-dimmer-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_t3b7x9q2_right_off",
+          "type": "action",
+          "channel": 10,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-dimmer",
+          "valuePresetId": "right-light-dimmer-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_t3b7x9q2_back_off",
+          "type": "action",
+          "channel": 20,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "back-light-dimmer",
+          "valuePresetId": "back-light-dimmer-off",
+          "channelMasterId": null,
+          "master": null
+        }
+      ]
+    },
+    {
+      "id": "template_q5n8u3lz",
+      "name": "Stage Flash Alternating Lines",
+      "rows": [
+        {
+          "id": "templateRow_q5n8u3lz_left_off",
+          "type": "action",
+          "channel": 1,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-dimmer",
+          "valuePresetId": "left-light-dimmer-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q5n8u3lz_right_off",
+          "type": "action",
+          "channel": 10,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-dimmer",
+          "valuePresetId": "right-light-dimmer-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q5n8u3lz_back_off",
+          "type": "action",
+          "channel": 20,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "back-light-dimmer",
+          "valuePresetId": "back-light-dimmer-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q5n8u3lz_front_off",
+          "type": "action",
+          "channel": 30,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "front-light-dimmer",
+          "valuePresetId": "front-light-dimmer-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q5n8u3lz_delay_reset",
+          "type": "delay",
+          "duration": 0.2
+        },
+        {
+          "id": "templateRow_q5n8u3lz_left_full",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "left-light-dimmer",
+          "valuePresetId": "left-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q5n8u3lz_right_full",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "right-light-dimmer",
+          "valuePresetId": "right-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q5n8u3lz_back_dimmed",
+          "type": "action",
+          "channel": 20,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "back-light-dimmer",
+          "valuePresetId": "back-light-dimmer-dimmed",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q5n8u3lz_front_bright",
+          "type": "action",
+          "channel": 30,
+          "value": 192,
+          "fade": 0.0,
+          "channelPresetId": "front-light-dimmer",
+          "valuePresetId": "front-light-dimmer-bright",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q5n8u3lz_delay_first",
+          "type": "delay",
+          "duration": 0.25
+        },
+        {
+          "id": "templateRow_q5n8u3lz_left_dimmed",
+          "type": "action",
+          "channel": 1,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "left-light-dimmer",
+          "valuePresetId": "left-light-dimmer-dimmed",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q5n8u3lz_right_dimmed",
+          "type": "action",
+          "channel": 10,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "right-light-dimmer",
+          "valuePresetId": "right-light-dimmer-dimmed",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q5n8u3lz_back_full",
+          "type": "action",
+          "channel": 20,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "back-light-dimmer",
+          "valuePresetId": "back-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q5n8u3lz_front_off2",
+          "type": "action",
+          "channel": 30,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "front-light-dimmer",
+          "valuePresetId": "front-light-dimmer-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q5n8u3lz_delay_second",
+          "type": "delay",
+          "duration": 0.25
+        },
+        {
+          "id": "templateRow_q5n8u3lz_left_full_2",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "left-light-dimmer",
+          "valuePresetId": "left-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q5n8u3lz_right_full_2",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "right-light-dimmer",
+          "valuePresetId": "right-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q5n8u3lz_back_dimmed2",
+          "type": "action",
+          "channel": 20,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "back-light-dimmer",
+          "valuePresetId": "back-light-dimmer-dimmed",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q5n8u3lz_front_full",
+          "type": "action",
+          "channel": 30,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "front-light-dimmer",
+          "valuePresetId": "front-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        }
+      ]
+    },
+    {
+      "id": "template_m4k1s7de",
+      "name": "Stage Staggered Hits",
+      "rows": [
+        {
+          "id": "templateRow_m4k1s7de_left_full",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "left-light-dimmer",
+          "valuePresetId": "left-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m4k1s7de_right_full",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "right-light-dimmer",
+          "valuePresetId": "right-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m4k1s7de_back_bright",
+          "type": "action",
+          "channel": 20,
+          "value": 192,
+          "fade": 0.0,
+          "channelPresetId": "back-light-dimmer",
+          "valuePresetId": "back-light-dimmer-bright",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m4k1s7de_front_dimmed",
+          "type": "action",
+          "channel": 30,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "front-light-dimmer",
+          "valuePresetId": "front-light-dimmer-dimmed",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m4k1s7de_delay_first",
+          "type": "delay",
+          "duration": 0.3
+        },
+        {
+          "id": "templateRow_m4k1s7de_left_dimmed",
+          "type": "action",
+          "channel": 1,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "left-light-dimmer",
+          "valuePresetId": "left-light-dimmer-dimmed",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m4k1s7de_right_dimmed",
+          "type": "action",
+          "channel": 10,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "right-light-dimmer",
+          "valuePresetId": "right-light-dimmer-dimmed",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m4k1s7de_back_full",
+          "type": "action",
+          "channel": 20,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "back-light-dimmer",
+          "valuePresetId": "back-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m4k1s7de_front_full",
+          "type": "action",
+          "channel": 30,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "front-light-dimmer",
+          "valuePresetId": "front-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m4k1s7de_delay_second",
+          "type": "delay",
+          "duration": 0.3
+        },
+        {
+          "id": "templateRow_m4k1s7de_left_full_2",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "left-light-dimmer",
+          "valuePresetId": "left-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m4k1s7de_right_full_2",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "right-light-dimmer",
+          "valuePresetId": "right-light-dimmer-full",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m4k1s7de_back_dimmed",
+          "type": "action",
+          "channel": 20,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "back-light-dimmer",
+          "valuePresetId": "back-light-dimmer-dimmed",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m4k1s7de_front_off",
+          "type": "action",
+          "channel": 30,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "front-light-dimmer",
+          "valuePresetId": "front-light-dimmer-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m4k1s7de_delay_third",
+          "type": "delay",
+          "duration": 0.3
+        },
+        {
+          "id": "templateRow_m4k1s7de_left_off",
+          "type": "action",
+          "channel": 1,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "left-light-dimmer",
+          "valuePresetId": "left-light-dimmer-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m4k1s7de_right_off",
+          "type": "action",
+          "channel": 10,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "right-light-dimmer",
+          "valuePresetId": "right-light-dimmer-off",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_m4k1s7de_back_off",
+          "type": "action",
+          "channel": 20,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "back-light-dimmer",
+          "valuePresetId": "back-light-dimmer-off",
+          "channelMasterId": null,
+          "master": null
         }
       ]
     }

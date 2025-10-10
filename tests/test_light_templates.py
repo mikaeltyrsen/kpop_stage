@@ -1,9 +1,20 @@
-import pytest
+import json
+from pathlib import Path
 
+import pytest
 
 pytest.importorskip("flask")
 
 from app import sanitize_template_row
+
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+LIGHT_TEMPLATES_PATH = ROOT_DIR / "light_templates.json"
+
+
+def load_light_templates():
+    with LIGHT_TEMPLATES_PATH.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
 
 
 def test_sanitize_template_row_action_includes_type_and_fields():
@@ -100,3 +111,20 @@ def test_sanitize_template_row_master_extracts_brightness_from_sliders():
         "white": 210,
         "sliders": {"brightness": 85, "white": 210, "extra": 33},
     }
+
+
+def test_sanitize_template_row_master_preserves_zero_white_slider():
+    result = sanitize_template_row(
+        {
+            "id": "row_master_zero_white",
+            "channel": 9,
+            "value": 0,
+            "channelMasterId": "master-left",
+            "master": {
+                "sliders": {"WHITE": 0, "brightness": 120},
+            },
+        }
+    )
+
+    assert result["master"]["white"] == 0
+    assert result["master"]["sliders"]["white"] == 0

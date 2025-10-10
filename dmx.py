@@ -754,6 +754,8 @@ class DMXShowManager:
         for raw in raw_actions:
             if not isinstance(raw, dict):
                 raise ValueError("DMX actions must be objects with time, channel, and value")
+            if bool(raw.get("muted")):
+                continue
             action = DMXAction.from_dict(raw)
             instance_raw = raw.get("templateInstanceId")
             instance_id = instance_raw if isinstance(instance_raw, str) and instance_raw else None
@@ -1109,6 +1111,9 @@ class DMXShowManager:
                     value = raw.get(key)
                     if isinstance(value, str) and value:
                         entry[key] = value
+
+                if bool(raw.get("muted")):
+                    entry["muted"] = True
 
                 loop_settings = _normalize_template_loop_settings(raw.get("templateLoop"))
                 if loop_settings and loop_settings.is_active():
