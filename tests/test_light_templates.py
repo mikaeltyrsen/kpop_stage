@@ -1,9 +1,20 @@
-import pytest
+import json
+from pathlib import Path
 
+import pytest
 
 pytest.importorskip("flask")
 
 from app import sanitize_template_row
+
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+LIGHT_TEMPLATES_PATH = ROOT_DIR / "light_templates.json"
+
+
+def load_light_templates():
+    with LIGHT_TEMPLATES_PATH.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
 
 
 def test_sanitize_template_row_action_includes_type_and_fields():
@@ -100,3 +111,46 @@ def test_sanitize_template_row_master_extracts_brightness_from_sliders():
         "white": 210,
         "sliders": {"brightness": 85, "white": 210, "extra": 33},
     }
+
+
+def test_color_templates_reset_white_channel():
+    data = load_light_templates()
+    templates = data.get("templates", [])
+    color_presets = {
+        "left": {
+            "colors": {
+                "left-light-red",
+                "left-light-green",
+                "left-light-blue",
+            },
+            "white": "left-light-white",
+        },
+        "right": {
+            "colors": {
+                "right-light-red",
+                "right-light-green",
+                "right-light-blue",
+            },
+            "white": "right-light-white",
+        },
+    }
+
+    failures = []
+    for template in templates:
+        rows = template.get("rows") or []
+        by_preset = {
+            row.get("channelPresetId"): row for row in rows if row.get("channelPresetId")
+        }
+        for side, config in color_presets.items():
+            uses_color = any(
+                row.get("channelPresetId") in config["colors"] and (row.get("value") or 0) > 0
+                for row in rows
+            )
+            if not uses_color:
+                continue
+            white_row = by_preset.get(config["white"])
+            if not white_row or (white_row.get("value") or 0) != 0:
+                identifier = template.get("name") or template.get("id")
+                failures.append(identifier)
+
+    assert not failures, f"Missing white reset in templates: {sorted(set(failures))}"
