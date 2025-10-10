@@ -39,7 +39,7 @@ DEFAULT_CHANNELS = 512
 DMX_FPS = 30.0
 DMX_BREAK_DURATION = float(os.environ.get("DMX_BREAK_DURATION", "0.00012"))
 DMX_MARK_AFTER_BREAK = float(os.environ.get("DMX_MARK_AFTER_BREAK", "0.000012"))
-DEFAULT_STARTUP_LEVELS = "1=255,2=255,3=255"
+DEFAULT_STARTUP_LEVELS = ""
 
 
 def _parse_env_float(name: str, default: float, *, minimum: float = 0.0) -> float:
