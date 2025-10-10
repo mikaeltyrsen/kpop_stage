@@ -166,6 +166,7 @@ const DEFAULT_ACTION = Object.freeze({
   channel: 1,
   value: 0,
   fade: 0,
+  muted: false,
   channelPresetId: null,
   valuePresetId: null,
   channelMasterId: null,
@@ -1631,7 +1632,7 @@ async function syncPreview(options = {}) {
     if (shouldPreviewActiveTemplateOnly()) {
       prepared = prepareTemplatePreviewActions(activeLightTemplateId);
     } else {
-      prepared = prepareActionsForSave();
+      prepared = prepareActionsForSave({ skipMuted: true });
     }
   } catch (error) {
     if (options.showError) {
@@ -2661,6 +2662,10 @@ function createActionRow(action, index, group) {
   row.dataset.groupId = group.id;
   row.dataset.groupTime = group.time;
   row.classList.add("action-group-item");
+  const isMuted = Boolean(action.muted);
+  if (isMuted) {
+    row.classList.add("action-group-item--muted");
+  }
   if (action.templateInstanceId) {
     row.dataset.templateInstanceId = action.templateInstanceId;
     row.dataset.templateId = action.templateId || "";
@@ -2692,9 +2697,31 @@ function createActionRow(action, index, group) {
     step: 0.1,
   });
   fadeInput.classList.add("input--compact-number");
+  fadeInput.disabled = isMuted;
   setActionFieldMetadata(fadeInput, actionId, "fade");
   fadeInput.addEventListener("change", (event) => handleFadeChange(event, index));
-  appendToColumn(row, "fade", fadeInput);
+
+  const fadeMuteWrapper = document.createElement("div");
+  fadeMuteWrapper.className = "fade-mute";
+  fadeMuteWrapper.append(fadeInput);
+
+  const muteLabel = document.createElement("label");
+  muteLabel.className = "fade-mute__mute";
+  muteLabel.title = "Mute this cue";
+
+  const muteCheckbox = document.createElement("input");
+  muteCheckbox.type = "checkbox";
+  muteCheckbox.checked = isMuted;
+  setActionFieldMetadata(muteCheckbox, actionId, "mute");
+  muteCheckbox.addEventListener("change", (event) => handleMuteChange(event, index));
+
+  const muteText = document.createElement("span");
+  muteText.textContent = "Mute";
+
+  muteLabel.append(muteCheckbox, muteText);
+  fadeMuteWrapper.append(muteLabel);
+
+  appendToColumn(row, "fade", fadeMuteWrapper);
 
   const toolsCell = row.querySelector('[data-column="tools"]');
   const tools = document.createElement("div");
@@ -3257,6 +3284,9 @@ function computeChannelStatesAtTime(targetSeconds) {
 
   const states = new Map();
   timeline.forEach(({ action }) => {
+    if (action.muted) {
+      return;
+    }
     if (action.channelMasterId) {
       const master = getChannelMaster(action.channelMasterId);
       if (!master) {
@@ -3941,6 +3971,26 @@ function handleFadeChange(event, index) {
   queuePreviewSync();
 }
 
+function handleMuteChange(event, index) {
+  const checkbox = event.target;
+  const action = actions[index];
+  if (!(checkbox instanceof HTMLInputElement) || !action) {
+    return;
+  }
+  const muted = checkbox.checked;
+  action.muted = muted;
+  const row = checkbox.closest(".action-group-item");
+  if (row) {
+    row.classList.toggle("action-group-item--muted", muted);
+    const fadeInput = row.querySelector('input[data-field="fade"]');
+    if (fadeInput instanceof HTMLInputElement) {
+      fadeInput.disabled = muted;
+    }
+  }
+  updateActiveActionHighlight(lastKnownTimelineSeconds);
+  queuePreviewSync();
+}
+
 function applyChannelPresetToAction(action, preset) {
   if (!action || !preset) return;
   action.channelPresetId = preset.id;
@@ -4146,6 +4196,7 @@ function duplicateAction(index) {
     channel: original.channel,
     value: original.value,
     fade: original.fade,
+    muted: Boolean(original.muted),
     channelPresetId: original.channelPresetId,
     valuePresetId: original.valuePresetId,
     channelMasterId: original.channelMasterId,
@@ -7883,7 +7934,8 @@ async function fetchFromApiCandidates(path) {
   throw aggregateError;
 }
 
-function prepareActionsForSave() {
+function prepareActionsForSave(options = {}) {
+  const skipMuted = options.skipMuted === true;
   const prepared = [];
   actions.forEach((action, index) => {
     const seconds = parseTimeString(action.time);
@@ -7894,6 +7946,10 @@ function prepareActionsForSave() {
     if (fade < 0) {
       throw new Error(`Row ${index + 1}: fade cannot be negative.`);
     }
+    const isMuted = Boolean(action.muted);
+    if (skipMuted && isMuted) {
+      return;
+    }
     if (action.channelMasterId) {
       const master = getChannelMaster(action.channelMasterId);
       if (!master) {
@@ -7903,7 +7959,12 @@ function prepareActionsForSave() {
       if (!expanded.length) {
         throw new Error(`Row ${index + 1}: master controller has no valid channels.`);
       }
-      expanded.forEach((entry) => prepared.push(entry));
+      expanded.forEach((entry) => {
+        if (isMuted) {
+          entry.muted = true;
+        }
+        prepared.push(entry);
+      });
       return;
     }
     const channel = Number.parseInt(action.channel, 10);
@@ -7920,6 +7981,9 @@ function prepareActionsForSave() {
       value,
       fade: Number(fade.toFixed(3)),
     };
+    if (isMuted) {
+      entry.muted = true;
+    }
     if (action.channelPresetId) {
       entry.channelPresetId = action.channelPresetId;
     }
