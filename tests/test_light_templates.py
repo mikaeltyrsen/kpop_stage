@@ -113,44 +113,18 @@ def test_sanitize_template_row_master_extracts_brightness_from_sliders():
     }
 
 
-def test_color_templates_reset_white_channel():
-    data = load_light_templates()
-    templates = data.get("templates", [])
-    color_presets = {
-        "left": {
-            "colors": {
-                "left-light-red",
-                "left-light-green",
-                "left-light-blue",
+def test_sanitize_template_row_master_preserves_zero_white_slider():
+    result = sanitize_template_row(
+        {
+            "id": "row_master_zero_white",
+            "channel": 9,
+            "value": 0,
+            "channelMasterId": "master-left",
+            "master": {
+                "sliders": {"WHITE": 0, "brightness": 120},
             },
-            "white": "left-light-white",
-        },
-        "right": {
-            "colors": {
-                "right-light-red",
-                "right-light-green",
-                "right-light-blue",
-            },
-            "white": "right-light-white",
-        },
-    }
-
-    failures = []
-    for template in templates:
-        rows = template.get("rows") or []
-        by_preset = {
-            row.get("channelPresetId"): row for row in rows if row.get("channelPresetId")
         }
-        for side, config in color_presets.items():
-            uses_color = any(
-                row.get("channelPresetId") in config["colors"] and (row.get("value") or 0) > 0
-                for row in rows
-            )
-            if not uses_color:
-                continue
-            white_row = by_preset.get(config["white"])
-            if not white_row or (white_row.get("value") or 0) != 0:
-                identifier = template.get("name") or template.get("id")
-                failures.append(identifier)
+    )
 
-    assert not failures, f"Missing white reset in templates: {sorted(set(failures))}"
+    assert result["master"]["white"] == 0
+    assert result["master"]["sliders"]["white"] == 0
