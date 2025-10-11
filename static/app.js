@@ -12,6 +12,12 @@ const totalTimeEl = document.querySelector(".player-time-total");
 const volumeSlider = document.getElementById("volume-slider");
 const playerStopButton = document.getElementById("player-stop-button");
 const smokeButton = document.getElementById("smoke-button");
+const searchParams = new URLSearchParams(window.location.search);
+const adminParam = (searchParams.get("admin") || "").toLowerCase();
+const isAdmin = ["1", "true", "yes", "on"].includes(adminParam);
+
+let userKey = null;
+const videoButtons = new Map();
 
 let isFetchingStatus = false;
 let statusPollTimer = null;
@@ -27,6 +33,54 @@ function showToast(message, type = "info") {
   setTimeout(() => {
     toastEl.classList.remove("visible", "error");
   }, 2400);
+}
+
+async function registerUser() {
+  try {
+    const response = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ admin: isAdmin }),
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.error || `Registration failed (${response.status})`);
+    }
+    const payload = await response.json();
+    if (payload && payload.key) {
+      userKey = payload.key;
+    } else {
+      throw new Error("Registration response missing key");
+    }
+  } catch (err) {
+    console.error(err);
+    showToast("Unable to join controller session", "error");
+  }
+}
+
+function applyAdminVisibility() {
+  if (volumeSlider) {
+    volumeSlider.hidden = !isAdmin;
+  }
+  if (smokeButton && !isAdmin) {
+    smokeButton.hidden = true;
+  }
+}
+
+function updatePlayButtons(status) {
+  const isVideoActive = Boolean(status && status.mode === "video");
+  const disable = !isAdmin && isVideoActive;
+  for (const button of videoButtons.values()) {
+    if (!button) {
+      continue;
+    }
+    button.disabled = disable;
+    if (disable) {
+      button.setAttribute("aria-disabled", "true");
+    } else {
+      button.removeAttribute("aria-disabled");
+    }
+  }
 }
 
 async function fetchVideos() {
@@ -53,6 +107,7 @@ function renderVideos(videos) {
   }
 
   const fragment = document.createDocumentFragment();
+  videoButtons.clear();
   for (const video of videos) {
     const node = template.content.cloneNode(true);
     const card = node.querySelector(".video-card");
@@ -73,20 +128,35 @@ function renderVideos(videos) {
       card.prepend(placeholder);
     }
     title.textContent = video.name;
+    const videoKey = video.id || title.textContent || "";
+    button.dataset.videoId = videoKey;
+    videoButtons.set(videoKey, button);
+    const shouldDisable = !isAdmin && latestStatus && latestStatus.mode === "video";
+    button.disabled = shouldDisable;
+    if (shouldDisable) {
+      button.setAttribute("aria-disabled", "true");
+    } else {
+      button.removeAttribute("aria-disabled");
+    }
     button.addEventListener("click", () => playVideo(video.id, video.name));
 
     fragment.appendChild(node);
   }
 
   listEl.appendChild(fragment);
+  updatePlayButtons(latestStatus);
 }
 
 async function playVideo(id, name) {
+  if (!userKey) {
+    showToast("Unable to select a video right now", "error");
+    return;
+  }
   try {
     const response = await fetch("/api/play", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
+      body: JSON.stringify({ id, key: userKey }),
     });
 
     if (!response.ok) {
@@ -103,8 +173,16 @@ async function playVideo(id, name) {
 }
 
 async function stopPlayback() {
+  if (!userKey) {
+    showToast("Unable to stop playback right now", "error");
+    return;
+  }
   try {
-    const response = await fetch("/api/stop", { method: "POST" });
+    const response = await fetch("/api/stop", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: userKey }),
+    });
 
     if (!response.ok) {
       const payload = await response.json().catch(() => ({}));
@@ -131,6 +209,10 @@ function formatTime(seconds) {
 
 function updateSmokeButton(status) {
   if (!smokeButton) {
+    return;
+  }
+  if (!isAdmin) {
+    smokeButton.hidden = true;
     return;
   }
   let available = false;
@@ -167,6 +249,19 @@ function updatePlayerUI(status) {
     latestStatus = status;
   }
   updateSmokeButton(status);
+  updatePlayButtons(status);
+
+  const controls =
+    status && typeof status === "object" && status.controls && typeof status.controls === "object"
+      ? status.controls
+      : {};
+  const canStop = Boolean(controls.can_stop);
+
+  if (playerStopButton) {
+    playerStopButton.hidden = !canStop;
+    playerStopButton.disabled = !canStop;
+  }
+
   if (!playerBar || !status) {
     return;
   }
@@ -222,16 +317,12 @@ function updatePlayerUI(status) {
     totalTimeEl.textContent = duration ? formatTime(duration) : "0:00";
   }
 
-  if (volumeSlider) {
+  if (volumeSlider && isAdmin) {
     const volume = Number.isFinite(status.volume) ? Math.max(0, Math.min(100, status.volume)) : null;
     volumeSlider.disabled = !isVideo;
     if (volume !== null && !isVolumeInteracting) {
       volumeSlider.value = String(Math.round(volume));
     }
-  }
-
-  if (playerStopButton) {
-    playerStopButton.disabled = !isVideo;
   }
 }
 
@@ -241,7 +332,8 @@ async function fetchStatus() {
   }
   isFetchingStatus = true;
   try {
-    const response = await fetch("/api/status");
+    const statusUrl = userKey ? `/api/status?key=${encodeURIComponent(userKey)}` : "/api/status";
+    const response = await fetch(statusUrl);
     if (!response.ok) {
       throw new Error(`Status request failed (${response.status})`);
     }
@@ -262,6 +354,9 @@ function scheduleStatusPolling() {
 }
 
 function scheduleVolumeUpdate(value) {
+  if (!isAdmin || !userKey) {
+    return;
+  }
   if (!volumeSlider || volumeSlider.disabled) {
     return;
   }
@@ -288,11 +383,14 @@ function scheduleVolumeUpdate(value) {
 
 async function sendVolumeUpdate(value) {
   pendingVolumeValue = null;
+  if (!isAdmin || !userKey) {
+    return;
+  }
   try {
     const response = await fetch("/api/volume", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ volume: value }),
+      body: JSON.stringify({ volume: value, key: userKey }),
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
@@ -314,6 +412,13 @@ async function triggerSmoke() {
   if (isTriggeringSmoke) {
     return;
   }
+  if (!isAdmin) {
+    return;
+  }
+  if (!userKey) {
+    showToast("Unable to trigger smoke right now", "error");
+    return;
+  }
   isTriggeringSmoke = true;
   const interimStatus = {
     ...(latestStatus && typeof latestStatus === "object" ? latestStatus : {}),
@@ -323,7 +428,11 @@ async function triggerSmoke() {
   latestStatus = interimStatus;
   updateSmokeButton(interimStatus);
   try {
-    const response = await fetch("/api/dmx/smoke", { method: "POST" });
+    const response = await fetch("/api/dmx/smoke", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: userKey }),
+    });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       throw new Error(payload.error || `Unable to trigger smoke (${response.status})`);
@@ -343,7 +452,7 @@ if (playerStopButton) {
   playerStopButton.addEventListener("click", stopPlayback);
 }
 
-if (volumeSlider) {
+if (volumeSlider && isAdmin) {
   volumeSlider.addEventListener("input", (event) => {
     isVolumeInteracting = true;
     scheduleVolumeUpdate(event.target.value);
@@ -355,12 +464,25 @@ if (volumeSlider) {
   volumeSlider.addEventListener("blur", () => {
     isVolumeInteracting = false;
   });
+} else if (volumeSlider) {
+  volumeSlider.hidden = true;
 }
 
-if (smokeButton) {
+if (smokeButton && isAdmin) {
   smokeButton.addEventListener("click", triggerSmoke);
+} else if (smokeButton) {
+  smokeButton.hidden = true;
 }
 
-fetchVideos();
-fetchStatus();
-scheduleStatusPolling();
+async function initializeController() {
+  await registerUser();
+  applyAdminVisibility();
+  await fetchVideos();
+  await fetchStatus();
+  scheduleStatusPolling();
+}
+
+initializeController().catch((err) => {
+  console.error(err);
+  showToast("Unable to initialize controller", "error");
+});

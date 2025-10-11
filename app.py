@@ -54,6 +54,71 @@ DISABLE_SELF_RESTART = os.environ.get("DISABLE_SELF_RESTART", "").strip().lower(
 }
 
 
+class UserRegistry:
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._users: Dict[str, Dict[str, Any]] = {}
+
+    def register(self, *, is_admin: bool) -> Dict[str, Any]:
+        key = uuid.uuid4().hex
+        record = {
+            "key": key,
+            "admin": bool(is_admin),
+            "registered_at": time.time(),
+        }
+        with self._lock:
+            self._users[key] = record
+        return record
+
+    def get(self, key: Optional[str]) -> Optional[Dict[str, Any]]:
+        if not key:
+            return None
+        with self._lock:
+            return self._users.get(key)
+
+    def is_admin(self, key: Optional[str]) -> bool:
+        user = self.get(key)
+        return bool(user and user.get("admin"))
+
+
+class PlaybackSession:
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._owner_key: Optional[str] = None
+        self._video_id: Optional[str] = None
+        self._started_at: Optional[float] = None
+
+    def start(self, owner_key: str, video_id: str) -> None:
+        with self._lock:
+            self._owner_key = owner_key
+            self._video_id = video_id
+            self._started_at = time.time()
+
+    def clear(self) -> None:
+        with self._lock:
+            self._owner_key = None
+            self._video_id = None
+            self._started_at = None
+
+    def owner_key(self) -> Optional[str]:
+        with self._lock:
+            return self._owner_key
+
+    def video_id(self) -> Optional[str]:
+        with self._lock:
+            return self._video_id
+
+    def is_owner(self, key: Optional[str]) -> bool:
+        if not key:
+            return False
+        with self._lock:
+            return self._owner_key == key
+
+    def has_active(self) -> bool:
+        with self._lock:
+            return self._owner_key is not None
+
+
 def _parse_int_env(name: str, default: int, *, minimum: int, maximum: int) -> int:
     raw = os.environ.get(name)
     if raw is None:
@@ -1184,9 +1249,18 @@ DEFAULT_VIDEO_PATH = resolve_media_path(video_config["default_video"])
 DMX_UNIVERSE = int(os.environ.get("DMX_UNIVERSE", "0"))
 
 dmx_manager: DMXShowManager = create_manager(DMX_TEMPLATE_DIR, universe=DMX_UNIVERSE)
+user_registry = UserRegistry()
+playback_session = PlaybackSession()
+
+
+def _handle_default_start(_: Path) -> None:
+    playback_session.clear()
+    dmx_manager.stop_show()
+
+
 controller = PlaybackController(
     DEFAULT_VIDEO_PATH,
-    on_default_start=lambda _: dmx_manager.stop_show(),
+    on_default_start=_handle_default_start,
 )
 
 
@@ -1244,6 +1318,19 @@ def dmx_template_builder_assets(filename: str):
     if not target.exists():
         abort(404)
     return send_from_directory(DMX_BUILDER_DIR, filename)
+
+
+def _parse_admin_flag(value: Any) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(value)
+
+
+@app.route("/api/register", methods=["POST"])
+def api_register() -> Any:
+    data = request.get_json(force=True, silent=True) or {}
+    record = user_registry.register(is_admin=_parse_admin_flag(data.get("admin")))
+    return jsonify({"status": "ok", "key": record["key"], "admin": record["admin"]})
 
 
 @app.route("/api/channel-presets", methods=["GET"])
@@ -1398,6 +1485,27 @@ def api_play() -> Any:
     if not video_id:
         return jsonify({"error": "Missing 'id' in request body"}), 400
 
+    key = data.get("key")
+    user = user_registry.get(key)
+    if not user:
+        return jsonify({"error": "Unknown user key"}), 403
+
+    is_admin = bool(user.get("admin"))
+
+    if not is_admin:
+        is_default = True
+        try:
+            state = controller.query_state()
+        except Exception:
+            LOGGER.exception("Unable to query playback state while validating play request")
+            state = None
+        if isinstance(state, dict):
+            default_flag = state.get("is_default")
+            if default_flag is not None:
+                is_default = bool(default_flag)
+        if playback_session.has_active() or not is_default:
+            return jsonify({"error": "Playback already in progress"}), 409
+
     video_entry = get_video_entry(video_id)
     if not video_entry:
         return jsonify({"error": "Unknown video id"}), 404
@@ -1420,11 +1528,39 @@ def api_play() -> Any:
     except Exception:
         LOGGER.exception("Unable to start DMX show for video %s", video_entry.get("name"))
 
+    playback_session.start(key, video_id)
+
     return jsonify({"status": "playing", "id": video_id})
 
 
 @app.route("/api/stop", methods=["POST"])
 def api_stop() -> Any:
+    data = request.get_json(force=True, silent=True) or {}
+    key = data.get("key") or request.args.get("key")
+    user = user_registry.get(key)
+    if not user:
+        return jsonify({"error": "Unknown user key"}), 403
+
+    is_admin = bool(user.get("admin"))
+    owner_key = playback_session.owner_key()
+
+    if not is_admin:
+        if owner_key and owner_key != key:
+            return jsonify({"error": "Only the user who started playback may stop it"}), 403
+        if not owner_key:
+            is_default = True
+            try:
+                state = controller.query_state()
+            except Exception:
+                LOGGER.exception("Unable to query playback state while validating stop request")
+                state = None
+            if isinstance(state, dict):
+                default_flag = state.get("is_default")
+                if default_flag is not None:
+                    is_default = bool(default_flag)
+            if not is_default:
+                return jsonify({"error": "Playback is controlled by another user"}), 403
+
     try:
         controller.stop()
     except FileNotFoundError:
@@ -1438,13 +1574,20 @@ def api_stop() -> Any:
         return jsonify({"error": "Unable to stop playback"}), 500
 
     dmx_manager.stop_show()
+    playback_session.clear()
 
     return jsonify({"status": "default_loop"})
 
 
 @app.route("/api/status")
 def api_status() -> Any:
+    request_key = request.args.get("key")
+    user = user_registry.get(request_key)
+    is_admin = bool(user.get("admin")) if user else False
+
     state = controller.query_state()
+    if not isinstance(state, dict):
+        state = {}
     mode = "default_loop" if state.get("is_default") else "video"
 
     video_info: Optional[Dict[str, Any]] = None
@@ -1475,6 +1618,19 @@ def api_status() -> Any:
     payload["smoke_active"] = dmx_manager.is_smoke_active()
     payload["smoke_available"] = dmx_manager.is_smoke_available()
 
+    if mode != "video":
+        playback_session.clear()
+
+    owner_key = playback_session.owner_key()
+    is_owner = playback_session.is_owner(request_key)
+    payload["controls"] = {
+        "can_stop": mode == "video" and (is_owner or is_admin),
+        "is_admin": is_admin,
+        "is_owner": is_owner,
+        "can_play": bool(is_admin or mode != "video"),
+        "has_active_owner": bool(owner_key),
+    }
+
     return jsonify(payload)
 
 
@@ -1483,6 +1639,13 @@ def api_volume() -> Any:
     data = request.get_json(force=True, silent=True) or {}
     if "volume" not in data:
         return jsonify({"error": "Missing 'volume' in request body"}), 400
+
+    key = data.get("key")
+    user = user_registry.get(key)
+    if not user:
+        return jsonify({"error": "Unknown user key"}), 403
+    if not user.get("admin"):
+        return jsonify({"error": "Only admins may adjust volume"}), 403
 
     try:
         requested_volume = float(data["volume"])
@@ -1505,6 +1668,14 @@ def api_volume() -> Any:
 
 @app.route("/api/dmx/smoke", methods=["POST"])
 def api_dmx_smoke() -> Any:
+    data = request.get_json(force=True, silent=True) or {}
+    key = data.get("key") or request.args.get("key")
+    user = user_registry.get(key)
+    if not user:
+        return jsonify({"error": "Unknown user key"}), 403
+    if not user.get("admin"):
+        return jsonify({"error": "Only admins may trigger smoke"}), 403
+
     if not dmx_manager.is_smoke_available():
         return jsonify({"error": "Smoke channel is not configured on the server."}), 400
 

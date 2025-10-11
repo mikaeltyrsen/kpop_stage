@@ -118,6 +118,19 @@ p {
   box-shadow: 0 12px 28px rgba(120, 75, 160, 0.5);
 }
 
+.play-button[disabled] {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none;
+  transform: none;
+}
+
+.play-button[disabled]:hover,
+.play-button[disabled]:focus {
+  transform: none;
+  box-shadow: none;
+}
+
 .stop-button {
   background: transparent;
   border: 2px solid rgba(255, 90, 90, 0.75);

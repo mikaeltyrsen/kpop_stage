@@ -1,6 +1,7 @@
 import pytest
 
 pytest.importorskip("flask")
+import pytest
 
 import app as app_module
 
@@ -36,8 +37,13 @@ def test_smoke_endpoint_triggers_manager(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr(app_module, "dmx_manager", manager)
     monkeypatch.setattr(app_module, "SMOKE_TRIGGER_LEVEL", 180)
     monkeypatch.setattr(app_module, "SMOKE_TRIGGER_DURATION", 1.5)
+    monkeypatch.setattr(app_module, "user_registry", app_module.UserRegistry())
+    monkeypatch.setattr(app_module, "playback_session", app_module.PlaybackSession())
 
-    response = client.post("/api/dmx/smoke")
+    register_response = client.post("/api/register", json={"admin": True})
+    admin_key = register_response.get_json()["key"]
+
+    response = client.post("/api/dmx/smoke", json={"key": admin_key})
 
     assert response.status_code == 200
     data = response.get_json()
@@ -50,12 +56,34 @@ def test_smoke_endpoint_handles_missing_channel(monkeypatch: pytest.MonkeyPatch)
     client = app_module.app.test_client()
     manager = StubSmokeManager(available=False)
     monkeypatch.setattr(app_module, "dmx_manager", manager)
+    monkeypatch.setattr(app_module, "user_registry", app_module.UserRegistry())
+    monkeypatch.setattr(app_module, "playback_session", app_module.PlaybackSession())
 
-    response = client.post("/api/dmx/smoke")
+    register_response = client.post("/api/register", json={"admin": True})
+    admin_key = register_response.get_json()["key"]
+
+    response = client.post("/api/dmx/smoke", json={"key": admin_key})
 
     assert response.status_code == 400
     body = response.get_json()
     assert "error" in body
+
+
+def test_smoke_endpoint_rejects_non_admin(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = app_module.app.test_client()
+    manager = StubSmokeManager()
+    monkeypatch.setattr(app_module, "dmx_manager", manager)
+    monkeypatch.setattr(app_module, "user_registry", app_module.UserRegistry())
+    monkeypatch.setattr(app_module, "playback_session", app_module.PlaybackSession())
+
+    register_response = client.post("/api/register", json={"admin": False})
+    user_key = register_response.get_json()["key"]
+
+    response = client.post("/api/dmx/smoke", json={"key": user_key})
+
+    assert response.status_code == 403
+    body = response.get_json()
+    assert "Only admins" in body["error"]
 
 
 def test_status_includes_smoke_fields(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -64,8 +92,13 @@ def test_status_includes_smoke_fields(monkeypatch: pytest.MonkeyPatch) -> None:
     controller = StubController()
     monkeypatch.setattr(app_module, "dmx_manager", manager)
     monkeypatch.setattr(app_module, "controller", controller)
+    monkeypatch.setattr(app_module, "user_registry", app_module.UserRegistry())
+    monkeypatch.setattr(app_module, "playback_session", app_module.PlaybackSession())
 
-    response = client.get("/api/status")
+    register_response = client.post("/api/register", json={"admin": False})
+    user_key = register_response.get_json()["key"]
+
+    response = client.get(f"/api/status?key={user_key}")
 
     assert response.status_code == 200
     payload = response.get_json()
@@ -73,3 +106,5 @@ def test_status_includes_smoke_fields(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "smoke_available" in payload
     assert payload["smoke_active"] is False
     assert payload["smoke_available"] is True
+    assert payload["controls"]["can_stop"] is False
+    assert payload["controls"]["is_admin"] is False
