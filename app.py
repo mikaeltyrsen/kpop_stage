@@ -54,6 +54,34 @@ DISABLE_SELF_RESTART = os.environ.get("DISABLE_SELF_RESTART", "").strip().lower(
 }
 
 
+def _parse_int_env(name: str, default: int, *, minimum: int, maximum: int) -> int:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        LOGGER.warning("Invalid integer value '%s' for %s; using %s.", raw, name, default)
+        return default
+    return max(minimum, min(maximum, value))
+
+
+def _parse_float_env(name: str, default: float, *, minimum: float) -> float:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        LOGGER.warning("Invalid float value '%s' for %s; using %s.", raw, name, default)
+        return default
+    return max(minimum, value)
+
+
+SMOKE_TRIGGER_LEVEL = _parse_int_env("SMOKE_TRIGGER_LEVEL", 255, minimum=0, maximum=255)
+SMOKE_TRIGGER_DURATION = _parse_float_env("SMOKE_TRIGGER_DURATION", 3.0, minimum=0.0)
+
+
 def _format_command(command: Iterable[str]) -> str:
     return " ".join(shlex.quote(str(part)) for part in command)
 
@@ -1444,6 +1472,9 @@ def api_status() -> Any:
         "video": video_info,
     }
 
+    payload["smoke_active"] = dmx_manager.is_smoke_active()
+    payload["smoke_available"] = dmx_manager.is_smoke_available()
+
     return jsonify(payload)
 
 
@@ -1470,6 +1501,25 @@ def api_volume() -> Any:
         return jsonify({"error": "Unable to set playback volume"}), 500
 
     return jsonify({"status": "ok", "volume": new_volume})
+
+
+@app.route("/api/dmx/smoke", methods=["POST"])
+def api_dmx_smoke() -> Any:
+    if not dmx_manager.is_smoke_available():
+        return jsonify({"error": "Smoke channel is not configured on the server."}), 400
+
+    try:
+        duration = dmx_manager.trigger_smoke(
+            level=SMOKE_TRIGGER_LEVEL,
+            duration=SMOKE_TRIGGER_DURATION,
+        )
+    except RuntimeError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception:
+        LOGGER.exception("Unable to trigger smoke effect")
+        return jsonify({"error": "Unable to trigger smoke effect"}), 500
+
+    return jsonify({"status": "triggered", "duration": duration, "active": duration > 0})
 
 
 @app.route("/api/dmx/templates/<video_id>", methods=["GET", "POST"])
