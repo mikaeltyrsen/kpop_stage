@@ -97,12 +97,44 @@
           <section
             id="channel-status"
             class="channel-status"
-            aria-live="polite"
-            aria-label="Active channels"
+            aria-label="Stage lighting preview"
           >
-            <h3 class="channel-status__title">Active Channels</h3>
-            <div id="channel-status-list" class="channel-status__content">
-              <p class="channel-status__empty">All channels at blackout.</p>
+            <h3 class="channel-status__title">Stage Preview</h3>
+            <div class="channel-status__content channel-status__stage">
+              <div class="stage-wrapper" id="stage-visual">
+                <div class="stage">
+                  <div class="stage-floor"></div>
+
+                  <div id="light-bar-1" class="light-bar">
+                    <div class="white-color"></div>
+                  </div>
+
+                  <div id="light-bar-2" class="light-bar">
+                    <div class="white-color"></div>
+                  </div>
+
+                  <div id="light-bar-3" class="light-bar">
+                    <div class="white-color"></div>
+                  </div>
+
+                  <div id="light-bar-4" class="light-bar">
+                    <div class="white-color"></div>
+                  </div>
+
+                  <div id="mover-light">
+                    <div id="red-laser" class="laser"><img src="red_laser.png" alt="" /></div>
+                    <div id="green-laser" class="laser"><img src="green_laser.png" alt="" /></div>
+                    <div id="beam-1" class="beam"><div class="white-color"></div></div>
+                    <div id="beam-2" class="beam"><div class="white-color"></div></div>
+                    <div id="beam-3" class="beam"><div class="white-color"></div></div>
+                    <div id="beam-4" class="beam"><div class="white-color"></div></div>
+                    <div id="led-strip"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="channel-status-list" class="visually-hidden" aria-live="polite">
+              All channels at blackout.
             </div>
           </section>
           <div class="video-hints">

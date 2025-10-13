@@ -10,6 +10,53 @@ const videoEl = document.getElementById("preview-video");
 const rowTemplate = document.getElementById("action-row-template");
 const channelPresetsContainer = document.getElementById("channel-presets");
 const channelStatusListEl = document.getElementById("channel-status-list");
+const stageWrapperEl = document.querySelector("#channel-status .stage-wrapper");
+const stageLightBars = {
+  front: {
+    element: document.getElementById("light-bar-1"),
+    whiteElement: document.querySelector("#light-bar-1 .white-color"),
+  },
+  back: {
+    element: document.getElementById("light-bar-2"),
+    whiteElement: document.querySelector("#light-bar-2 .white-color"),
+  },
+  left: {
+    element: document.getElementById("light-bar-3"),
+    whiteElement: document.querySelector("#light-bar-3 .white-color"),
+  },
+  right: {
+    element: document.getElementById("light-bar-4"),
+    whiteElement: document.querySelector("#light-bar-4 .white-color"),
+  },
+};
+const moverLightEl = document.getElementById("mover-light");
+const moverBeamElements = {
+  1: {
+    element: document.getElementById("beam-1"),
+    whiteElement: document.querySelector("#beam-1 .white-color"),
+    baseRotation: 225,
+  },
+  2: {
+    element: document.getElementById("beam-2"),
+    whiteElement: document.querySelector("#beam-2 .white-color"),
+    baseRotation: 315,
+  },
+  3: {
+    element: document.getElementById("beam-3"),
+    whiteElement: document.querySelector("#beam-3 .white-color"),
+    baseRotation: 315,
+  },
+  4: {
+    element: document.getElementById("beam-4"),
+    whiteElement: document.querySelector("#beam-4 .white-color"),
+    baseRotation: 225,
+  },
+};
+const moverLaserElements = {
+  red: document.getElementById("red-laser"),
+  green: document.getElementById("green-laser"),
+};
+const moverLedStripEl = document.getElementById("led-strip");
 const addChannelPresetButton = document.getElementById("add-channel-preset");
 const channelPresetsSection = document.querySelector(".preset-settings");
 const builderLayout = document.querySelector(".builder-layout");
@@ -117,6 +164,33 @@ const DEFAULT_SLIDER_VALUES = Object.freeze({
   [CHANNEL_COMPONENTS.BRIGHTNESS]: 255,
   [CHANNEL_COMPONENTS.WHITE]: 0,
 });
+
+const STAGE_LIGHT_BAR_PREFIXES = Object.freeze({
+  front: "front-light-",
+  back: "back-light-",
+  left: "left-light-",
+  right: "right-light-",
+});
+
+const STAGE_LIGHT_LABELS = Object.freeze({
+  front: "Front light",
+  back: "Back light",
+  left: "Left light",
+  right: "Right light",
+});
+
+const LIGHT_BAR_KEYS = Object.keys(STAGE_LIGHT_BAR_PREFIXES);
+const MOVER_ROTATION_MAX_DEGREES = 520;
+const BEAM_ROTATION_MAX_DEGREES = 180;
+const BEAM_HEIGHT_MIN = 50;
+const BEAM_HEIGHT_MAX = 500;
+const STROBE_BASE_DURATION_MS = 2000;
+const STROBE_MIN_DURATION_MS = 60;
+const MOVER_ROTATION_SPEED_SLOW = 10;
+const MOVER_ROTATION_SPEED_FAST = 1;
+const BEAM_ROTATION_SPEED_SLOW = 3;
+const BEAM_ROTATION_SPEED_FAST = 0.5;
+const LED_STRIP_MIN_OPACITY = 0.05;
 
 const CHANNEL_COMPONENT_DEFAULT_TYPE = CHANNEL_COMPONENT_TYPES.SLIDER;
 
@@ -3247,41 +3321,10 @@ function findLatestActionIndexAtTime(targetSeconds) {
 }
 
 function updateChannelStatusDisplay(seconds) {
-  if (!channelStatusListEl) return;
-  channelStatusListEl.innerHTML = "";
   const activeChannels = computeChannelStatesAtTime(seconds);
-  if (!activeChannels.length) {
-    const empty = document.createElement("p");
-    empty.className = "channel-status__empty";
-    empty.textContent = "All channels at blackout.";
-    channelStatusListEl.append(empty);
-    return;
-  }
-
-  const list = document.createElement("ul");
-  list.className = "channel-status__list";
-
-  activeChannels.forEach((state) => {
-    const item = document.createElement("li");
-    item.className = "channel-status__item";
-
-    const channelPreset = findChannelPresetForState(state);
-    const valuePreset = findValuePresetForState(state, channelPreset);
-
-    const label = document.createElement("span");
-    label.className = "channel-status__item-label";
-    label.textContent = formatChannelStatusChannelLabel(state, channelPreset);
-
-    const valueEl = document.createElement("span");
-    valueEl.textContent = formatChannelStatusValueLabel(state, valuePreset);
-
-    item.title = formatChannelStatusTooltip(state, channelPreset, valuePreset);
-
-    item.append(label, valueEl);
-    list.append(item);
-  });
-
-  channelStatusListEl.append(list);
+  const stageState = computeStageFixtureState(activeChannels);
+  applyStageVisualization(stageState);
+  updateStageAccessibilitySummary(stageState);
 }
 
 function computeChannelStatesAtTime(targetSeconds) {
@@ -3357,6 +3400,456 @@ function computeChannelStatesAtTime(targetSeconds) {
     .sort((a, b) => a.channel - b.channel);
 }
 
+function createDefaultLightBarState() {
+  return {
+    red: 0,
+    green: 0,
+    blue: 0,
+    white: 0,
+    brightness: 0,
+    strobe: 0,
+  };
+}
+
+function createDefaultMoverState() {
+  return {
+    brightness: 0,
+    red: 0,
+    green: 0,
+    blue: 0,
+    white: 0,
+    strobe: 0,
+    rotation: 0,
+    rotationSpeed: 0,
+    beams: {
+      1: { rotation: 0, speed: 0 },
+      2: { rotation: 0, speed: 0 },
+      3: { rotation: 0, speed: 0 },
+      4: { rotation: 0, speed: 0 },
+    },
+    lasers: { red: 0, green: 0 },
+    ledStrip: 0,
+  };
+}
+
+function computeStageFixtureState(activeChannels) {
+  const bars = {
+    front: createDefaultLightBarState(),
+    back: createDefaultLightBarState(),
+    left: createDefaultLightBarState(),
+    right: createDefaultLightBarState(),
+  };
+  const mover = createDefaultMoverState();
+  const remaining = [];
+
+  (activeChannels || []).forEach((state) => {
+    if (!applyBarChannelState(bars, state) && !applyMoverChannelState(mover, state)) {
+      remaining.push(state);
+    }
+  });
+
+  return {
+    bars,
+    mover,
+    remainingChannels: remaining,
+  };
+}
+
+function applyBarChannelState(bars, state) {
+  if (!state || typeof state.channelPresetId !== "string") {
+    return false;
+  }
+  const presetId = state.channelPresetId.toLowerCase();
+  const value = clampChannelValue(state.value);
+  for (const key of LIGHT_BAR_KEYS) {
+    const prefix = STAGE_LIGHT_BAR_PREFIXES[key];
+    if (!prefix || !presetId.startsWith(prefix)) {
+      continue;
+    }
+    const bar = bars[key];
+    if (!bar) {
+      return true;
+    }
+    const suffix = presetId.slice(prefix.length);
+    switch (suffix) {
+      case "red":
+        bar.red = value;
+        return true;
+      case "green":
+        bar.green = value;
+        return true;
+      case "blue":
+        bar.blue = value;
+        return true;
+      case "white":
+        bar.white = value;
+        return true;
+      case "brightness":
+      case "dimmer":
+        bar.brightness = value;
+        return true;
+      case "strobe":
+        bar.strobe = value;
+        return true;
+      default:
+        return false;
+    }
+  }
+  return false;
+}
+
+function applyMoverChannelState(mover, state) {
+  if (!state || typeof state.channelPresetId !== "string") {
+    return false;
+  }
+  const presetId = state.channelPresetId.toLowerCase();
+  const value = clampChannelValue(state.value);
+
+  if (presetId === "mover-light-beam-red") {
+    mover.red = value;
+    return true;
+  }
+  if (presetId === "mover-light-beam-green") {
+    mover.green = value;
+    return true;
+  }
+  if (presetId === "mover-light-beam-blue") {
+    mover.blue = value;
+    return true;
+  }
+  if (presetId === "mover-light-beam-white") {
+    mover.white = value;
+    return true;
+  }
+  if (presetId === "mover-light-beam-brightness") {
+    mover.brightness = value;
+    return true;
+  }
+  if (presetId === "mover-light-strobe") {
+    mover.strobe = value;
+    return true;
+  }
+  if (presetId === "mover-light-rotation") {
+    mover.rotation = value;
+    return true;
+  }
+  if (presetId === "mover-light-rotation-speed") {
+    mover.rotationSpeed = value;
+    return true;
+  }
+  if (presetId === "mover-light-laser-red") {
+    mover.lasers.red = value;
+    return true;
+  }
+  if (presetId === "mover-light-laser-green") {
+    mover.lasers.green = value;
+    return true;
+  }
+  if (presetId === "mover-light-strip") {
+    mover.ledStrip = value;
+    return true;
+  }
+
+  for (const beamId of Object.keys(mover.beams)) {
+    const rotationId = `mover-light-beam${beamId}-rotation`;
+    const speedId = `mover-light-beam${beamId}-rotation-speed`;
+    if (presetId === rotationId) {
+      mover.beams[beamId].rotation = value;
+      return true;
+    }
+    if (presetId === speedId) {
+      mover.beams[beamId].speed = value;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function applyStageVisualization(stageState) {
+  if (!stageWrapperEl) {
+    return;
+  }
+  const bars = stageState?.bars || {};
+  LIGHT_BAR_KEYS.forEach((key) => {
+    const config = stageLightBars[key];
+    if (!config || !config.element) {
+      return;
+    }
+    const barState = bars[key] || createDefaultLightBarState();
+    applyLightBarState(config, barState);
+  });
+  applyMoverState(stageState?.mover || createDefaultMoverState());
+}
+
+function applyLightBarState(config, state) {
+  const brightnessAlpha = clampUnit((state?.brightness || 0) / 255);
+  const color = createRgbaColor(state?.red || 0, state?.green || 0, state?.blue || 0, brightnessAlpha);
+  config.element.style.setProperty("--light-color", color);
+  if (config.whiteElement) {
+    const whiteAlpha = clampUnit((state?.white || 0) / 255);
+    config.whiteElement.style.setProperty(
+      "--white-color",
+      createRgbaColor(255, 255, 255, whiteAlpha),
+    );
+  }
+
+  const strobeValue = clampChannelValue(state?.strobe || 0);
+  const strobeActive = strobeValue > 0;
+  config.element.classList.toggle("is-strobing", strobeActive);
+  if (config.whiteElement) {
+    config.whiteElement.classList.toggle("is-strobing", strobeActive);
+  }
+  if (strobeActive) {
+    const duration = `${computeStrobeDuration(strobeValue)}ms`;
+    config.element.style.animationDuration = duration;
+    if (config.whiteElement) {
+      config.whiteElement.style.animationDuration = duration;
+    }
+  } else {
+    config.element.style.animationDuration = "";
+    if (config.whiteElement) {
+      config.whiteElement.style.animationDuration = "";
+    }
+  }
+}
+
+function applyMoverState(state) {
+  if (!moverLightEl) {
+    return;
+  }
+  const brightnessAlpha = clampUnit((state?.brightness || 0) / 255);
+  moverLightEl.style.opacity = brightnessAlpha.toFixed(3);
+  const moverColor = createRgbaColor(state?.red || 0, state?.green || 0, state?.blue || 0, brightnessAlpha);
+  moverLightEl.style.boxShadow = `0px 0px 40px ${moverColor}, 0px 0px 40px ${moverColor}, 0px 0px 40px ${moverColor}`;
+
+  const strobeValue = clampChannelValue(state?.strobe || 0);
+  const strobeActive = strobeValue > 0;
+  moverLightEl.classList.toggle("is-strobing", strobeActive);
+  moverLightEl.style.animationDuration = strobeActive ? `${computeStrobeDuration(strobeValue)}ms` : "";
+
+  const rotationDegrees = ((state?.rotation || 0) / 255) * MOVER_ROTATION_MAX_DEGREES;
+  moverLightEl.style.setProperty("--mover-rotation", `${rotationDegrees.toFixed(2)}deg`);
+
+  const rotationSpeedSeconds = mapMoverRotationSpeed(state?.rotationSpeed || 0);
+  moverLightEl.style.setProperty(
+    "--mover-rotation-duration",
+    rotationSpeedSeconds === null ? "0s" : `${rotationSpeedSeconds}s`,
+  );
+
+  const whiteAlpha = clampUnit((state?.white || 0) / 255);
+  const beamColor = createRgbaColor(state?.red || 0, state?.green || 0, state?.blue || 0, 1);
+  Object.entries(moverBeamElements).forEach(([id, config]) => {
+    if (!config || !config.element) {
+      return;
+    }
+    config.element.style.background = beamColor;
+    if (config.whiteElement) {
+      config.whiteElement.style.background = createRgbaColor(255, 255, 255, whiteAlpha);
+    }
+    const beamState = state?.beams?.[id] || { rotation: 0, speed: 0 };
+    const angle = computeBeamAngle(config.baseRotation, beamState.rotation);
+    const height = computeBeamHeight(beamState.rotation);
+    config.element.style.setProperty("--beam-rotation", `${angle.toFixed(2)}deg`);
+    config.element.style.setProperty("--beam-height", `${height.toFixed(2)}%`);
+    const beamDuration = mapBeamRotationSpeed(beamState.speed || 0);
+    config.element.style.setProperty(
+      "--beam-rotation-duration",
+      beamDuration === null ? "0s" : `${beamDuration}s`,
+    );
+  });
+
+  const redLaser = moverLaserElements.red;
+  if (redLaser) {
+    redLaser.style.opacity = clampUnit((state?.lasers?.red || 0) / 255).toFixed(3);
+  }
+  const greenLaser = moverLaserElements.green;
+  if (greenLaser) {
+    greenLaser.style.opacity = clampUnit((state?.lasers?.green || 0) / 255).toFixed(3);
+  }
+
+  if (moverLedStripEl) {
+    const ledIntensity = clampUnit((state?.ledStrip || 0) / 255);
+    const appliedOpacity = ledIntensity > 0 ? Math.max(LED_STRIP_MIN_OPACITY, ledIntensity) : 0;
+    moverLedStripEl.style.opacity = appliedOpacity.toFixed(3);
+    moverLedStripEl.style.outlineColor = createRgbaColor(
+      state?.red || 0,
+      state?.green || 0,
+      state?.blue || 0,
+      appliedOpacity,
+    );
+    moverLedStripEl.style.boxShadow = appliedOpacity
+      ? `0 0 32px ${createRgbaColor(state?.red || 0, state?.green || 0, state?.blue || 0, appliedOpacity)}`
+      : "";
+  }
+}
+
+function computeBeamAngle(baseRotation, value) {
+  const normalized = clampChannelValue(value);
+  if (!Number.isFinite(baseRotation)) {
+    return 0;
+  }
+  const rotationOffset = (normalized / 255) * BEAM_ROTATION_MAX_DEGREES;
+  return baseRotation - rotationOffset;
+}
+
+function computeBeamHeight(value) {
+  const normalized = clampChannelValue(value);
+  const rotationDegrees = (normalized / 255) * BEAM_ROTATION_MAX_DEGREES;
+  if (rotationDegrees <= 90) {
+    const ratio = rotationDegrees / 90;
+    return BEAM_HEIGHT_MAX - ratio * (BEAM_HEIGHT_MAX - BEAM_HEIGHT_MIN);
+  }
+  const ratio = (rotationDegrees - 90) / 90;
+  return BEAM_HEIGHT_MIN + ratio * (BEAM_HEIGHT_MAX - BEAM_HEIGHT_MIN);
+}
+
+function computeStrobeDuration(value) {
+  const numeric = clampChannelValue(value);
+  if (numeric <= 0) {
+    return STROBE_BASE_DURATION_MS;
+  }
+  const duration = STROBE_BASE_DURATION_MS / numeric;
+  return Math.max(STROBE_MIN_DURATION_MS, Math.round(duration));
+}
+
+function mapMoverRotationSpeed(value) {
+  const numeric = clampChannelValue(value);
+  if (numeric <= 0) {
+    return null;
+  }
+  if (numeric === 1) {
+    return MOVER_ROTATION_SPEED_SLOW;
+  }
+  const ratio = (numeric - 1) / 254;
+  const duration =
+    MOVER_ROTATION_SPEED_SLOW - ratio * (MOVER_ROTATION_SPEED_SLOW - MOVER_ROTATION_SPEED_FAST);
+  return Math.max(MOVER_ROTATION_SPEED_FAST, Number(duration.toFixed(2)));
+}
+
+function mapBeamRotationSpeed(value) {
+  const numeric = clampChannelValue(value);
+  if (numeric <= 0) {
+    return null;
+  }
+  if (numeric === 1) {
+    return BEAM_ROTATION_SPEED_SLOW;
+  }
+  const ratio = (numeric - 1) / 254;
+  const duration =
+    BEAM_ROTATION_SPEED_SLOW - ratio * (BEAM_ROTATION_SPEED_SLOW - BEAM_ROTATION_SPEED_FAST);
+  return Math.max(BEAM_ROTATION_SPEED_FAST, Number(duration.toFixed(2)));
+}
+
+function createRgbaColor(red, green, blue, alpha) {
+  const r = clamp(Math.round(Number(red) || 0), 0, 255);
+  const g = clamp(Math.round(Number(green) || 0), 0, 255);
+  const b = clamp(Math.round(Number(blue) || 0), 0, 255);
+  const normalizedAlpha = clampUnit(Number(alpha));
+  return `rgba(${r}, ${g}, ${b}, ${normalizedAlpha.toFixed(3)})`;
+}
+
+function clampUnit(value) {
+  return clamp(Number.isFinite(value) ? value : Number(value) || 0, 0, 1);
+}
+
+function updateStageAccessibilitySummary(stageState) {
+  if (!channelStatusListEl) {
+    return;
+  }
+  const summary = buildStageAccessibilitySummary(stageState);
+  channelStatusListEl.textContent = summary;
+}
+
+function buildStageAccessibilitySummary(stageState) {
+  if (!stageState) {
+    return "All channels at blackout.";
+  }
+  const descriptions = [];
+  const bars = stageState.bars || {};
+  LIGHT_BAR_KEYS.forEach((key) => {
+    const state = bars[key];
+    if (!state) {
+      return;
+    }
+    const brightness = clampUnit((state.brightness || 0) / 255);
+    const white = clampUnit((state.white || 0) / 255);
+    const hasColor = (state.red || state.green || state.blue) > 0;
+    if (!brightness && !white && !hasColor) {
+      return;
+    }
+    const label = STAGE_LIGHT_LABELS[key] || key;
+    const parts = [`${label}: brightness ${Math.round(brightness * 100)}%`];
+    if (hasColor) {
+      parts.push(`color ${rgbToHex(state.red, state.green, state.blue)}`);
+    }
+    if (white > 0) {
+      parts.push(`white ${Math.round(white * 100)}%`);
+    }
+    if ((state.strobe || 0) > 0) {
+      parts.push(`strobe ${formatStrobeDescription(state.strobe)}`);
+    }
+    descriptions.push(parts.join(", "));
+  });
+
+  const mover = stageState.mover || null;
+  if (mover) {
+    const brightness = clampUnit((mover.brightness || 0) / 255);
+    const hasColor = (mover.red || mover.green || mover.blue) > 0;
+    const lasers = [];
+    if ((mover.lasers?.red || 0) > 0) lasers.push("red laser");
+    if ((mover.lasers?.green || 0) > 0) lasers.push("green laser");
+    if (brightness > 0 || hasColor || lasers.length) {
+      const moverParts = [`Mover brightness ${Math.round(brightness * 100)}%`];
+      if (hasColor) {
+        moverParts.push(`color ${rgbToHex(mover.red, mover.green, mover.blue)}`);
+      }
+      const rotation = Math.round(((mover.rotation || 0) / 255) * MOVER_ROTATION_MAX_DEGREES);
+      moverParts.push(`rotation ${rotation}°`);
+      if ((mover.strobe || 0) > 0) {
+        moverParts.push(`strobe ${formatStrobeDescription(mover.strobe)}`);
+      }
+      if (lasers.length) {
+        moverParts.push(`${lasers.join(" & ")} on`);
+      }
+      descriptions.push(moverParts.join(", "));
+    }
+  }
+
+  const extras = (stageState.remainingChannels || [])
+    .map((state) => {
+      const preset = findChannelPresetForState(state);
+      if (!preset) {
+        return null;
+      }
+      const valuePreset = findValuePresetForState(state, preset);
+      const label = formatChannelStatusChannelLabel(state, preset);
+      const value = formatChannelStatusValueLabel(state, valuePreset);
+      return `${label}: ${value}`;
+    })
+    .filter(Boolean);
+  if (extras.length) {
+    descriptions.push(`Other active channels — ${extras.join("; ")}`);
+  }
+
+  if (!descriptions.length) {
+    return "All channels at blackout.";
+  }
+  return descriptions.join(" ");
+}
+
+function formatStrobeDescription(value) {
+  const durationMs = computeStrobeDuration(value);
+  const seconds = durationMs / 1000;
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return `value ${value}`;
+  }
+  if (seconds >= 1) {
+    return `~${seconds.toFixed(seconds >= 10 ? 0 : 1)}s cycle`;
+  }
+  return `~${Math.round(seconds * 1000)}ms cycle`;
+}
+
 function findChannelPresetForState(state) {
   if (!state) return null;
   if (state.channelPresetId) {
@@ -3418,16 +3911,6 @@ function formatChannelStatusValueLabel(state, valuePreset) {
     return String(state.value);
   }
   return `${state.value ?? "0"}`;
-}
-
-function formatChannelStatusTooltip(state, channelPreset, valuePreset) {
-  const channelNumber = Number.isFinite(state.channel) ? state.channel : Number.parseInt(state.channel, 10);
-  const valueNumber = Number.isFinite(state.value) ? state.value : Number.parseInt(state.value, 10);
-  const baseChannel = Number.isFinite(channelNumber) ? `Channel ${channelNumber}` : "Channel";
-  const baseValue = Number.isFinite(valueNumber) ? `Value ${valueNumber}` : "Value";
-  const channelLabel = channelPreset?.name ? `${channelPreset.name} (${baseChannel})` : baseChannel;
-  const valueLabel = valuePreset?.name ? `${valuePreset.name} (${baseValue})` : baseValue;
-  return `${channelLabel} — ${valueLabel}`;
 }
 
 function createInput({ type, value, placeholder, min, max, step }) {
