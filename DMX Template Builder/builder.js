@@ -272,6 +272,10 @@ const TEMPLATE_LOOP_DEFAULTS = Object.freeze({
   duration: 0,
 });
 
+const TEMPLATE_LOOP_INFINITE_DURATION_SECONDS = 600;
+const TEMPLATE_LOOP_MAX_ITERATIONS = 9999;
+const TEMPLATE_LOOP_EPSILON = 0.000001;
+
 const ICON_SVGS = {
   delete: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z"/></svg>`,
   duplicate: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M352 512L128 512L128 288L176 288L176 224L128 224C92.7 224 64 252.7 64 288L64 512C64 547.3 92.7 576 128 576L352 576C387.3 576 416 547.3 416 512L416 464L352 464L352 512zM288 416L512 416C547.3 416 576 387.3 576 352L576 128C576 92.7 547.3 64 512 64L288 64C252.7 64 224 92.7 224 128L224 352C224 387.3 252.7 416 288 416z"/></svg>`,
@@ -1062,6 +1066,14 @@ function cloneTemplateLoopSettings(loop) {
   if (!loop) return null;
   const normalized = normalizeTemplateLoop(loop);
   return { ...normalized };
+}
+
+function isTemplateLoopActive(loop) {
+  if (!loop || typeof loop !== "object") {
+    return false;
+  }
+  const normalized = normalizeTemplateLoop(loop);
+  return normalized.duration > 0 && (normalized.enabled || normalized.infinite);
 }
 
 function shouldSerializeTemplateLoop(loop) {
@@ -3312,6 +3324,280 @@ function getVideoCurrentTimeSeconds() {
   return Math.max(0, lastKnownTimelineSeconds);
 }
 
+function cloneMasterState(state) {
+  if (!state || typeof state !== "object") {
+    return null;
+  }
+  const cloned = { ...state };
+  if (state.sliders && typeof state.sliders === "object") {
+    cloned.sliders = { ...state.sliders };
+  }
+  if (state.dropdownSelections && typeof state.dropdownSelections === "object") {
+    cloned.dropdownSelections = { ...state.dropdownSelections };
+  }
+  return cloned;
+}
+
+function createPreviewAction(rawAction, sortIndex) {
+  if (!rawAction || typeof rawAction !== "object") {
+    return null;
+  }
+  const channelValue = Number.parseInt(rawAction.channel, 10);
+  const valueValue = Number.parseInt(rawAction.value, 10);
+  const fadeValue = Number.parseFloat(rawAction.fade);
+  const timeSeconds = parseTimeString(rawAction.time);
+  if (timeSeconds === null) {
+    return null;
+  }
+  const normalizedSeconds = Number(timeSeconds.toFixed(6));
+  const preview = {
+    time: secondsToTimecode(normalizedSeconds),
+    timeSeconds: normalizedSeconds,
+    channel: clamp(Number.isFinite(channelValue) ? channelValue : 1, 1, 512),
+    value: clamp(Number.isFinite(valueValue) ? valueValue : 0, 0, 255),
+    fade: Number.isFinite(fadeValue) && fadeValue > 0 ? Number(fadeValue.toFixed(6)) : 0,
+    channelPresetId:
+      typeof rawAction.channelPresetId === "string" && rawAction.channelPresetId
+        ? rawAction.channelPresetId
+        : null,
+    valuePresetId:
+      typeof rawAction.valuePresetId === "string" && rawAction.valuePresetId
+        ? rawAction.valuePresetId
+        : null,
+    channelMasterId:
+      typeof rawAction.channelMasterId === "string" && rawAction.channelMasterId
+        ? rawAction.channelMasterId
+        : null,
+    master: cloneMasterState(rawAction.master),
+    templateInstanceId:
+      typeof rawAction.templateInstanceId === "string" && rawAction.templateInstanceId
+        ? rawAction.templateInstanceId
+        : null,
+    templateLoop:
+      rawAction.templateLoop && typeof rawAction.templateLoop === "object"
+        ? normalizeTemplateLoop(rawAction.templateLoop)
+        : null,
+    sortIndex: sortIndex,
+  };
+  if (!preview.channelMasterId && rawAction.channelMasterId) {
+    preview.channelMasterId = rawAction.channelMasterId;
+  }
+  return preview;
+}
+
+function expandActionsForPreview(actionList) {
+  if (!Array.isArray(actionList) || !actionList.length) {
+    return [];
+  }
+
+  const parsedEntries = [];
+  const instances = new Map();
+  const channelTimes = new Map();
+
+  actionList.forEach((rawAction) => {
+    const entryIndex = parsedEntries.length;
+    const preview = createPreviewAction(rawAction, entryIndex);
+    if (!preview) {
+      return;
+    }
+    const entry = {
+      action: preview,
+      instanceId: preview.templateInstanceId,
+      loop: preview.templateLoop,
+    };
+    parsedEntries.push(entry);
+
+    const channelEntries = channelTimes.get(preview.channel) || [];
+    channelEntries.push({
+      time: preview.timeSeconds,
+      instanceId: preview.templateInstanceId,
+      entry,
+    });
+    channelTimes.set(preview.channel, channelEntries);
+
+    if (preview.templateInstanceId) {
+      const info = instances.get(preview.templateInstanceId) || { entries: [], loop: null };
+      info.entries.push(entry);
+      if (preview.templateLoop && isTemplateLoopActive(preview.templateLoop)) {
+        info.loop = preview.templateLoop;
+      }
+      instances.set(preview.templateInstanceId, info);
+    }
+  });
+
+  channelTimes.forEach((list) => {
+    list.sort((a, b) => a.time - b.time);
+  });
+
+  const expanded = parsedEntries.map((item) => item.action);
+  let nextSortIndex = expanded.length;
+
+  instances.forEach((info) => {
+    const loop = info.loop;
+    const entries = info.entries || [];
+    if (!loop || !isTemplateLoopActive(loop) || !entries.length) {
+      return;
+    }
+    const duration = loop.duration;
+    if (!Number.isFinite(duration) || duration <= 0) {
+      return;
+    }
+
+    const orderedEntries = entries
+      .slice()
+      .sort((a, b) => a.action.timeSeconds - b.action.timeSeconds);
+    const baseStart = orderedEntries[0]?.action?.timeSeconds;
+    if (!Number.isFinite(baseStart)) {
+      return;
+    }
+
+    let channels = Array.isArray(loop.channels) ? loop.channels.slice() : [];
+    if (!channels.length) {
+      channels = Array.from(new Set(orderedEntries.map((item) => item.action.channel))).sort(
+        (a, b) => a - b,
+      );
+    }
+    if (!channels.length) {
+      return;
+    }
+    const channelSet = new Set(channels);
+
+    const forwardOffsets = [];
+    const loopEntrySet = new Set();
+    const loopWindow = Math.max(duration - TEMPLATE_LOOP_EPSILON, 0);
+
+    orderedEntries.forEach((entry) => {
+      const { action } = entry;
+      if (!action) {
+        return;
+      }
+      if (!channelSet.has(action.channel)) {
+        return;
+      }
+      const offset = action.timeSeconds - baseStart;
+      if (offset < -TEMPLATE_LOOP_EPSILON) {
+        return;
+      }
+      if (offset > loopWindow + TEMPLATE_LOOP_EPSILON) {
+        return;
+      }
+      forwardOffsets.push({ offset, action });
+      loopEntrySet.add(entry);
+    });
+
+    if (!forwardOffsets.length) {
+      return;
+    }
+
+    forwardOffsets.sort((a, b) => a.offset - b.offset);
+
+    let reverseOffsets = null;
+    if (loop.mode === "pingpong") {
+      reverseOffsets = forwardOffsets
+        .slice()
+        .reverse()
+        .map(({ offset, action }) => ({
+          offset: Math.max(0, Math.min(duration, duration - offset)),
+          action,
+        }));
+    }
+
+    let conflictTime = null;
+    channels.forEach((channel) => {
+      const timeline = channelTimes.get(channel) || [];
+      for (const infoEntry of timeline) {
+        if (infoEntry.time <= baseStart + TEMPLATE_LOOP_EPSILON) {
+          continue;
+        }
+        if (loopEntrySet.has(infoEntry.entry)) {
+          continue;
+        }
+        if (conflictTime === null || infoEntry.time < conflictTime) {
+          conflictTime = infoEntry.time;
+        }
+        break;
+      }
+    });
+
+    let availableIterations = null;
+    if (conflictTime !== null) {
+      const availableTime = Math.max(0, conflictTime - baseStart);
+      availableIterations = Math.max(
+        1,
+        Math.floor((availableTime + TEMPLATE_LOOP_EPSILON) / duration) + 1,
+      );
+    }
+
+    let totalIterations;
+    if (loop.infinite) {
+      if (availableIterations === null) {
+        let fallbackIterations = Math.max(loop.count || 1, 2);
+        if (TEMPLATE_LOOP_INFINITE_DURATION_SECONDS > 0 && duration > 0) {
+          const targetIterations = Math.ceil(TEMPLATE_LOOP_INFINITE_DURATION_SECONDS / duration);
+          fallbackIterations = Math.max(fallbackIterations, targetIterations);
+        }
+        totalIterations = Math.min(fallbackIterations, TEMPLATE_LOOP_MAX_ITERATIONS);
+      } else {
+        totalIterations = availableIterations;
+      }
+    } else {
+      const requested = Math.max(1, loop.count || 1);
+      totalIterations =
+        availableIterations === null ? requested : Math.min(requested, availableIterations);
+    }
+
+    if (!Number.isFinite(totalIterations) || totalIterations <= 1) {
+      return;
+    }
+
+    for (let iteration = 1; iteration < totalIterations; iteration += 1) {
+      const iterationStart = baseStart + duration * iteration;
+      if (conflictTime !== null && iterationStart >= conflictTime - TEMPLATE_LOOP_EPSILON) {
+        break;
+      }
+
+      const useReverse = loop.mode === "pingpong" && iteration % 2 === 1 && Array.isArray(reverseOffsets);
+      const offsets = useReverse ? reverseOffsets : forwardOffsets;
+      let stopIteration = false;
+
+      offsets.forEach(({ offset, action }) => {
+        if (stopIteration) {
+          return;
+        }
+        const newTime = iterationStart + offset;
+        if (conflictTime !== null && newTime >= conflictTime - TEMPLATE_LOOP_EPSILON) {
+          stopIteration = true;
+          return;
+        }
+        const normalizedTime = Number(newTime.toFixed(6));
+        const duplicate = {
+          ...action,
+          time: secondsToTimecode(normalizedTime),
+          timeSeconds: normalizedTime,
+          templateLoop: null,
+          master: cloneMasterState(action.master),
+          sortIndex: nextSortIndex,
+        };
+        nextSortIndex += 1;
+        expanded.push(duplicate);
+      });
+
+      if (stopIteration) {
+        break;
+      }
+    }
+  });
+
+  expanded.sort((a, b) => {
+    if (a.timeSeconds === b.timeSeconds) {
+      return (a.sortIndex || 0) - (b.sortIndex || 0);
+    }
+    return a.timeSeconds - b.timeSeconds;
+  });
+
+  return expanded;
+}
+
 function findLatestActionIndexAtTime(targetSeconds) {
   const epsilon = 0.001;
   let bestIndex = null;
@@ -3338,26 +3624,25 @@ function updateChannelStatusDisplay(seconds) {
 function computeChannelStatesAtTime(targetSeconds) {
   if (!actions.length) return [];
   const epsilon = 0.001;
-  const timeline = actions
-    .map((action, index) => ({
-      action,
-      index,
-      seconds: parseTimeString(action.time),
-    }))
-    .filter((item) => item.seconds !== null && item.seconds - targetSeconds <= epsilon)
-    .sort((a, b) => {
-      if (a.seconds === b.seconds) {
-        return a.index - b.index;
-      }
-      return a.seconds - b.seconds;
-    });
-
+  const expanded = expandActionsForPreview(actions);
   const states = new Map();
-  timeline.forEach(({ action }) => {
+
+  for (const action of expanded) {
+    const seconds =
+      typeof action.timeSeconds === "number" && Number.isFinite(action.timeSeconds)
+        ? action.timeSeconds
+        : parseTimeString(action.time);
+    if (seconds === null || !Number.isFinite(seconds)) {
+      continue;
+    }
+    if (seconds - targetSeconds > epsilon) {
+      break;
+    }
+
     if (action.channelMasterId) {
       const master = getChannelMaster(action.channelMasterId);
       if (!master) {
-        return;
+        continue;
       }
       const state = ensureMasterState(action, master) || {};
       const values = buildMasterChannelValues(master, state);
@@ -3377,15 +3662,19 @@ function computeChannelStatesAtTime(targetSeconds) {
           valuePresetId: null,
         });
       });
-      return;
+      continue;
     }
 
-    const channel = Number.parseInt(action.channel, 10);
-    const value = Number.parseInt(action.value, 10);
-    if (!Number.isFinite(channel) || channel < 1 || channel > 512) return;
-    if (!Number.isFinite(value)) return;
+    const channelNumber = Number.parseInt(action.channel, 10);
+    const valueNumber = Number.parseInt(action.value, 10);
+    if (!Number.isFinite(channelNumber) || channelNumber < 1 || channelNumber > 512) {
+      continue;
+    }
+    if (!Number.isFinite(valueNumber)) {
+      continue;
+    }
 
-    const normalizedValue = clamp(value, 0, 255);
+    const normalizedValue = clamp(valueNumber, 0, 255);
     const channelPresetId =
       typeof action.channelPresetId === "string" && action.channelPresetId
         ? action.channelPresetId
@@ -3395,13 +3684,13 @@ function computeChannelStatesAtTime(targetSeconds) {
         ? action.valuePresetId
         : null;
 
-    states.set(channel, {
-      channel,
+    states.set(channelNumber, {
+      channel: channelNumber,
       value: normalizedValue,
       channelPresetId,
       valuePresetId,
     });
-  });
+  }
 
   return Array.from(states.values())
     .filter((state) => state.value > 0)
@@ -3649,14 +3938,23 @@ function applyMoverState(state) {
 
   moverLightEl.style.animation = animations.length ? animations.join(", ") : "none";
 
+  const previousRotation = Number.parseFloat(moverLightEl.dataset.rotationDegrees || "");
   const rotationDegrees = ((state?.rotation || 0) / 255) * MOVER_ROTATION_MAX_DEGREES;
   moverLightEl.style.setProperty("--mover-rotation", `${rotationDegrees.toFixed(2)}deg`);
 
   const rotationSpeedSeconds = mapMoverRotationSpeed(state?.rotationSpeed || 0);
+  let rotationDurationSeconds = 0;
+  if (rotationSpeedSeconds !== null && rotationSpeedSeconds > 0) {
+    const lastRotation = Number.isFinite(previousRotation) ? previousRotation : rotationDegrees;
+    const delta = Math.min(Math.abs(rotationDegrees - lastRotation), MOVER_ROTATION_MAX_DEGREES);
+    const ratio = MOVER_ROTATION_MAX_DEGREES > 0 ? delta / MOVER_ROTATION_MAX_DEGREES : 0;
+    rotationDurationSeconds = rotationSpeedSeconds * ratio;
+  }
   moverLightEl.style.setProperty(
     "--mover-rotation-duration",
-    rotationSpeedSeconds === null ? "0s" : `${rotationSpeedSeconds}s`,
+    rotationDurationSeconds > 0 ? `${rotationDurationSeconds.toFixed(3)}s` : "0s",
   );
+  moverLightEl.dataset.rotationDegrees = rotationDegrees.toFixed(6);
 
   const whiteAlpha = clampUnit((state?.white || 0) / 255);
   const beamColor = createRgbaColor(state?.red || 0, state?.green || 0, state?.blue || 0, 1);
