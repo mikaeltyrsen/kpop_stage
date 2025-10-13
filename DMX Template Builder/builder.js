@@ -3276,16 +3276,24 @@ function computeChannelStatesAtTime(targetSeconds) {
       return a.seconds - b.seconds;
     });
 
-  const states = new Map();
-  timeline.forEach(({ action }) => {
+  const channelStates = new Map();
+  timeline.forEach(({ action, seconds }) => {
+    const fadeDuration = normalizeFadeDuration(action.fade);
     if (action.channelMasterId) {
       const master = getChannelMaster(action.channelMasterId);
       if (!master) {
         return;
       }
-      const state = ensureMasterState(action, master) || {};
-      const values = buildMasterChannelValues(master, state);
-      Object.values(master.presets).forEach((preset) => {
+      const masterState = ensureMasterState(action, master);
+      if (!masterState) {
+        return;
+      }
+      const values = buildMasterChannelValues(master, masterState);
+      const componentOrder = Array.isArray(master.componentOrder)
+        ? master.componentOrder
+        : Object.keys(master.presets || {});
+      componentOrder.forEach((componentKey) => {
+        const preset = master.presets?.[componentKey];
         if (!preset) {
           return;
         }
@@ -3293,43 +3301,118 @@ function computeChannelStatesAtTime(targetSeconds) {
         if (!Number.isFinite(channelNumber) || channelNumber < 1 || channelNumber > 512) {
           return;
         }
-        const value = clampChannelValue(values[getChannelPresetComponent(preset)] ?? 0);
-        states.set(channelNumber, {
-          channel: channelNumber,
-          value,
+        const value = clampChannelValue(values[componentKey] ?? 0);
+        applyChannelValueToState(channelStates, channelNumber, value, seconds, fadeDuration, {
           channelPresetId: preset.id,
-          valuePresetId: null,
         });
       });
       return;
     }
 
-    const channel = Number.parseInt(action.channel, 10);
-    const value = Number.parseInt(action.value, 10);
-    if (!Number.isFinite(channel) || channel < 1 || channel > 512) return;
-    if (!Number.isFinite(value)) return;
-
-    const normalizedValue = clamp(value, 0, 255);
+    const channelNumber = Number.parseInt(action.channel, 10);
+    if (!Number.isFinite(channelNumber) || channelNumber < 1 || channelNumber > 512) {
+      return;
+    }
+    const value = clampChannelValue(action.value);
     const channelPresetId =
-      typeof action.channelPresetId === "string" && action.channelPresetId
-        ? action.channelPresetId
-        : null;
+      typeof action.channelPresetId === "string" && action.channelPresetId ? action.channelPresetId : null;
     const valuePresetId =
-      typeof action.valuePresetId === "string" && action.valuePresetId
-        ? action.valuePresetId
-        : null;
-
-    states.set(channel, {
-      channel,
-      value: normalizedValue,
+      typeof action.valuePresetId === "string" && action.valuePresetId ? action.valuePresetId : null;
+    applyChannelValueToState(channelStates, channelNumber, value, seconds, fadeDuration, {
       channelPresetId,
       valuePresetId,
     });
   });
 
-  return Array.from(states.values())
-    .filter((state) => state.value > 0)
-    .sort((a, b) => a.channel - b.channel);
+  const results = [];
+  channelStates.forEach((state, channelNumber) => {
+    const value = clamp(evaluateChannelStateValue(state, targetSeconds), 0, 255);
+    if (value <= 0) {
+      return;
+    }
+    results.push({
+      channel: channelNumber,
+      value,
+      channelPresetId: state.channelPresetId || null,
+      valuePresetId: state.valuePresetId || null,
+    });
+  });
+
+  return results.sort((a, b) => a.channel - b.channel);
+}
+
+function normalizeFadeDuration(value) {
+  const numeric = Number.parseFloat(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return 0;
+  }
+  return Math.max(0, numeric);
+}
+
+function ensureChannelState(channelStates, channelNumber) {
+  let state = channelStates.get(channelNumber);
+  if (!state) {
+    state = {
+      value: 0,
+      fade: null,
+      channelPresetId: null,
+      valuePresetId: null,
+    };
+    channelStates.set(channelNumber, state);
+  }
+  return state;
+}
+
+function evaluateChannelStateValue(state, time) {
+  if (!state) {
+    return 0;
+  }
+  if (!state.fade) {
+    return Number.isFinite(state.value) ? state.value : 0;
+  }
+  const fade = state.fade;
+  if (!Number.isFinite(time)) {
+    return fade.startValue;
+  }
+  if (time <= fade.start) {
+    state.value = fade.startValue;
+    return state.value;
+  }
+  if (fade.duration <= 0 || time >= fade.end) {
+    state.fade = null;
+    state.value = fade.endValue;
+    return state.value;
+  }
+  const progress = clamp((time - fade.start) / fade.duration, 0, 1);
+  const nextValue = fade.startValue + (fade.endValue - fade.startValue) * progress;
+  state.value = nextValue;
+  return nextValue;
+}
+
+function applyChannelValueToState(channelStates, channelNumber, targetValue, seconds, fadeDuration, metadata = {}) {
+  const state = ensureChannelState(channelStates, channelNumber);
+  const startValue = evaluateChannelStateValue(state, seconds);
+  const endValue = clamp(targetValue, 0, 255);
+  if (fadeDuration > 0 && Math.abs(endValue - startValue) > 0.0001) {
+    state.fade = {
+      start: seconds,
+      duration: fadeDuration,
+      startValue,
+      endValue,
+      end: seconds + fadeDuration,
+    };
+    state.value = startValue;
+  } else {
+    state.fade = null;
+    state.value = endValue;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(metadata, "channelPresetId")) {
+    state.channelPresetId = metadata.channelPresetId || null;
+  }
+  if (Object.prototype.hasOwnProperty.call(metadata, "valuePresetId")) {
+    state.valuePresetId = metadata.valuePresetId || null;
+  }
 }
 
 function updateStageVisualizer(channelStates) {
@@ -3384,15 +3467,16 @@ function buildStageStateMap(channelStates) {
   const map = new Map();
   channelStates.forEach((state) => {
     if (!state) return;
-    const numericValue = clampChannelValue(Number(state.value ?? 0));
-    if (numericValue <= 0) {
+    const numericValue = Number(state.value ?? 0);
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
       return;
     }
+    const normalizedValue = clamp(numericValue, 0, 255);
     if (typeof state.channelPresetId === "string" && state.channelPresetId) {
-      map.set(state.channelPresetId, numericValue);
+      map.set(state.channelPresetId, normalizedValue);
     }
     const channelKey = `channel-${state.channel}`;
-    map.set(channelKey, numericValue);
+    map.set(channelKey, normalizedValue);
   });
   return map;
 }
@@ -3731,7 +3815,7 @@ function applyMoverRotation(element, angle, speedValue) {
   const delta = Math.abs(angle - previous);
   stageRotationState.mover = angle;
   const duration = computeRotationDuration(speedValue, delta, 520, { min: 1, max: 10 });
-  const baseTransition = "box-shadow 0.2s ease, opacity 0.2s ease";
+  const baseTransition = "box-shadow 0.1s ease, opacity 0.1s ease";
   if (!duration) {
     element.style.transition = `transform 0s linear, ${baseTransition}`;
   } else {
@@ -3742,23 +3826,31 @@ function applyMoverRotation(element, angle, speedValue) {
 
 function computeRotationDuration(speedValue, deltaAngle, maxAngle, range) {
   const baseDuration = mapDmxToDuration(speedValue, range);
-  if (baseDuration === null || baseDuration <= 0 || deltaAngle <= 0) {
+  const effectiveDuration = baseDuration === null ? range?.min ?? 0 : baseDuration;
+  if (effectiveDuration <= 0 || deltaAngle <= 0) {
     return 0;
   }
   const travelRatio = maxAngle > 0 ? Math.min(deltaAngle / maxAngle, 1) : 0;
-  const scaled = baseDuration * travelRatio;
+  const scaled = effectiveDuration * travelRatio;
   return Math.max(scaled, 0.05);
 }
 
 function mapDmxToDuration(value, range, options = {}) {
   const numeric = Number(value);
-  if (!Number.isFinite(numeric) || numeric <= 0) {
+  if (!Number.isFinite(numeric)) {
     return null;
   }
   const minDuration = range?.min ?? 0.1;
   const maxDuration = range?.max ?? minDuration;
-  const clamped = Math.min(255, Math.max(1, numeric));
-  const normalized = (clamped - 1) / 254;
+  if (numeric <= 0) {
+    const fastest = Math.max(minDuration * 0.5, 0.05);
+    return fastest;
+  }
+  let normalized = 0;
+  if (numeric > 0) {
+    const clamped = Math.min(255, Math.max(1, numeric));
+    normalized = (clamped - 1) / 254;
+  }
   const ratio = options.invert ? 1 - normalized : normalized;
   return minDuration + (maxDuration - minDuration) * ratio;
 }
@@ -3786,7 +3878,7 @@ function applyBeamRotation(element, index, angle, speedValue) {
   const previous = Number.isFinite(previousAngles[index]) ? previousAngles[index] : angle;
   const delta = Math.abs(angle - previous);
   const duration = computeRotationDuration(speedValue, delta, 180, { min: 0.3, max: 5 });
-  const baseTransition = "opacity 0.2s ease, background-color 0.2s ease";
+  const baseTransition = "opacity 0.1s ease, background-color 0.1s ease";
   if (!duration) {
     element.style.transition = `transform 0s ease, height 0s ease, ${baseTransition}`;
   } else {
