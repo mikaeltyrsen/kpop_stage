@@ -3578,23 +3578,47 @@ function applyLightBarState(config, stateMap) {
   const red = getChannelValue(stateMap, config.presets.red);
   const green = getChannelValue(stateMap, config.presets.green);
   const blue = getChannelValue(stateMap, config.presets.blue);
-  const brightnessValue = getOptionalChannelValue(stateMap, config.presets.brightness);
-  const hasColor = red > 0 || green > 0 || blue > 0;
-  const brightnessAlpha = brightnessValue !== null ? clamp(brightnessValue / 255, 0, 1) : hasColor ? 1 : 0;
-  const colorShadow = config.shadow(createRgba(red, green, blue, brightnessAlpha));
-  const colorShadowOff = config.shadow(createRgba(red, green, blue, 0));
-  const strobeValue = getChannelValue(stateMap, config.presets.strobe);
-  applyShadow(config.element, colorShadow, colorShadowOff, strobeValue, config.strobeRange);
-
   const whiteValue = getChannelValue(stateMap, config.presets.white);
   const whiteAlpha = clamp(whiteValue / 255, 0, 1);
+  const hasColor = red > 0 || green > 0 || blue > 0;
+  const brightnessValue = getOptionalChannelValue(stateMap, config.presets.brightness);
+  const brightness =
+    brightnessValue !== null ? clamp(brightnessValue / 255, 0, 1) : hasColor || whiteAlpha > 0 ? 1 : 0;
+
+  if (brightness >= 1) {
+    config.element.style.removeProperty("opacity");
+  } else {
+    const opacityValue = brightness <= 0 ? 0 : Math.round(brightness * 1000) / 1000;
+    config.element.style.opacity = `${opacityValue}`;
+  }
+
+  const strobeValue = getChannelValue(stateMap, config.presets.strobe);
+  const colorAlpha = hasColor ? 1 : 0;
+  const colorShadow = config.shadow(createRgba(red, green, blue, colorAlpha));
+  const colorShadowOff = config.shadow(createRgba(red, green, blue, 0));
+  applyShadow(
+    config.element,
+    colorShadow,
+    colorShadowOff,
+    strobeValue,
+    config.strobeRange,
+    { preferOnState: brightness > 0 && hasColor }
+  );
+
   if (config.whiteElement) {
     const whiteShadow = config.shadow(createRgba(255, 255, 255, whiteAlpha));
     const whiteShadowOff = config.shadow(createRgba(255, 255, 255, 0));
-    applyShadow(config.whiteElement, whiteShadow, whiteShadowOff, strobeValue, config.strobeRange);
+    applyShadow(
+      config.whiteElement,
+      whiteShadow,
+      whiteShadowOff,
+      strobeValue,
+      config.strobeRange,
+      { preferOnState: brightness > 0 && whiteAlpha > 0 }
+    );
   }
 
-  const isActive = brightnessAlpha > 0 || whiteAlpha > 0;
+  const isActive = brightness > 0 && (hasColor || whiteAlpha > 0);
   config.element.classList.toggle("is-active", isActive);
   return isActive;
 }

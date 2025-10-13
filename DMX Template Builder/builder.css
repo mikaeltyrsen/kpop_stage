@@ -1393,7 +1393,7 @@ input::-webkit-inner-spin-button {
   outline: 1px solid #666;
   background: #000;
   z-index: 10;
-  transition: box-shadow 0.1s ease;
+  transition: opacity 0.1s ease, box-shadow 0.1s ease;
   --light-shadow-on: 0 0 0 rgba(0, 0, 0, 0);
   --light-shadow-off: 0 0 0 rgba(0, 0, 0, 0);
 }
