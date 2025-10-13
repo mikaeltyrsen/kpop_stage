@@ -1484,6 +1484,8 @@ input::-webkit-inner-spin-button {
 #mover-light {
   --mover-rotation: 45deg;
   --mover-rotation-duration: 0.5s;
+  --mover-glow-color: rgba(255, 173, 0, 0);
+  --mover-glow-off-color: rgba(255, 173, 0, 0);
   position: relative;
   background: #000;
   outline: 1px solid #666;
@@ -1492,17 +1494,14 @@ input::-webkit-inner-spin-button {
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 0px 0px 40px rgba(255, 173, 0, 0);
+  box-shadow:
+    0px 0px 40px var(--mover-glow-color),
+    0px 0px 40px var(--mover-glow-color),
+    0px 0px 40px var(--mover-glow-color);
   border-radius: 100px;
   transform: rotate(var(--mover-rotation));
   transition: transform var(--mover-rotation-duration) linear;
   z-index: 10;
-}
-
-#mover-light.is-strobing {
-  animation-name: stage-strobe;
-  animation-iteration-count: infinite;
-  animation-timing-function: steps(2, end);
 }
 
 #mover-light .beam {
@@ -1593,6 +1592,23 @@ input::-webkit-inner-spin-button {
   55%,
   100% {
     opacity: 0;
+  }
+}
+
+@keyframes mover-white-flash {
+  0%,
+  45% {
+    box-shadow:
+      0px 0px 40px var(--mover-glow-color),
+      0px 0px 40px var(--mover-glow-color),
+      0px 0px 40px var(--mover-glow-color);
+  }
+  55%,
+  100% {
+    box-shadow:
+      0px 0px 40px var(--mover-glow-off-color),
+      0px 0px 40px var(--mover-glow-off-color),
+      0px 0px 40px var(--mover-glow-off-color);
   }
 }
 

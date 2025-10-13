@@ -190,7 +190,15 @@ const MOVER_ROTATION_SPEED_SLOW = 10;
 const MOVER_ROTATION_SPEED_FAST = 1;
 const BEAM_ROTATION_SPEED_SLOW = 3;
 const BEAM_ROTATION_SPEED_FAST = 0.5;
-const LED_STRIP_MIN_OPACITY = 0.05;
+const LED_STRIP_COLOR_RANGES = Object.freeze([
+  { min: 15, max: 21, color: [255, 0, 0], label: "Red" },
+  { min: 22, max: 30, color: [0, 255, 0], label: "Green" },
+  { min: 31, max: 39, color: [0, 0, 255], label: "Blue" },
+  { min: 40, max: 48, color: [255, 255, 0], label: "Yellow" },
+  { min: 49, max: 57, color: [128, 0, 128], label: "Purple" },
+  { min: 58, max: 66, color: [0, 255, 255], label: "Cyan" },
+  { min: 67, max: 75, color: [255, 255, 255], label: "White" },
+]);
 
 const CHANNEL_COMPONENT_DEFAULT_TYPE = CHANNEL_COMPONENT_TYPES.SLIDER;
 
@@ -3620,13 +3628,26 @@ function applyMoverState(state) {
   }
   const brightnessAlpha = clampUnit((state?.brightness || 0) / 255);
   moverLightEl.style.opacity = brightnessAlpha.toFixed(3);
-  const moverColor = createRgbaColor(state?.red || 0, state?.green || 0, state?.blue || 0, brightnessAlpha);
-  moverLightEl.style.boxShadow = `0px 0px 40px ${moverColor}, 0px 0px 40px ${moverColor}, 0px 0px 40px ${moverColor}`;
+  const moverOnColor = createRgbaColor(state?.red || 0, state?.green || 0, state?.blue || 0, brightnessAlpha);
+  moverLightEl.style.setProperty("--mover-glow-color", moverOnColor);
+  moverLightEl.style.setProperty(
+    "--mover-glow-off-color",
+    createRgbaColor(state?.red || 0, state?.green || 0, state?.blue || 0, 0),
+  );
+
+  const animations = [];
 
   const strobeValue = clampChannelValue(state?.strobe || 0);
-  const strobeActive = strobeValue > 0;
-  moverLightEl.classList.toggle("is-strobing", strobeActive);
-  moverLightEl.style.animationDuration = strobeActive ? `${computeStrobeDuration(strobeValue)}ms` : "";
+  if (strobeValue > 0) {
+    animations.push(`stage-strobe ${computeStrobeDuration(strobeValue)}ms steps(2, end) infinite`);
+  }
+
+  const whiteFlashValue = clampChannelValue(state?.white || 0);
+  if (whiteFlashValue > 0 && brightnessAlpha > 0) {
+    animations.push(`mover-white-flash ${computeStrobeDuration(whiteFlashValue)}ms steps(2, end) infinite`);
+  }
+
+  moverLightEl.style.animation = animations.length ? animations.join(", ") : "none";
 
   const rotationDegrees = ((state?.rotation || 0) / 255) * MOVER_ROTATION_MAX_DEGREES;
   moverLightEl.style.setProperty("--mover-rotation", `${rotationDegrees.toFixed(2)}deg`);
@@ -3669,18 +3690,17 @@ function applyMoverState(state) {
   }
 
   if (moverLedStripEl) {
-    const ledIntensity = clampUnit((state?.ledStrip || 0) / 255);
-    const appliedOpacity = ledIntensity > 0 ? Math.max(LED_STRIP_MIN_OPACITY, ledIntensity) : 0;
-    moverLedStripEl.style.opacity = appliedOpacity.toFixed(3);
-    moverLedStripEl.style.outlineColor = createRgbaColor(
-      state?.red || 0,
-      state?.green || 0,
-      state?.blue || 0,
-      appliedOpacity,
-    );
-    moverLedStripEl.style.boxShadow = appliedOpacity
-      ? `0 0 32px ${createRgbaColor(state?.red || 0, state?.green || 0, state?.blue || 0, appliedOpacity)}`
-      : "";
+    const ledStripConfig = mapLedStripColor(state?.ledStrip || 0);
+    if (!ledStripConfig) {
+      moverLedStripEl.style.opacity = "0";
+      moverLedStripEl.style.outlineColor = "rgba(0, 0, 0, 0)";
+      moverLedStripEl.style.boxShadow = "";
+    } else {
+      const [r, g, b] = ledStripConfig.color;
+      moverLedStripEl.style.opacity = "1";
+      moverLedStripEl.style.outlineColor = createRgbaColor(r, g, b, 1);
+      moverLedStripEl.style.boxShadow = `0 0 32px ${createRgbaColor(r, g, b, 0.75)}`;
+    }
   }
 }
 
@@ -3702,6 +3722,15 @@ function computeBeamHeight(value) {
   }
   const ratio = (rotationDegrees - 90) / 90;
   return BEAM_HEIGHT_MIN + ratio * (BEAM_HEIGHT_MAX - BEAM_HEIGHT_MIN);
+}
+
+function mapLedStripColor(value) {
+  const numeric = clampChannelValue(value);
+  if (numeric < 15) {
+    return null;
+  }
+  const match = LED_STRIP_COLOR_RANGES.find((range) => numeric >= range.min && numeric <= range.max);
+  return match || null;
 }
 
 function computeStrobeDuration(value) {
@@ -3799,7 +3828,9 @@ function buildStageAccessibilitySummary(stageState) {
     const lasers = [];
     if ((mover.lasers?.red || 0) > 0) lasers.push("red laser");
     if ((mover.lasers?.green || 0) > 0) lasers.push("green laser");
-    if (brightness > 0 || hasColor || lasers.length) {
+    const ledStripConfig = mapLedStripColor(mover.ledStrip || 0);
+    const hasWhiteFlash = clampChannelValue(mover.white || 0) > 0;
+    if (brightness > 0 || hasColor || lasers.length || ledStripConfig || hasWhiteFlash) {
       const moverParts = [`Mover brightness ${Math.round(brightness * 100)}%`];
       if (hasColor) {
         moverParts.push(`color ${rgbToHex(mover.red, mover.green, mover.blue)}`);
@@ -3809,8 +3840,14 @@ function buildStageAccessibilitySummary(stageState) {
       if ((mover.strobe || 0) > 0) {
         moverParts.push(`strobe ${formatStrobeDescription(mover.strobe)}`);
       }
+      if (hasWhiteFlash && brightness > 0) {
+        moverParts.push(`white flash ${formatStrobeDescription(mover.white)}`);
+      }
       if (lasers.length) {
         moverParts.push(`${lasers.join(" & ")} on`);
+      }
+      if (ledStripConfig) {
+        moverParts.push(`LED strip ${ledStripConfig.label}`);
       }
       descriptions.push(moverParts.join(", "));
     }
