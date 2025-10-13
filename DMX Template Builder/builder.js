@@ -3503,7 +3503,7 @@ function buildStageStateMap(channelStates) {
   channelStates.forEach((state) => {
     if (!state) return;
     const numericValue = Number(state.value ?? 0);
-    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    if (!Number.isFinite(numericValue)) {
       return;
     }
     const normalizedValue = clamp(numericValue, 0, 255);
