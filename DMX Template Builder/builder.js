@@ -166,6 +166,7 @@ const DEFAULT_ACTION = Object.freeze({
   channel: 1,
   value: 0,
   fade: 0,
+  stepTitle: "",
   channelPresetId: null,
   valuePresetId: null,
   channelMasterId: null,
@@ -725,6 +726,9 @@ function expandMasterAction(action, master, seconds, fade) {
       channelPresetId: preset.id,
       channelMasterId: master.id,
     };
+    if (typeof action.stepTitle === "string" && action.stepTitle) {
+      entry.stepTitle = action.stepTitle;
+    }
     if (action.templateId) {
       entry.templateId = action.templateId;
     }
@@ -884,9 +888,13 @@ function collapseMasterActions(list) {
         templateInstanceId: action.templateInstanceId || null,
         templateRowId: action.templateRowId || null,
         templateLoop: action.templateLoop ? normalizeTemplateLoop(action.templateLoop) : null,
+        stepTitle: typeof action.stepTitle === "string" ? action.stepTitle : "",
         actions: [],
       };
       grouped.set(key, group);
+    }
+    if (!group.stepTitle && typeof action.stepTitle === "string" && action.stepTitle) {
+      group.stepTitle = action.stepTitle;
     }
     group.actions.push(action);
   });
@@ -899,6 +907,7 @@ function collapseMasterActions(list) {
     masterAction.templateId = group.templateId;
     masterAction.templateInstanceId = group.templateInstanceId;
     masterAction.templateRowId = group.templateRowId;
+    masterAction.stepTitle = group.stepTitle || "";
     if (group.templateLoop) {
       masterAction.templateLoop = group.templateLoop;
     }
@@ -1951,6 +1960,16 @@ async function loadTemplate(videoId) {
     actions.forEach(ensureActionLocalId);
     seedTemplateInstanceCounter(actions);
     assignStepIdsForActions(actions);
+    if (actions.length) {
+      const seenStepIds = new Set();
+      actions.forEach((action) => {
+        const id = getActionStepId(action);
+        if (id && !seenStepIds.has(id)) {
+          collapsedStepIds.add(id);
+          seenStepIds.add(id);
+        }
+      });
+    }
     autoAssignPresetsToActions(actions);
     const templateIds = new Set(
       actions
@@ -2071,15 +2090,22 @@ function renderActions(options = {}) {
   actions.forEach((action, index) => {
     const stepId = getActionStepId(action);
     const timeValue = action.time || DEFAULT_ACTION.time;
+    const actionTitle = typeof action.stepTitle === "string" ? action.stepTitle : "";
     actionGroupIds[index] = stepId;
     let group = groupLookup.get(stepId);
     if (!group) {
-      group = { id: stepId, time: timeValue, items: [] };
+      group = { id: stepId, time: timeValue, title: actionTitle, items: [] };
       groupLookup.set(stepId, group);
       groupsInOrder.push(group);
     }
     if (!group.items.length) {
       group.time = timeValue;
+    }
+    if (!group.title && actionTitle) {
+      group.title = actionTitle;
+    }
+    if (group.title && action.stepTitle !== group.title) {
+      action.stepTitle = group.title;
     }
     group.items.push({ action, index });
   });
@@ -2089,6 +2115,7 @@ function renderActions(options = {}) {
     stepInfoById.set(group.id, {
       id: group.id,
       time: group.time,
+      title: group.title || "",
       indices,
     });
   });
@@ -2256,6 +2283,25 @@ function createGroupHeaderRow(group, collapsed, displayCount, itemsForHeader = g
     }
   });
 
+  const titleInput = createInput({
+    type: "text",
+    value: group.title || "",
+    placeholder: "Step title",
+  });
+  titleInput.classList.add("action-group-header__title-input");
+  titleInput.dataset.groupId = group.id;
+  titleInput.dataset.field = "step-title";
+  titleInput.addEventListener("input", (event) => handleStepTitleInput(event, group.id));
+  titleInput.addEventListener("blur", (event) => handleStepTitleBlur(event, group.id));
+  titleInput.addEventListener("focus", () => {
+    const firstIndex = referenceItems[0]?.index;
+    if (Number.isInteger(firstIndex)) {
+      setHighlightedAction(firstIndex);
+    } else {
+      setHighlightedStep(group.id);
+    }
+  });
+
   const actionsContainer = document.createElement("div");
   actionsContainer.className = "action-group-header__actions";
 
@@ -2284,7 +2330,7 @@ function createGroupHeaderRow(group, collapsed, displayCount, itemsForHeader = g
 
   actionsContainer.append(countEl, addRowButton, addTemplateButton);
 
-  content.append(toggleButton, timeInput, actionsContainer);
+  content.append(toggleButton, timeInput, titleInput, actionsContainer);
   cell.append(content);
   row.append(cell);
 
@@ -3769,6 +3815,39 @@ function appendToColumn(row, column, element) {
   }
 }
 
+function updateStepTitleForGroup(stepId, value) {
+  const normalized = typeof value === "string" ? value : "";
+  actions.forEach((action) => {
+    if (getActionStepId(action) === stepId) {
+      action.stepTitle = normalized;
+    }
+  });
+  const info = stepInfoById.get(stepId);
+  if (info) {
+    info.title = normalized;
+  }
+}
+
+function handleStepTitleInput(event, stepId) {
+  const input = event?.target;
+  if (!input || typeof input.value !== "string") {
+    return;
+  }
+  updateStepTitleForGroup(stepId, input.value);
+}
+
+function handleStepTitleBlur(event, stepId) {
+  const input = event?.target;
+  if (!input || typeof input.value !== "string") {
+    return;
+  }
+  const trimmed = input.value.trim();
+  if (trimmed !== input.value) {
+    input.value = trimmed;
+  }
+  updateStepTitleForGroup(stepId, trimmed);
+}
+
 function handleStepTimeChange(event, stepId) {
   const input = event.target;
   const value = input.value.trim();
@@ -4112,6 +4191,14 @@ function addAction(action, options = {}) {
   }
   const actionId = getActionLocalId(newAction);
   const stepId = setActionStepId(newAction, options.stepId);
+  let stepTitleValue = typeof newAction.stepTitle === "string" ? newAction.stepTitle : "";
+  if (!stepTitleValue && stepId) {
+    const existing = actions.find((item) => getActionStepId(item) === stepId);
+    if (existing && typeof existing.stepTitle === "string") {
+      stepTitleValue = existing.stepTitle;
+    }
+  }
+  newAction.stepTitle = stepTitleValue || "";
   const insertIndex =
     Number.isInteger(options.insertIndex) && options.insertIndex >= 0
       ? Math.min(options.insertIndex, actions.length)
@@ -4154,6 +4241,7 @@ function duplicateAction(index) {
     templateInstanceId: original.templateInstanceId,
     templateRowId: original.templateRowId,
     templateLoop: original.templateLoop ? { ...original.templateLoop } : null,
+    stepTitle: typeof original.stepTitle === "string" ? original.stepTitle : "",
   };
   addAction(copy, { stepId, insertIndex: index + 1, focusField: "channelPreset" });
 }
@@ -7508,6 +7596,18 @@ function createActionsFromTemplate(template, stepId, time, instanceId, options =
     : 0;
 
   const created = [];
+  let stepTitle = "";
+  if (stepId) {
+    const info = stepInfoById.get(stepId);
+    if (info && typeof info.title === "string") {
+      stepTitle = info.title;
+    } else {
+      const existing = actions.find((item) => getActionStepId(item) === stepId);
+      if (existing && typeof existing.stepTitle === "string") {
+        stepTitle = existing.stepTitle;
+      }
+    }
+  }
   entries.forEach(({ row, offset }) => {
     const absoluteSeconds = baseSeconds + offset;
     const timecode = secondsToTimecode(absoluteSeconds);
@@ -7525,6 +7625,9 @@ function createActionsFromTemplate(template, stepId, time, instanceId, options =
       templateInstanceId: instanceId,
       templateRowId: row.id,
     };
+    if (stepTitle) {
+      action.stepTitle = stepTitle;
+    }
     if (loopSettings) {
       const mergedLoop = { ...loopSettings };
       if (durationValue > 0) {
@@ -7876,6 +7979,15 @@ function prepareActionsForSave() {
       value,
       fade: Number(fade.toFixed(3)),
     };
+    const stepTitle = typeof action.stepTitle === "string" ? action.stepTitle.trim() : "";
+    if (stepTitle) {
+      entry.stepTitle = stepTitle;
+      if (stepTitle !== action.stepTitle) {
+        action.stepTitle = stepTitle;
+      }
+    } else if (action.stepTitle) {
+      action.stepTitle = "";
+    }
     if (action.channelPresetId) {
       entry.channelPresetId = action.channelPresetId;
     }
