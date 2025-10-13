@@ -10,6 +10,53 @@ const videoEl = document.getElementById("preview-video");
 const rowTemplate = document.getElementById("action-row-template");
 const channelPresetsContainer = document.getElementById("channel-presets");
 const channelStatusListEl = document.getElementById("channel-status-list");
+const stageWrapperEl = document.querySelector("#channel-status .stage-wrapper");
+const stageLightBars = {
+  front: {
+    element: document.getElementById("light-bar-1"),
+    whiteElement: document.querySelector("#light-bar-1 .white-color"),
+  },
+  back: {
+    element: document.getElementById("light-bar-2"),
+    whiteElement: document.querySelector("#light-bar-2 .white-color"),
+  },
+  left: {
+    element: document.getElementById("light-bar-3"),
+    whiteElement: document.querySelector("#light-bar-3 .white-color"),
+  },
+  right: {
+    element: document.getElementById("light-bar-4"),
+    whiteElement: document.querySelector("#light-bar-4 .white-color"),
+  },
+};
+const moverLightEl = document.getElementById("mover-light");
+const moverBeamElements = {
+  1: {
+    element: document.getElementById("beam-1"),
+    whiteElement: document.querySelector("#beam-1 .white-color"),
+    baseRotation: 225,
+  },
+  2: {
+    element: document.getElementById("beam-2"),
+    whiteElement: document.querySelector("#beam-2 .white-color"),
+    baseRotation: 315,
+  },
+  3: {
+    element: document.getElementById("beam-3"),
+    whiteElement: document.querySelector("#beam-3 .white-color"),
+    baseRotation: 315,
+  },
+  4: {
+    element: document.getElementById("beam-4"),
+    whiteElement: document.querySelector("#beam-4 .white-color"),
+    baseRotation: 225,
+  },
+};
+const moverLaserElements = {
+  red: document.getElementById("red-laser"),
+  green: document.getElementById("green-laser"),
+};
+const moverLedStripEl = document.getElementById("led-strip");
 const addChannelPresetButton = document.getElementById("add-channel-preset");
 const channelPresetsSection = document.querySelector(".preset-settings");
 const builderLayout = document.querySelector(".builder-layout");
@@ -118,6 +165,41 @@ const DEFAULT_SLIDER_VALUES = Object.freeze({
   [CHANNEL_COMPONENTS.WHITE]: 0,
 });
 
+const STAGE_LIGHT_BAR_PREFIXES = Object.freeze({
+  front: "front-light-",
+  back: "back-light-",
+  left: "left-light-",
+  right: "right-light-",
+});
+
+const STAGE_LIGHT_LABELS = Object.freeze({
+  front: "Front light",
+  back: "Back light",
+  left: "Left light",
+  right: "Right light",
+});
+
+const LIGHT_BAR_KEYS = Object.keys(STAGE_LIGHT_BAR_PREFIXES);
+const MOVER_ROTATION_MAX_DEGREES = 520;
+const BEAM_ROTATION_MAX_DEGREES = 180;
+const BEAM_HEIGHT_MIN = 50;
+const BEAM_HEIGHT_MAX = 500;
+const STROBE_SLOW_DURATION_MS = 2000;
+const STROBE_FAST_DURATION_MS = 120;
+const MOVER_ROTATION_SPEED_SLOW = 10;
+const MOVER_ROTATION_SPEED_FAST = 1;
+const BEAM_ROTATION_SPEED_SLOW = 3;
+const BEAM_ROTATION_SPEED_FAST = 0.5;
+const LED_STRIP_COLOR_RANGES = Object.freeze([
+  { min: 15, max: 21, color: [255, 0, 0], label: "Red" },
+  { min: 22, max: 30, color: [0, 255, 0], label: "Green" },
+  { min: 31, max: 39, color: [0, 0, 255], label: "Blue" },
+  { min: 40, max: 48, color: [255, 255, 0], label: "Yellow" },
+  { min: 49, max: 57, color: [128, 0, 128], label: "Purple" },
+  { min: 58, max: 66, color: [0, 255, 255], label: "Cyan" },
+  { min: 67, max: 75, color: [255, 255, 255], label: "White" },
+]);
+
 const CHANNEL_COMPONENT_DEFAULT_TYPE = CHANNEL_COMPONENT_TYPES.SLIDER;
 
 const CHANNEL_MASTER_PREFIX = "master:";
@@ -189,6 +271,10 @@ const TEMPLATE_LOOP_DEFAULTS = Object.freeze({
   mode: "forward",
   duration: 0,
 });
+
+const TEMPLATE_LOOP_INFINITE_DURATION_SECONDS = 600;
+const TEMPLATE_LOOP_MAX_ITERATIONS = 9999;
+const TEMPLATE_LOOP_EPSILON = 0.000001;
 
 const ICON_SVGS = {
   delete: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z"/></svg>`,
@@ -980,6 +1066,14 @@ function cloneTemplateLoopSettings(loop) {
   if (!loop) return null;
   const normalized = normalizeTemplateLoop(loop);
   return { ...normalized };
+}
+
+function isTemplateLoopActive(loop) {
+  if (!loop || typeof loop !== "object") {
+    return false;
+  }
+  const normalized = normalizeTemplateLoop(loop);
+  return normalized.duration > 0 && (normalized.enabled || normalized.infinite);
 }
 
 function shouldSerializeTemplateLoop(loop) {
@@ -3230,6 +3324,280 @@ function getVideoCurrentTimeSeconds() {
   return Math.max(0, lastKnownTimelineSeconds);
 }
 
+function cloneMasterState(state) {
+  if (!state || typeof state !== "object") {
+    return null;
+  }
+  const cloned = { ...state };
+  if (state.sliders && typeof state.sliders === "object") {
+    cloned.sliders = { ...state.sliders };
+  }
+  if (state.dropdownSelections && typeof state.dropdownSelections === "object") {
+    cloned.dropdownSelections = { ...state.dropdownSelections };
+  }
+  return cloned;
+}
+
+function createPreviewAction(rawAction, sortIndex) {
+  if (!rawAction || typeof rawAction !== "object") {
+    return null;
+  }
+  const channelValue = Number.parseInt(rawAction.channel, 10);
+  const valueValue = Number.parseInt(rawAction.value, 10);
+  const fadeValue = Number.parseFloat(rawAction.fade);
+  const timeSeconds = parseTimeString(rawAction.time);
+  if (timeSeconds === null) {
+    return null;
+  }
+  const normalizedSeconds = Number(timeSeconds.toFixed(6));
+  const preview = {
+    time: secondsToTimecode(normalizedSeconds),
+    timeSeconds: normalizedSeconds,
+    channel: clamp(Number.isFinite(channelValue) ? channelValue : 1, 1, 512),
+    value: clamp(Number.isFinite(valueValue) ? valueValue : 0, 0, 255),
+    fade: Number.isFinite(fadeValue) && fadeValue > 0 ? Number(fadeValue.toFixed(6)) : 0,
+    channelPresetId:
+      typeof rawAction.channelPresetId === "string" && rawAction.channelPresetId
+        ? rawAction.channelPresetId
+        : null,
+    valuePresetId:
+      typeof rawAction.valuePresetId === "string" && rawAction.valuePresetId
+        ? rawAction.valuePresetId
+        : null,
+    channelMasterId:
+      typeof rawAction.channelMasterId === "string" && rawAction.channelMasterId
+        ? rawAction.channelMasterId
+        : null,
+    master: cloneMasterState(rawAction.master),
+    templateInstanceId:
+      typeof rawAction.templateInstanceId === "string" && rawAction.templateInstanceId
+        ? rawAction.templateInstanceId
+        : null,
+    templateLoop:
+      rawAction.templateLoop && typeof rawAction.templateLoop === "object"
+        ? normalizeTemplateLoop(rawAction.templateLoop)
+        : null,
+    sortIndex: sortIndex,
+  };
+  if (!preview.channelMasterId && rawAction.channelMasterId) {
+    preview.channelMasterId = rawAction.channelMasterId;
+  }
+  return preview;
+}
+
+function expandActionsForPreview(actionList) {
+  if (!Array.isArray(actionList) || !actionList.length) {
+    return [];
+  }
+
+  const parsedEntries = [];
+  const instances = new Map();
+  const channelTimes = new Map();
+
+  actionList.forEach((rawAction) => {
+    const entryIndex = parsedEntries.length;
+    const preview = createPreviewAction(rawAction, entryIndex);
+    if (!preview) {
+      return;
+    }
+    const entry = {
+      action: preview,
+      instanceId: preview.templateInstanceId,
+      loop: preview.templateLoop,
+    };
+    parsedEntries.push(entry);
+
+    const channelEntries = channelTimes.get(preview.channel) || [];
+    channelEntries.push({
+      time: preview.timeSeconds,
+      instanceId: preview.templateInstanceId,
+      entry,
+    });
+    channelTimes.set(preview.channel, channelEntries);
+
+    if (preview.templateInstanceId) {
+      const info = instances.get(preview.templateInstanceId) || { entries: [], loop: null };
+      info.entries.push(entry);
+      if (preview.templateLoop && isTemplateLoopActive(preview.templateLoop)) {
+        info.loop = preview.templateLoop;
+      }
+      instances.set(preview.templateInstanceId, info);
+    }
+  });
+
+  channelTimes.forEach((list) => {
+    list.sort((a, b) => a.time - b.time);
+  });
+
+  const expanded = parsedEntries.map((item) => item.action);
+  let nextSortIndex = expanded.length;
+
+  instances.forEach((info) => {
+    const loop = info.loop;
+    const entries = info.entries || [];
+    if (!loop || !isTemplateLoopActive(loop) || !entries.length) {
+      return;
+    }
+    const duration = loop.duration;
+    if (!Number.isFinite(duration) || duration <= 0) {
+      return;
+    }
+
+    const orderedEntries = entries
+      .slice()
+      .sort((a, b) => a.action.timeSeconds - b.action.timeSeconds);
+    const baseStart = orderedEntries[0]?.action?.timeSeconds;
+    if (!Number.isFinite(baseStart)) {
+      return;
+    }
+
+    let channels = Array.isArray(loop.channels) ? loop.channels.slice() : [];
+    if (!channels.length) {
+      channels = Array.from(new Set(orderedEntries.map((item) => item.action.channel))).sort(
+        (a, b) => a - b,
+      );
+    }
+    if (!channels.length) {
+      return;
+    }
+    const channelSet = new Set(channels);
+
+    const forwardOffsets = [];
+    const loopEntrySet = new Set();
+    const loopWindow = Math.max(duration - TEMPLATE_LOOP_EPSILON, 0);
+
+    orderedEntries.forEach((entry) => {
+      const { action } = entry;
+      if (!action) {
+        return;
+      }
+      if (!channelSet.has(action.channel)) {
+        return;
+      }
+      const offset = action.timeSeconds - baseStart;
+      if (offset < -TEMPLATE_LOOP_EPSILON) {
+        return;
+      }
+      if (offset > loopWindow + TEMPLATE_LOOP_EPSILON) {
+        return;
+      }
+      forwardOffsets.push({ offset, action });
+      loopEntrySet.add(entry);
+    });
+
+    if (!forwardOffsets.length) {
+      return;
+    }
+
+    forwardOffsets.sort((a, b) => a.offset - b.offset);
+
+    let reverseOffsets = null;
+    if (loop.mode === "pingpong") {
+      reverseOffsets = forwardOffsets
+        .slice()
+        .reverse()
+        .map(({ offset, action }) => ({
+          offset: Math.max(0, Math.min(duration, duration - offset)),
+          action,
+        }));
+    }
+
+    let conflictTime = null;
+    channels.forEach((channel) => {
+      const timeline = channelTimes.get(channel) || [];
+      for (const infoEntry of timeline) {
+        if (infoEntry.time <= baseStart + TEMPLATE_LOOP_EPSILON) {
+          continue;
+        }
+        if (loopEntrySet.has(infoEntry.entry)) {
+          continue;
+        }
+        if (conflictTime === null || infoEntry.time < conflictTime) {
+          conflictTime = infoEntry.time;
+        }
+        break;
+      }
+    });
+
+    let availableIterations = null;
+    if (conflictTime !== null) {
+      const availableTime = Math.max(0, conflictTime - baseStart);
+      availableIterations = Math.max(
+        1,
+        Math.floor((availableTime + TEMPLATE_LOOP_EPSILON) / duration) + 1,
+      );
+    }
+
+    let totalIterations;
+    if (loop.infinite) {
+      if (availableIterations === null) {
+        let fallbackIterations = Math.max(loop.count || 1, 2);
+        if (TEMPLATE_LOOP_INFINITE_DURATION_SECONDS > 0 && duration > 0) {
+          const targetIterations = Math.ceil(TEMPLATE_LOOP_INFINITE_DURATION_SECONDS / duration);
+          fallbackIterations = Math.max(fallbackIterations, targetIterations);
+        }
+        totalIterations = Math.min(fallbackIterations, TEMPLATE_LOOP_MAX_ITERATIONS);
+      } else {
+        totalIterations = availableIterations;
+      }
+    } else {
+      const requested = Math.max(1, loop.count || 1);
+      totalIterations =
+        availableIterations === null ? requested : Math.min(requested, availableIterations);
+    }
+
+    if (!Number.isFinite(totalIterations) || totalIterations <= 1) {
+      return;
+    }
+
+    for (let iteration = 1; iteration < totalIterations; iteration += 1) {
+      const iterationStart = baseStart + duration * iteration;
+      if (conflictTime !== null && iterationStart >= conflictTime - TEMPLATE_LOOP_EPSILON) {
+        break;
+      }
+
+      const useReverse = loop.mode === "pingpong" && iteration % 2 === 1 && Array.isArray(reverseOffsets);
+      const offsets = useReverse ? reverseOffsets : forwardOffsets;
+      let stopIteration = false;
+
+      offsets.forEach(({ offset, action }) => {
+        if (stopIteration) {
+          return;
+        }
+        const newTime = iterationStart + offset;
+        if (conflictTime !== null && newTime >= conflictTime - TEMPLATE_LOOP_EPSILON) {
+          stopIteration = true;
+          return;
+        }
+        const normalizedTime = Number(newTime.toFixed(6));
+        const duplicate = {
+          ...action,
+          time: secondsToTimecode(normalizedTime),
+          timeSeconds: normalizedTime,
+          templateLoop: null,
+          master: cloneMasterState(action.master),
+          sortIndex: nextSortIndex,
+        };
+        nextSortIndex += 1;
+        expanded.push(duplicate);
+      });
+
+      if (stopIteration) {
+        break;
+      }
+    }
+  });
+
+  expanded.sort((a, b) => {
+    if (a.timeSeconds === b.timeSeconds) {
+      return (a.sortIndex || 0) - (b.sortIndex || 0);
+    }
+    return a.timeSeconds - b.timeSeconds;
+  });
+
+  return expanded;
+}
+
 function findLatestActionIndexAtTime(targetSeconds) {
   const epsilon = 0.001;
   let bestIndex = null;
@@ -3247,66 +3615,34 @@ function findLatestActionIndexAtTime(targetSeconds) {
 }
 
 function updateChannelStatusDisplay(seconds) {
-  if (!channelStatusListEl) return;
-  channelStatusListEl.innerHTML = "";
   const activeChannels = computeChannelStatesAtTime(seconds);
-  if (!activeChannels.length) {
-    const empty = document.createElement("p");
-    empty.className = "channel-status__empty";
-    empty.textContent = "All channels at blackout.";
-    channelStatusListEl.append(empty);
-    return;
-  }
-
-  const list = document.createElement("ul");
-  list.className = "channel-status__list";
-
-  activeChannels.forEach((state) => {
-    const item = document.createElement("li");
-    item.className = "channel-status__item";
-
-    const channelPreset = findChannelPresetForState(state);
-    const valuePreset = findValuePresetForState(state, channelPreset);
-
-    const label = document.createElement("span");
-    label.className = "channel-status__item-label";
-    label.textContent = formatChannelStatusChannelLabel(state, channelPreset);
-
-    const valueEl = document.createElement("span");
-    valueEl.textContent = formatChannelStatusValueLabel(state, valuePreset);
-
-    item.title = formatChannelStatusTooltip(state, channelPreset, valuePreset);
-
-    item.append(label, valueEl);
-    list.append(item);
-  });
-
-  channelStatusListEl.append(list);
+  const stageState = computeStageFixtureState(activeChannels);
+  applyStageVisualization(stageState);
+  updateStageAccessibilitySummary(stageState);
 }
 
 function computeChannelStatesAtTime(targetSeconds) {
   if (!actions.length) return [];
   const epsilon = 0.001;
-  const timeline = actions
-    .map((action, index) => ({
-      action,
-      index,
-      seconds: parseTimeString(action.time),
-    }))
-    .filter((item) => item.seconds !== null && item.seconds - targetSeconds <= epsilon)
-    .sort((a, b) => {
-      if (a.seconds === b.seconds) {
-        return a.index - b.index;
-      }
-      return a.seconds - b.seconds;
-    });
-
+  const expanded = expandActionsForPreview(actions);
   const states = new Map();
-  timeline.forEach(({ action }) => {
+
+  for (const action of expanded) {
+    const seconds =
+      typeof action.timeSeconds === "number" && Number.isFinite(action.timeSeconds)
+        ? action.timeSeconds
+        : parseTimeString(action.time);
+    if (seconds === null || !Number.isFinite(seconds)) {
+      continue;
+    }
+    if (seconds - targetSeconds > epsilon) {
+      break;
+    }
+
     if (action.channelMasterId) {
       const master = getChannelMaster(action.channelMasterId);
       if (!master) {
-        return;
+        continue;
       }
       const state = ensureMasterState(action, master) || {};
       const values = buildMasterChannelValues(master, state);
@@ -3326,15 +3662,19 @@ function computeChannelStatesAtTime(targetSeconds) {
           valuePresetId: null,
         });
       });
-      return;
+      continue;
     }
 
-    const channel = Number.parseInt(action.channel, 10);
-    const value = Number.parseInt(action.value, 10);
-    if (!Number.isFinite(channel) || channel < 1 || channel > 512) return;
-    if (!Number.isFinite(value)) return;
+    const channelNumber = Number.parseInt(action.channel, 10);
+    const valueNumber = Number.parseInt(action.value, 10);
+    if (!Number.isFinite(channelNumber) || channelNumber < 1 || channelNumber > 512) {
+      continue;
+    }
+    if (!Number.isFinite(valueNumber)) {
+      continue;
+    }
 
-    const normalizedValue = clamp(value, 0, 255);
+    const normalizedValue = clamp(valueNumber, 0, 255);
     const channelPresetId =
       typeof action.channelPresetId === "string" && action.channelPresetId
         ? action.channelPresetId
@@ -3344,17 +3684,521 @@ function computeChannelStatesAtTime(targetSeconds) {
         ? action.valuePresetId
         : null;
 
-    states.set(channel, {
-      channel,
+    states.set(channelNumber, {
+      channel: channelNumber,
       value: normalizedValue,
       channelPresetId,
       valuePresetId,
     });
-  });
+  }
 
   return Array.from(states.values())
     .filter((state) => state.value > 0)
     .sort((a, b) => a.channel - b.channel);
+}
+
+function createDefaultLightBarState() {
+  return {
+    red: 0,
+    green: 0,
+    blue: 0,
+    white: 0,
+    brightness: 0,
+    strobe: 0,
+  };
+}
+
+function createDefaultMoverState() {
+  return {
+    brightness: 0,
+    red: 0,
+    green: 0,
+    blue: 0,
+    white: 0,
+    strobe: 0,
+    rotation: 0,
+    rotationSpeed: 0,
+    beams: {
+      1: { rotation: 0, speed: 0 },
+      2: { rotation: 0, speed: 0 },
+      3: { rotation: 0, speed: 0 },
+      4: { rotation: 0, speed: 0 },
+    },
+    lasers: { red: 0, green: 0 },
+    ledStrip: 0,
+  };
+}
+
+function computeStageFixtureState(activeChannels) {
+  const bars = {
+    front: createDefaultLightBarState(),
+    back: createDefaultLightBarState(),
+    left: createDefaultLightBarState(),
+    right: createDefaultLightBarState(),
+  };
+  const mover = createDefaultMoverState();
+  const remaining = [];
+
+  (activeChannels || []).forEach((state) => {
+    if (!applyBarChannelState(bars, state) && !applyMoverChannelState(mover, state)) {
+      remaining.push(state);
+    }
+  });
+
+  return {
+    bars,
+    mover,
+    remainingChannels: remaining,
+  };
+}
+
+function applyBarChannelState(bars, state) {
+  if (!state || typeof state.channelPresetId !== "string") {
+    return false;
+  }
+  const presetId = state.channelPresetId.toLowerCase();
+  const value = clampChannelValue(state.value);
+  for (const key of LIGHT_BAR_KEYS) {
+    const prefix = STAGE_LIGHT_BAR_PREFIXES[key];
+    if (!prefix || !presetId.startsWith(prefix)) {
+      continue;
+    }
+    const bar = bars[key];
+    if (!bar) {
+      return true;
+    }
+    const suffix = presetId.slice(prefix.length);
+    switch (suffix) {
+      case "red":
+        bar.red = value;
+        return true;
+      case "green":
+        bar.green = value;
+        return true;
+      case "blue":
+        bar.blue = value;
+        return true;
+      case "white":
+        bar.white = value;
+        return true;
+      case "brightness":
+      case "dimmer":
+        bar.brightness = value;
+        return true;
+      case "strobe":
+        bar.strobe = value;
+        return true;
+      default:
+        return false;
+    }
+  }
+  return false;
+}
+
+function applyMoverChannelState(mover, state) {
+  if (!state || typeof state.channelPresetId !== "string") {
+    return false;
+  }
+  const presetId = state.channelPresetId.toLowerCase();
+  const value = clampChannelValue(state.value);
+
+  if (presetId === "mover-light-beam-red") {
+    mover.red = value;
+    return true;
+  }
+  if (presetId === "mover-light-beam-green") {
+    mover.green = value;
+    return true;
+  }
+  if (presetId === "mover-light-beam-blue") {
+    mover.blue = value;
+    return true;
+  }
+  if (presetId === "mover-light-beam-white") {
+    mover.white = value;
+    return true;
+  }
+  if (presetId === "mover-light-beam-brightness") {
+    mover.brightness = value;
+    return true;
+  }
+  if (presetId === "mover-light-strobe") {
+    mover.strobe = value;
+    return true;
+  }
+  if (presetId === "mover-light-rotation") {
+    mover.rotation = value;
+    return true;
+  }
+  if (presetId === "mover-light-rotation-speed") {
+    mover.rotationSpeed = value;
+    return true;
+  }
+  if (presetId === "mover-light-laser-red") {
+    mover.lasers.red = value;
+    return true;
+  }
+  if (presetId === "mover-light-laser-green") {
+    mover.lasers.green = value;
+    return true;
+  }
+  if (presetId === "mover-light-strip") {
+    mover.ledStrip = value;
+    return true;
+  }
+
+  for (const beamId of Object.keys(mover.beams)) {
+    const rotationId = `mover-light-beam${beamId}-rotation`;
+    const speedId = `mover-light-beam${beamId}-rotation-speed`;
+    if (presetId === rotationId) {
+      mover.beams[beamId].rotation = value;
+      return true;
+    }
+    if (presetId === speedId) {
+      mover.beams[beamId].speed = value;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function applyStageVisualization(stageState) {
+  if (!stageWrapperEl) {
+    return;
+  }
+  const bars = stageState?.bars || {};
+  LIGHT_BAR_KEYS.forEach((key) => {
+    const config = stageLightBars[key];
+    if (!config || !config.element) {
+      return;
+    }
+    const barState = bars[key] || createDefaultLightBarState();
+    applyLightBarState(config, barState);
+  });
+  applyMoverState(stageState?.mover || createDefaultMoverState());
+}
+
+function applyLightBarState(config, state) {
+  const brightnessAlpha = clampUnit((state?.brightness || 0) / 255);
+  const color = createRgbaColor(state?.red || 0, state?.green || 0, state?.blue || 0, brightnessAlpha);
+  config.element.style.setProperty("--light-color", color);
+  if (config.whiteElement) {
+    const whiteAlpha = clampUnit((state?.white || 0) / 255);
+    config.whiteElement.style.setProperty(
+      "--white-color",
+      createRgbaColor(255, 255, 255, whiteAlpha),
+    );
+  }
+
+  const strobeValue = clampChannelValue(state?.strobe || 0);
+  const strobeActive = strobeValue > 0;
+  config.element.classList.toggle("is-strobing", strobeActive);
+  if (config.whiteElement) {
+    config.whiteElement.classList.toggle("is-strobing", strobeActive);
+  }
+  if (strobeActive) {
+    const duration = `${computeStrobeDuration(strobeValue)}ms`;
+    config.element.style.animationDuration = duration;
+    if (config.whiteElement) {
+      config.whiteElement.style.animationDuration = duration;
+    }
+  } else {
+    config.element.style.animationDuration = "";
+    if (config.whiteElement) {
+      config.whiteElement.style.animationDuration = "";
+    }
+  }
+}
+
+function applyMoverState(state) {
+  if (!moverLightEl) {
+    return;
+  }
+  const brightnessAlpha = clampUnit((state?.brightness || 0) / 255);
+  moverLightEl.style.opacity = brightnessAlpha.toFixed(3);
+  const moverOnColor = createRgbaColor(state?.red || 0, state?.green || 0, state?.blue || 0, brightnessAlpha);
+  moverLightEl.style.setProperty("--mover-glow-color", moverOnColor);
+  moverLightEl.style.setProperty(
+    "--mover-glow-off-color",
+    createRgbaColor(state?.red || 0, state?.green || 0, state?.blue || 0, 0),
+  );
+
+  const animations = [];
+
+  const strobeValue = clampChannelValue(state?.strobe || 0);
+  if (strobeValue > 0) {
+    animations.push(`stage-strobe ${computeStrobeDuration(strobeValue)}ms linear infinite`);
+  }
+
+  const whiteFlashValue = clampChannelValue(state?.white || 0);
+  if (whiteFlashValue > 0 && brightnessAlpha > 0) {
+    animations.push(`mover-white-flash ${computeStrobeDuration(whiteFlashValue)}ms linear infinite`);
+  }
+
+  moverLightEl.style.animation = animations.length ? animations.join(", ") : "none";
+
+  const previousRotation = Number.parseFloat(moverLightEl.dataset.rotationDegrees || "");
+  const rotationDegrees = ((state?.rotation || 0) / 255) * MOVER_ROTATION_MAX_DEGREES;
+  moverLightEl.style.setProperty("--mover-rotation", `${rotationDegrees.toFixed(2)}deg`);
+
+  const rotationSpeedSeconds = mapMoverRotationSpeed(state?.rotationSpeed || 0);
+  let rotationDurationSeconds = 0;
+  if (rotationSpeedSeconds !== null && rotationSpeedSeconds > 0) {
+    const lastRotation = Number.isFinite(previousRotation) ? previousRotation : rotationDegrees;
+    const delta = Math.min(Math.abs(rotationDegrees - lastRotation), MOVER_ROTATION_MAX_DEGREES);
+    const ratio = MOVER_ROTATION_MAX_DEGREES > 0 ? delta / MOVER_ROTATION_MAX_DEGREES : 0;
+    rotationDurationSeconds = rotationSpeedSeconds * ratio;
+  }
+  moverLightEl.style.setProperty(
+    "--mover-rotation-duration",
+    rotationDurationSeconds > 0 ? `${rotationDurationSeconds.toFixed(3)}s` : "0s",
+  );
+  moverLightEl.dataset.rotationDegrees = rotationDegrees.toFixed(6);
+
+  const whiteAlpha = clampUnit((state?.white || 0) / 255);
+  const beamColor = createRgbaColor(state?.red || 0, state?.green || 0, state?.blue || 0, 1);
+  Object.entries(moverBeamElements).forEach(([id, config]) => {
+    if (!config || !config.element) {
+      return;
+    }
+    config.element.style.background = beamColor;
+    if (config.whiteElement) {
+      config.whiteElement.style.background = createRgbaColor(255, 255, 255, whiteAlpha);
+    }
+    const beamState = state?.beams?.[id] || { rotation: 0, speed: 0 };
+    const rotationValue = clampChannelValue(beamState.rotation || 0);
+    const previousRotationValue = Number.parseFloat(config.element.dataset.rotationValue || "");
+    const lastRotationValue = Number.isFinite(previousRotationValue)
+      ? previousRotationValue
+      : rotationValue;
+    const angle = computeBeamAngle(config.baseRotation, rotationValue);
+    const height = computeBeamHeight(rotationValue);
+    config.element.style.setProperty("--beam-rotation", `${angle.toFixed(2)}deg`);
+    config.element.style.setProperty("--beam-height", `${height.toFixed(2)}%`);
+    const beamDuration = mapBeamRotationSpeed(beamState.speed || 0);
+    let beamDurationSeconds = 0;
+    if (beamDuration !== null && beamDuration > 0) {
+      const deltaRatio = Math.min(Math.abs(rotationValue - lastRotationValue), 255) / 255;
+      beamDurationSeconds = beamDuration * deltaRatio;
+    }
+    config.element.style.setProperty(
+      "--beam-rotation-duration",
+      beamDurationSeconds > 0 ? `${beamDurationSeconds.toFixed(3)}s` : "0s",
+    );
+    config.element.dataset.rotationValue = rotationValue.toFixed(6);
+  });
+
+  const redLaser = moverLaserElements.red;
+  if (redLaser) {
+    redLaser.style.opacity = clampUnit((state?.lasers?.red || 0) / 255).toFixed(3);
+  }
+  const greenLaser = moverLaserElements.green;
+  if (greenLaser) {
+    greenLaser.style.opacity = clampUnit((state?.lasers?.green || 0) / 255).toFixed(3);
+  }
+
+  if (moverLedStripEl) {
+    const ledStripConfig = mapLedStripColor(state?.ledStrip || 0);
+    if (!ledStripConfig) {
+      moverLedStripEl.style.opacity = "0";
+      moverLedStripEl.style.outlineColor = "rgba(0, 0, 0, 0)";
+      moverLedStripEl.style.boxShadow = "";
+    } else {
+      const [r, g, b] = ledStripConfig.color;
+      moverLedStripEl.style.opacity = "1";
+      moverLedStripEl.style.outlineColor = createRgbaColor(r, g, b, 1);
+      moverLedStripEl.style.boxShadow = `0 0 32px ${createRgbaColor(r, g, b, 0.75)}`;
+    }
+  }
+}
+
+function computeBeamAngle(baseRotation, value) {
+  const normalized = clampChannelValue(value);
+  if (!Number.isFinite(baseRotation)) {
+    return 0;
+  }
+  const rotationOffset = (normalized / 255) * BEAM_ROTATION_MAX_DEGREES;
+  return baseRotation - rotationOffset;
+}
+
+function computeBeamHeight(value) {
+  const normalized = clampChannelValue(value);
+  const rotationDegrees = (normalized / 255) * BEAM_ROTATION_MAX_DEGREES;
+  if (rotationDegrees <= 90) {
+    const ratio = rotationDegrees / 90;
+    return BEAM_HEIGHT_MAX - ratio * (BEAM_HEIGHT_MAX - BEAM_HEIGHT_MIN);
+  }
+  const ratio = (rotationDegrees - 90) / 90;
+  return BEAM_HEIGHT_MIN + ratio * (BEAM_HEIGHT_MAX - BEAM_HEIGHT_MIN);
+}
+
+function mapLedStripColor(value) {
+  const numeric = clampChannelValue(value);
+  if (numeric < 15) {
+    return null;
+  }
+  const match = LED_STRIP_COLOR_RANGES.find((range) => numeric >= range.min && numeric <= range.max);
+  return match || null;
+}
+
+function computeStrobeDuration(value) {
+  const numeric = clampChannelValue(value);
+  if (numeric <= 0) {
+    return STROBE_SLOW_DURATION_MS;
+  }
+  if (numeric === 1) {
+    return STROBE_SLOW_DURATION_MS;
+  }
+  const ratio = (numeric - 1) / 254;
+  const duration =
+    STROBE_SLOW_DURATION_MS - ratio * (STROBE_SLOW_DURATION_MS - STROBE_FAST_DURATION_MS);
+  return Math.round(Math.max(STROBE_FAST_DURATION_MS, duration));
+}
+
+function mapMoverRotationSpeed(value) {
+  const numeric = clampChannelValue(value);
+  if (numeric <= 0) {
+    return null;
+  }
+  if (numeric === 1) {
+    return MOVER_ROTATION_SPEED_SLOW;
+  }
+  const ratio = (numeric - 1) / 254;
+  const duration =
+    MOVER_ROTATION_SPEED_SLOW - ratio * (MOVER_ROTATION_SPEED_SLOW - MOVER_ROTATION_SPEED_FAST);
+  return Math.max(MOVER_ROTATION_SPEED_FAST, Number(duration.toFixed(2)));
+}
+
+function mapBeamRotationSpeed(value) {
+  const numeric = clampChannelValue(value);
+  if (numeric <= 0) {
+    return null;
+  }
+  if (numeric === 1) {
+    return BEAM_ROTATION_SPEED_SLOW;
+  }
+  const ratio = (numeric - 1) / 254;
+  const duration =
+    BEAM_ROTATION_SPEED_SLOW - ratio * (BEAM_ROTATION_SPEED_SLOW - BEAM_ROTATION_SPEED_FAST);
+  return Math.max(BEAM_ROTATION_SPEED_FAST, Number(duration.toFixed(2)));
+}
+
+function createRgbaColor(red, green, blue, alpha) {
+  const r = clamp(Math.round(Number(red) || 0), 0, 255);
+  const g = clamp(Math.round(Number(green) || 0), 0, 255);
+  const b = clamp(Math.round(Number(blue) || 0), 0, 255);
+  const normalizedAlpha = clampUnit(Number(alpha));
+  return `rgba(${r}, ${g}, ${b}, ${normalizedAlpha.toFixed(3)})`;
+}
+
+function clampUnit(value) {
+  return clamp(Number.isFinite(value) ? value : Number(value) || 0, 0, 1);
+}
+
+function updateStageAccessibilitySummary(stageState) {
+  if (!channelStatusListEl) {
+    return;
+  }
+  const summary = buildStageAccessibilitySummary(stageState);
+  channelStatusListEl.textContent = summary;
+}
+
+function buildStageAccessibilitySummary(stageState) {
+  if (!stageState) {
+    return "All channels at blackout.";
+  }
+  const descriptions = [];
+  const bars = stageState.bars || {};
+  LIGHT_BAR_KEYS.forEach((key) => {
+    const state = bars[key];
+    if (!state) {
+      return;
+    }
+    const brightness = clampUnit((state.brightness || 0) / 255);
+    const white = clampUnit((state.white || 0) / 255);
+    const hasColor = (state.red || state.green || state.blue) > 0;
+    if (!brightness && !white && !hasColor) {
+      return;
+    }
+    const label = STAGE_LIGHT_LABELS[key] || key;
+    const parts = [`${label}: brightness ${Math.round(brightness * 100)}%`];
+    if (hasColor) {
+      parts.push(`color ${rgbToHex(state.red, state.green, state.blue)}`);
+    }
+    if (white > 0) {
+      parts.push(`white ${Math.round(white * 100)}%`);
+    }
+    if ((state.strobe || 0) > 0) {
+      parts.push(`strobe ${formatStrobeDescription(state.strobe)}`);
+    }
+    descriptions.push(parts.join(", "));
+  });
+
+  const mover = stageState.mover || null;
+  if (mover) {
+    const brightness = clampUnit((mover.brightness || 0) / 255);
+    const hasColor = (mover.red || mover.green || mover.blue) > 0;
+    const lasers = [];
+    if ((mover.lasers?.red || 0) > 0) lasers.push("red laser");
+    if ((mover.lasers?.green || 0) > 0) lasers.push("green laser");
+    const ledStripConfig = mapLedStripColor(mover.ledStrip || 0);
+    const hasWhiteFlash = clampChannelValue(mover.white || 0) > 0;
+    if (brightness > 0 || hasColor || lasers.length || ledStripConfig || hasWhiteFlash) {
+      const moverParts = [`Mover brightness ${Math.round(brightness * 100)}%`];
+      if (hasColor) {
+        moverParts.push(`color ${rgbToHex(mover.red, mover.green, mover.blue)}`);
+      }
+      const rotation = Math.round(((mover.rotation || 0) / 255) * MOVER_ROTATION_MAX_DEGREES);
+      moverParts.push(`rotation ${rotation}°`);
+      if ((mover.strobe || 0) > 0) {
+        moverParts.push(`strobe ${formatStrobeDescription(mover.strobe)}`);
+      }
+      if (hasWhiteFlash && brightness > 0) {
+        moverParts.push(`white flash ${formatStrobeDescription(mover.white)}`);
+      }
+      if (lasers.length) {
+        moverParts.push(`${lasers.join(" & ")} on`);
+      }
+      if (ledStripConfig) {
+        moverParts.push(`LED strip ${ledStripConfig.label}`);
+      }
+      descriptions.push(moverParts.join(", "));
+    }
+  }
+
+  const extras = (stageState.remainingChannels || [])
+    .map((state) => {
+      const preset = findChannelPresetForState(state);
+      if (!preset) {
+        return null;
+      }
+      const valuePreset = findValuePresetForState(state, preset);
+      const label = formatChannelStatusChannelLabel(state, preset);
+      const value = formatChannelStatusValueLabel(state, valuePreset);
+      return `${label}: ${value}`;
+    })
+    .filter(Boolean);
+  if (extras.length) {
+    descriptions.push(`Other active channels — ${extras.join("; ")}`);
+  }
+
+  if (!descriptions.length) {
+    return "All channels at blackout.";
+  }
+  return descriptions.join(" ");
+}
+
+function formatStrobeDescription(value) {
+  const durationMs = computeStrobeDuration(value);
+  const seconds = durationMs / 1000;
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return `value ${value}`;
+  }
+  if (seconds >= 1) {
+    return `~${seconds.toFixed(seconds >= 10 ? 0 : 1)}s cycle`;
+  }
+  return `~${Math.round(seconds * 1000)}ms cycle`;
 }
 
 function findChannelPresetForState(state) {
@@ -3418,16 +4262,6 @@ function formatChannelStatusValueLabel(state, valuePreset) {
     return String(state.value);
   }
   return `${state.value ?? "0"}`;
-}
-
-function formatChannelStatusTooltip(state, channelPreset, valuePreset) {
-  const channelNumber = Number.isFinite(state.channel) ? state.channel : Number.parseInt(state.channel, 10);
-  const valueNumber = Number.isFinite(state.value) ? state.value : Number.parseInt(state.value, 10);
-  const baseChannel = Number.isFinite(channelNumber) ? `Channel ${channelNumber}` : "Channel";
-  const baseValue = Number.isFinite(valueNumber) ? `Value ${valueNumber}` : "Value";
-  const channelLabel = channelPreset?.name ? `${channelPreset.name} (${baseChannel})` : baseChannel;
-  const valueLabel = valuePreset?.name ? `${valuePreset.name} (${baseValue})` : baseValue;
-  return `${channelLabel} — ${valueLabel}`;
 }
 
 function createInput({ type, value, placeholder, min, max, step }) {

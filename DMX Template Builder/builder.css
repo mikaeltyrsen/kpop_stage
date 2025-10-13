@@ -1360,29 +1360,293 @@ input::-webkit-inner-spin-button {
 .channel-status__content {
   font-size: 0.95rem;
   line-height: 1.4;
-}
-
-.channel-status__list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 0.35rem;
-}
-
-.channel-status__item {
   display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
+  justify-content: center;
 }
 
-.channel-status__item-label {
-  font-weight: 600;
+.channel-status__stage {
+  padding: 0.5rem 0;
 }
 
-.channel-status__empty {
-  margin: 0;
-  opacity: 0.75;
+.stage-wrapper {
+  --stage-border-color: rgba(148, 163, 184, 0.35);
+  --stage-background: radial-gradient(circle at center, rgba(12, 14, 23, 0.9), rgba(3, 5, 12, 0.96));
+  background: var(--stage-background);
+  border-radius: 0.9rem;
+  padding: 1.1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: min(100%, 320px);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.65), 0 12px 28px rgba(2, 6, 23, 0.6);
+}
+
+.stage {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  border: 1px solid var(--stage-border-color);
+  border-radius: 1.1rem;
+  background: #020204;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.stage-floor {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(circle at center, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.98));
+}
+
+.light-bar {
+  --light-color: rgba(255, 0, 0, 0);
+  position: absolute;
+  width: 60%;
+  height: 10px;
+  outline: 1px solid #666;
+  background: #000;
+  box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  z-index: 5;
+}
+
+.light-bar .white-color {
+  --white-color: rgba(255, 255, 255, 0);
+  width: 100%;
+  height: 100%;
+  box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+}
+
+#light-bar-1 {
+  bottom: -20px;
+  box-shadow:
+    0px -20px 20px var(--light-color),
+    0px -20px 50px var(--light-color),
+    0px -3px 0px var(--light-color);
+}
+
+#light-bar-1 .white-color {
+  box-shadow:
+    0px -20px 20px var(--white-color),
+    0px -20px 50px var(--white-color),
+    0px -3px 0px var(--white-color);
+}
+
+#light-bar-2 {
+  height: 100%;
+  width: 100%;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  box-shadow: 0px 0px 40px var(--light-color);
+}
+
+#light-bar-2 .white-color {
+  box-shadow: 0px 0px 40px var(--white-color);
+}
+
+#light-bar-3 {
+  top: 10%;
+  right: -30%;
+  transform: rotate(45deg);
+  box-shadow:
+    0px 20px 20px var(--light-color),
+    0px 20px 50px var(--light-color),
+    0px 3px 0px var(--light-color);
+}
+
+#light-bar-3 .white-color {
+  box-shadow:
+    0px 20px 20px var(--white-color),
+    0px 20px 50px var(--white-color),
+    0px 3px 0px var(--white-color);
+}
+
+#light-bar-4 {
+  left: -30%;
+  top: 10%;
+  transform: rotate(-45deg);
+  box-shadow:
+    0px 20px 20px var(--light-color),
+    0px 20px 50px var(--light-color),
+    0px 3px 0px var(--light-color);
+}
+
+#light-bar-4 .white-color {
+  box-shadow:
+    0px 20px 20px var(--white-color),
+    0px 20px 50px var(--white-color),
+    0px 3px 0px var(--white-color);
+}
+
+#mover-light {
+  --mover-rotation: 45deg;
+  --mover-rotation-duration: 0.5s;
+  --mover-glow-color: rgba(255, 173, 0, 0);
+  --mover-glow-off-color: rgba(255, 173, 0, 0);
+  position: relative;
+  background: #000;
+  outline: 1px solid #666;
+  width: 20%;
+  height: 20%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow:
+    0px 0px 40px var(--mover-glow-color),
+    0px 0px 40px var(--mover-glow-color),
+    0px 0px 40px var(--mover-glow-color);
+  border-radius: 100px;
+  transform: rotate(var(--mover-rotation));
+  transition: transform var(--mover-rotation-duration) linear;
+  z-index: 10;
+}
+
+#mover-light .beam {
+  --beam-rotation: 0deg;
+  --beam-height: 500%;
+  --beam-rotation-duration: 0.6s;
+  width: 50%;
+  position: absolute;
+  background: rgba(255, 0, 0, 0);
+  border-radius: 100px;
+  overflow: hidden;
+  filter: blur(3px);
+  height: var(--beam-height);
+  transform: rotate(var(--beam-rotation));
+  transition:
+    transform var(--beam-rotation-duration) ease-in-out,
+    height var(--beam-rotation-duration) ease-in-out;
+}
+
+#mover-light .beam .white-color {
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0);
+}
+
+#beam-1 {
+  top: 10%;
+  left: -10%;
+  transform-origin: top;
+  --beam-rotation: 225deg;
+}
+
+#beam-2 {
+  top: 10%;
+  right: -10%;
+  transform-origin: top;
+  --beam-rotation: 315deg;
+}
+
+#beam-3 {
+  bottom: 10%;
+  left: -10%;
+  transform-origin: bottom;
+  --beam-rotation: 315deg;
+}
+
+#beam-4 {
+  bottom: 10%;
+  right: -10%;
+  transform-origin: bottom;
+  --beam-rotation: 225deg;
+}
+
+#led-strip {
+  width: 100%;
+  height: 100%;
+  border-radius: 100px;
+  outline: 5px solid rgba(255, 0, 255, 0.4);
+  outline-offset: -5px;
+  position: absolute;
+  z-index: 0;
+  background: #000;
+  filter: blur(2px);
+  opacity: 0.8;
+}
+
+.laser {
+  position: absolute;
+  width: 800%;
+  height: 800%;
+  z-index: 0;
+  filter: blur(1px);
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.laser img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+@keyframes stage-strobe {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes mover-white-flash {
+  0% {
+    box-shadow:
+      0px 0px 40px var(--mover-glow-off-color),
+      0px 0px 40px var(--mover-glow-off-color),
+      0px 0px 40px var(--mover-glow-off-color);
+  }
+  15% {
+    box-shadow:
+      0px 0px 40px var(--mover-glow-color),
+      0px 0px 40px var(--mover-glow-color),
+      0px 0px 40px var(--mover-glow-color);
+  }
+  45% {
+    box-shadow:
+      0px 0px 40px var(--mover-glow-color),
+      0px 0px 40px var(--mover-glow-color),
+      0px 0px 40px var(--mover-glow-color);
+  }
+  60% {
+    box-shadow:
+      0px 0px 40px var(--mover-glow-off-color),
+      0px 0px 40px var(--mover-glow-off-color),
+      0px 0px 40px var(--mover-glow-off-color);
+  }
+  100% {
+    box-shadow:
+      0px 0px 40px var(--mover-glow-off-color),
+      0px 0px 40px var(--mover-glow-off-color),
+      0px 0px 40px var(--mover-glow-off-color);
+  }
+}
+
+.light-bar.is-strobing {
+  animation-name: stage-strobe;
+  animation-iteration-count: infinite;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+
+.light-bar.is-strobing .white-color {
+  animation-name: stage-strobe;
+  animation-iteration-count: inherit;
+  animation-timing-function: inherit;
+  animation-fill-mode: inherit;
 }
 
 .table-wrapper {
