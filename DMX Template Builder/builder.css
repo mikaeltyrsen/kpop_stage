@@ -1370,13 +1370,11 @@ input::-webkit-inner-spin-button {
   width: min(220px, 100%);
   aspect-ratio: 1 / 1;
   border: 1px solid rgba(97, 97, 97, 0.75);
-  border-radius: 1rem;
   padding: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
   background: rgba(0, 0, 0, 0.85);
-  overflow: hidden;
 }
 
 .stage-visualizer .stage-floor {

@@ -3262,19 +3262,54 @@ function updateChannelStatusDisplay(seconds) {
 function computeChannelStatesAtTime(targetSeconds) {
   if (!actions.length) return [];
   const epsilon = 0.001;
-  const timeline = actions
-    .map((action, index) => ({
-      action,
-      index,
-      seconds: parseTimeString(action.time),
-    }))
-    .filter((item) => item.seconds !== null && item.seconds - targetSeconds <= epsilon)
-    .sort((a, b) => {
-      if (a.seconds === b.seconds) {
+  const maxTime = targetSeconds + epsilon;
+  const timeline = [];
+
+  actions.forEach((action, index) => {
+    const baseSeconds = parseTimeString(action.time);
+    if (baseSeconds === null || baseSeconds > maxTime) {
+      return;
+    }
+
+    const pushTimelineEntry = (seconds, iteration) => {
+      if (seconds - targetSeconds > epsilon) {
+        return;
+      }
+      timeline.push({ action, index, seconds, iteration });
+    };
+
+    pushTimelineEntry(baseSeconds, 0);
+
+    const loop = action.templateLoop ? normalizeTemplateLoop(action.templateLoop) : null;
+    const loopDuration = loop ? Number(loop.duration || 0) : 0;
+    const loopActive = Boolean(
+      loop && loopDuration > 0 && (loop.enabled || loop.infinite),
+    );
+    if (!loopActive) {
+      return;
+    }
+
+    const totalIterations = loop.infinite ? Infinity : Math.max(loop.count || 0, 1);
+    const maxIterationByTime = Math.floor((maxTime - baseSeconds) / loopDuration);
+    const maxIteration = loop.infinite
+      ? maxIterationByTime
+      : Math.min(totalIterations - 1, maxIterationByTime);
+
+    for (let iteration = 1; iteration <= maxIteration; iteration += 1) {
+      const seconds = baseSeconds + iteration * loopDuration;
+      pushTimelineEntry(seconds, iteration);
+    }
+  });
+
+  timeline.sort((a, b) => {
+    if (a.seconds === b.seconds) {
+      if (a.iteration === b.iteration) {
         return a.index - b.index;
       }
-      return a.seconds - b.seconds;
-    });
+      return a.iteration - b.iteration;
+    }
+    return a.seconds - b.seconds;
+  });
 
   const channelStates = new Map();
   timeline.forEach(({ action, seconds }) => {
