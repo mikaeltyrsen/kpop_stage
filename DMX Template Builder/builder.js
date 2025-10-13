@@ -3709,6 +3709,15 @@ function applyShadow(element, onShadow, offShadow, strobeValue, range, options =
   element.style.setProperty("--strobe-duration", `${duration}s`);
 }
 
+function clearShadow(element) {
+  if (!element) return;
+  element.classList.remove("is-strobing");
+  element.style.removeProperty("--strobe-duration");
+  element.style.removeProperty("--light-shadow-on");
+  element.style.removeProperty("--light-shadow-off");
+  element.style.boxShadow = "none";
+}
+
 function computeStrobeDuration(value, range = { min: 0.08, max: 2 }) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric) || numeric <= 0) {
@@ -3750,23 +3759,13 @@ function buildMoverStageConfig(root) {
     },
   ];
 
-  const redLaser = root.querySelector("#red-laser");
-  const greenLaser = root.querySelector("#green-laser");
-  const redImage = redLaser ? redLaser.querySelector("img") : null;
-  const greenImage = greenLaser ? greenLaser.querySelector("img") : null;
-  if (redImage) {
-    redImage.src = createLaserPlaceholderSvg("#ff4d4d");
-    redImage.alt = redImage.alt || "";
-  }
-  if (greenImage) {
-    greenImage.src = createLaserPlaceholderSvg("#6bff6b");
-    greenImage.alt = greenImage.alt || "";
-  }
-
   return {
     container,
     beams,
-    lasers: { red: redLaser, green: greenLaser },
+    lasers: {
+      red: root.querySelector("#red-laser"),
+      green: root.querySelector("#green-laser"),
+    },
     ledStrip: container.querySelector("#led-strip"),
     label: "Mover Light",
     presets: {
@@ -3792,11 +3791,6 @@ function buildMoverStageConfig(root) {
     ],
     baseRotation: 0,
   };
-}
-
-function createLaserPlaceholderSvg(color) {
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><defs><radialGradient id='g' cx='50%' cy='50%' r='50%'><stop offset='0%' stop-color='${color}' stop-opacity='0.85'/><stop offset='100%' stop-color='${color}' stop-opacity='0'/></radialGradient></defs><circle cx='100' cy='100' r='100' fill='url(#g)'/></svg>`;
-  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
 function updateMoverStage(config, stateMap) {
@@ -3843,17 +3837,22 @@ function updateMoverStage(config, stateMap) {
   applyMoverRotation(config.container, moverAngle, rotationSpeedValue);
 
   const flashValue = getChannelValue(stateMap, config.presets.flash);
-  const flashAlpha = clamp(flashValue / 255, 0, 1);
-  const baseShadowColor = createRgba(255, 173, 0, brightness > 0 ? Math.max(brightness, 0.2) : 0);
-  const flashShadowColor = createRgba(255, 255, 255, flashAlpha);
-  applyShadow(
-    config.container,
-    createMoverShadow(flashShadowColor),
-    createMoverShadow(baseShadowColor),
-    flashValue,
-    { min: 0.08, max: 2 },
-    { preferOnState: false },
-  );
+  let flashAlpha = 0;
+  if (flashValue <= 0) {
+    clearShadow(config.container);
+  } else {
+    flashAlpha = clamp(flashValue / 255, 0, 1);
+    const baseShadowColor = createRgba(255, 173, 0, brightness > 0 ? Math.max(brightness, 0.2) : 0);
+    const flashShadowColor = createRgba(255, 255, 255, flashAlpha);
+    applyShadow(
+      config.container,
+      createMoverShadow(flashShadowColor),
+      createMoverShadow(baseShadowColor),
+      flashValue,
+      { min: 0.08, max: 2 },
+      { preferOnState: false },
+    );
+  }
 
   const lasersActive = updateLasers(config, stateMap, brightness);
   const ledActive = updateLedStrip(config, stateMap, brightness);
