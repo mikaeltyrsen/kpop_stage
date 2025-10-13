@@ -3362,9 +3362,6 @@ function computeChannelStatesAtTime(targetSeconds) {
   const results = [];
   channelStates.forEach((state, channelNumber) => {
     const value = clamp(evaluateChannelStateValue(state, targetSeconds), 0, 255);
-    if (value <= 0) {
-      return;
-    }
     results.push({
       channel: channelNumber,
       value,
