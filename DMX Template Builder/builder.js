@@ -184,8 +184,8 @@ const MOVER_ROTATION_MAX_DEGREES = 520;
 const BEAM_ROTATION_MAX_DEGREES = 180;
 const BEAM_HEIGHT_MIN = 50;
 const BEAM_HEIGHT_MAX = 500;
-const STROBE_BASE_DURATION_MS = 2000;
-const STROBE_MIN_DURATION_MS = 60;
+const STROBE_SLOW_DURATION_MS = 2000;
+const STROBE_FAST_DURATION_MS = 120;
 const MOVER_ROTATION_SPEED_SLOW = 10;
 const MOVER_ROTATION_SPEED_FAST = 1;
 const BEAM_ROTATION_SPEED_SLOW = 3;
@@ -3928,12 +3928,12 @@ function applyMoverState(state) {
 
   const strobeValue = clampChannelValue(state?.strobe || 0);
   if (strobeValue > 0) {
-    animations.push(`stage-strobe ${computeStrobeDuration(strobeValue)}ms steps(2, end) infinite`);
+    animations.push(`stage-strobe ${computeStrobeDuration(strobeValue)}ms linear infinite`);
   }
 
   const whiteFlashValue = clampChannelValue(state?.white || 0);
   if (whiteFlashValue > 0 && brightnessAlpha > 0) {
-    animations.push(`mover-white-flash ${computeStrobeDuration(whiteFlashValue)}ms steps(2, end) infinite`);
+    animations.push(`mover-white-flash ${computeStrobeDuration(whiteFlashValue)}ms linear infinite`);
   }
 
   moverLightEl.style.animation = animations.length ? animations.join(", ") : "none";
@@ -3967,15 +3967,26 @@ function applyMoverState(state) {
       config.whiteElement.style.background = createRgbaColor(255, 255, 255, whiteAlpha);
     }
     const beamState = state?.beams?.[id] || { rotation: 0, speed: 0 };
-    const angle = computeBeamAngle(config.baseRotation, beamState.rotation);
-    const height = computeBeamHeight(beamState.rotation);
+    const rotationValue = clampChannelValue(beamState.rotation || 0);
+    const previousRotationValue = Number.parseFloat(config.element.dataset.rotationValue || "");
+    const lastRotationValue = Number.isFinite(previousRotationValue)
+      ? previousRotationValue
+      : rotationValue;
+    const angle = computeBeamAngle(config.baseRotation, rotationValue);
+    const height = computeBeamHeight(rotationValue);
     config.element.style.setProperty("--beam-rotation", `${angle.toFixed(2)}deg`);
     config.element.style.setProperty("--beam-height", `${height.toFixed(2)}%`);
     const beamDuration = mapBeamRotationSpeed(beamState.speed || 0);
+    let beamDurationSeconds = 0;
+    if (beamDuration !== null && beamDuration > 0) {
+      const deltaRatio = Math.min(Math.abs(rotationValue - lastRotationValue), 255) / 255;
+      beamDurationSeconds = beamDuration * deltaRatio;
+    }
     config.element.style.setProperty(
       "--beam-rotation-duration",
-      beamDuration === null ? "0s" : `${beamDuration}s`,
+      beamDurationSeconds > 0 ? `${beamDurationSeconds.toFixed(3)}s` : "0s",
     );
+    config.element.dataset.rotationValue = rotationValue.toFixed(6);
   });
 
   const redLaser = moverLaserElements.red;
@@ -4034,10 +4045,15 @@ function mapLedStripColor(value) {
 function computeStrobeDuration(value) {
   const numeric = clampChannelValue(value);
   if (numeric <= 0) {
-    return STROBE_BASE_DURATION_MS;
+    return STROBE_SLOW_DURATION_MS;
   }
-  const duration = STROBE_BASE_DURATION_MS / numeric;
-  return Math.max(STROBE_MIN_DURATION_MS, Math.round(duration));
+  if (numeric === 1) {
+    return STROBE_SLOW_DURATION_MS;
+  }
+  const ratio = (numeric - 1) / 254;
+  const duration =
+    STROBE_SLOW_DURATION_MS - ratio * (STROBE_SLOW_DURATION_MS - STROBE_FAST_DURATION_MS);
+  return Math.round(Math.max(STROBE_FAST_DURATION_MS, duration));
 }
 
 function mapMoverRotationSpeed(value) {

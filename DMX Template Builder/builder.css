@@ -1585,25 +1585,48 @@ input::-webkit-inner-spin-button {
 }
 
 @keyframes stage-strobe {
-  0%,
-  45% {
+  0% {
+    opacity: 0;
+  }
+  10% {
     opacity: 1;
   }
-  55%,
+  40% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 0;
+  }
   100% {
     opacity: 0;
   }
 }
 
 @keyframes mover-white-flash {
-  0%,
+  0% {
+    box-shadow:
+      0px 0px 40px var(--mover-glow-off-color),
+      0px 0px 40px var(--mover-glow-off-color),
+      0px 0px 40px var(--mover-glow-off-color);
+  }
+  15% {
+    box-shadow:
+      0px 0px 40px var(--mover-glow-color),
+      0px 0px 40px var(--mover-glow-color),
+      0px 0px 40px var(--mover-glow-color);
+  }
   45% {
     box-shadow:
       0px 0px 40px var(--mover-glow-color),
       0px 0px 40px var(--mover-glow-color),
       0px 0px 40px var(--mover-glow-color);
   }
-  55%,
+  60% {
+    box-shadow:
+      0px 0px 40px var(--mover-glow-off-color),
+      0px 0px 40px var(--mover-glow-off-color),
+      0px 0px 40px var(--mover-glow-off-color);
+  }
   100% {
     box-shadow:
       0px 0px 40px var(--mover-glow-off-color),
@@ -1615,13 +1638,15 @@ input::-webkit-inner-spin-button {
 .light-bar.is-strobing {
   animation-name: stage-strobe;
   animation-iteration-count: infinite;
-  animation-timing-function: steps(2, end);
+  animation-timing-function: linear;
+  animation-fill-mode: both;
 }
 
 .light-bar.is-strobing .white-color {
   animation-name: stage-strobe;
   animation-iteration-count: inherit;
   animation-timing-function: inherit;
+  animation-fill-mode: inherit;
 }
 
 .table-wrapper {
