@@ -39,7 +39,8 @@ DEFAULT_CHANNELS = 512
 DMX_FPS = 30.0
 DMX_BREAK_DURATION = float(os.environ.get("DMX_BREAK_DURATION", "0.00012"))
 DMX_MARK_AFTER_BREAK = float(os.environ.get("DMX_MARK_AFTER_BREAK", "0.000012"))
-DEFAULT_STARTUP_LEVELS = ""
+DEFAULT_STARTUP_LEVELS = "1=255,2=255,3=255"
+DEFAULT_SMOKE_CHANNEL = 60
 
 
 def _parse_env_float(name: str, default: float, *, minimum: float = 0.0) -> float:
@@ -65,6 +66,21 @@ TEMPLATE_LOOP_MAX_ITERATIONS = 9999
 
 def _clamp(value: int, low: int, high: int) -> int:
     return max(low, min(high, value))
+
+
+def _resolve_smoke_channel() -> Optional[int]:
+    raw = os.environ.get("SMOKE_CHANNEL")
+    if raw is None or not raw.strip():
+        return DEFAULT_SMOKE_CHANNEL
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        LOGGER.warning("Invalid SMOKE_CHANNEL value '%s'. Smoke trigger disabled.", raw)
+        return None
+    if value <= 0 or value > DEFAULT_CHANNELS:
+        LOGGER.warning("SMOKE_CHANNEL %s out of range. Smoke trigger disabled.", value)
+        return None
+    return value
 
 
 def _resolve_serial_port() -> Optional[str]:
@@ -715,6 +731,7 @@ class DMXShowManager:
         self,
         templates_dir: Path,
         output: DMXOutput,
+        smoke_channel: Optional[int] = None,
     ) -> None:
         self.templates_dir = templates_dir
         self.templates_dir.mkdir(parents=True, exist_ok=True)
@@ -723,6 +740,17 @@ class DMXShowManager:
         self._lock = threading.Lock()
         self._has_active_show = False
         self._baseline_levels: List[int] = [0] * self.output.channel_count
+        if smoke_channel and (smoke_channel < 1 or smoke_channel > self.output.channel_count):
+            LOGGER.warning(
+                "Configured smoke channel %s is outside of available range. Smoke trigger disabled.",
+                smoke_channel,
+            )
+            self._smoke_channel: Optional[int] = None
+        else:
+            self._smoke_channel = smoke_channel
+        self._smoke_lock = threading.Lock()
+        self._smoke_reset_timer: Optional[threading.Timer] = None
+        self._smoke_active = False
 
     def update_baseline_levels(self, levels: Iterable[int]) -> None:
         """Replace the stored baseline DMX levels used when starting shows."""
@@ -731,6 +759,45 @@ class DMXShowManager:
         if len(values) != self.output.channel_count:
             raise ValueError("Baseline levels must match DMX channel count")
         self._baseline_levels = [_clamp(value, 0, 255) for value in values]
+
+    def is_smoke_available(self) -> bool:
+        return self._smoke_channel is not None
+
+    def is_smoke_active(self) -> bool:
+        with self._smoke_lock:
+            return bool(self._smoke_channel and self._smoke_active)
+
+    def trigger_smoke(self, level: int = 255, duration: float = 3.0) -> float:
+        if not self._smoke_channel:
+            raise RuntimeError("Smoke channel is not configured")
+        clamped_level = _clamp(int(level), 0, 255)
+        duration_value = max(0.0, float(duration))
+        with self._smoke_lock:
+            if self._smoke_reset_timer:
+                self._smoke_reset_timer.cancel()
+                self._smoke_reset_timer = None
+            self.output.set_channel(self._smoke_channel, clamped_level)
+            if clamped_level <= 0 or duration_value <= 0:
+                self.output.set_channel(self._smoke_channel, 0)
+                self._smoke_active = False
+                return 0.0
+            self._smoke_active = True
+
+            timer: Optional[threading.Timer] = None
+
+            def _reset() -> None:
+                with self._smoke_lock:
+                    if self._smoke_reset_timer is not timer:
+                        return
+                    self.output.set_channel(self._smoke_channel, 0)
+                    self._smoke_active = False
+                    self._smoke_reset_timer = None
+
+            timer = threading.Timer(duration_value, _reset)
+            timer.daemon = True
+            self._smoke_reset_timer = timer
+            timer.start()
+        return duration_value
 
     def template_path_for_video(self, video_entry: Dict[str, object]) -> Path:
         template_value = video_entry.get("dmx_template")
@@ -1105,6 +1172,7 @@ class DMXShowManager:
                     "templateInstanceId",
                     "templateRowId",
                     "channelMasterId",
+                    "stepTitle",
                 ):
                     value = raw.get(key)
                     if isinstance(value, str) and value:
@@ -1127,7 +1195,8 @@ class DMXShowManager:
 
 def create_manager(templates_dir: Path, universe: int = 0) -> DMXShowManager:
     output = DMXOutput(universe=universe)
-    manager = DMXShowManager(templates_dir, output)
+    smoke_channel = _resolve_smoke_channel()
+    manager = DMXShowManager(templates_dir, output, smoke_channel=smoke_channel)
 
     startup_config = os.environ.get("DMX_STARTUP_LEVELS", DEFAULT_STARTUP_LEVELS)
     try:

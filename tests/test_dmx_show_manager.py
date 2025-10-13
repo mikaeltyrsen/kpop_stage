@@ -40,8 +40,28 @@ class DummyRunner:
         self.stop_calls += 1
 
 
+class SmokeOutput(DummyOutput):
+    def __init__(self, channel_count: int = 8) -> None:
+        super().__init__(channel_count)
+        self.channel_levels: List[int] = [0] * channel_count
+        self.set_channel_calls: List[tuple[int, int]] = []
+
+    def set_channel(self, channel: int, value: int, *, _cancel_transition: bool = True) -> None:
+        idx = channel - 1
+        if idx < 0 or idx >= self.channel_count:
+            raise ValueError("Channel out of range")
+        self.channel_levels[idx] = value
+        self.set_channel_calls.append((channel, value))
+
+    def get_channel_level(self, channel: int) -> int:
+        idx = channel - 1
+        if idx < 0 or idx >= self.channel_count:
+            raise ValueError("Channel out of range")
+        return self.channel_levels[idx]
+
+
 def create_manager(tmp_path: Path, output: DummyOutput) -> DMXShowManager:
-    manager = DMXShowManager(tmp_path, output)
+    manager = DMXShowManager(tmp_path, output, smoke_channel=None)
     manager.runner = DummyRunner()  # type: ignore[assignment]
     return manager
 
@@ -618,4 +638,30 @@ def test_create_manager_allows_disabling_startup_levels(monkeypatch: pytest.Monk
     output = manager.output
     assert isinstance(output, StartupOutput)
     assert output.applied == []
+
+
+def test_trigger_smoke_sets_channel_and_resets(tmp_path: Path) -> None:
+    output = SmokeOutput(channel_count=64)
+    manager = DMXShowManager(tmp_path, output, smoke_channel=10)
+
+    duration = manager.trigger_smoke(level=255, duration=0.01)
+
+    assert duration == pytest.approx(0.01, rel=0.1)
+    assert manager.is_smoke_available()
+    assert manager.is_smoke_active()
+    assert output.set_channel_calls[-1] == (10, 255)
+
+    time.sleep(0.05)
+
+    assert output.get_channel_level(10) == 0
+    assert not manager.is_smoke_active()
+
+
+def test_trigger_smoke_requires_configured_channel(tmp_path: Path) -> None:
+    output = SmokeOutput(channel_count=32)
+    manager = DMXShowManager(tmp_path, output, smoke_channel=None)
+
+    assert not manager.is_smoke_available()
+    with pytest.raises(RuntimeError):
+        manager.trigger_smoke()
 
