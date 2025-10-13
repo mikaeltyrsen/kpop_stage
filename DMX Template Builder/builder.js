@@ -9,7 +9,14 @@ const templateInfoEl = document.getElementById("template-info");
 const videoEl = document.getElementById("preview-video");
 const rowTemplate = document.getElementById("action-row-template");
 const channelPresetsContainer = document.getElementById("channel-presets");
-const channelStatusListEl = document.getElementById("channel-status-list");
+const stageVisualizerEl = document.getElementById("stage-visualizer");
+const stageStatusEl = stageVisualizerEl ? stageVisualizerEl.querySelector(".stage-status") : null;
+const stageLightConfig = stageVisualizerEl ? buildStageLightConfig(stageVisualizerEl) : null;
+const moverStageConfig = stageVisualizerEl ? buildMoverStageConfig(stageVisualizerEl) : null;
+const stageRotationState = {
+  mover: moverStageConfig ? moverStageConfig.baseRotation : 0,
+  beams: moverStageConfig ? moverStageConfig.beams.map((beam) => beam.baseAngle) : [],
+};
 const addChannelPresetButton = document.getElementById("add-channel-preset");
 const channelPresetsSection = document.querySelector(".preset-settings");
 const builderLayout = document.querySelector(".builder-layout");
@@ -3247,70 +3254,81 @@ function findLatestActionIndexAtTime(targetSeconds) {
 }
 
 function updateChannelStatusDisplay(seconds) {
-  if (!channelStatusListEl) return;
-  channelStatusListEl.innerHTML = "";
-  const activeChannels = computeChannelStatesAtTime(seconds);
-  if (!activeChannels.length) {
-    const empty = document.createElement("p");
-    empty.className = "channel-status__empty";
-    empty.textContent = "All channels at blackout.";
-    channelStatusListEl.append(empty);
-    return;
-  }
-
-  const list = document.createElement("ul");
-  list.className = "channel-status__list";
-
-  activeChannels.forEach((state) => {
-    const item = document.createElement("li");
-    item.className = "channel-status__item";
-
-    const channelPreset = findChannelPresetForState(state);
-    const valuePreset = findValuePresetForState(state, channelPreset);
-
-    const label = document.createElement("span");
-    label.className = "channel-status__item-label";
-    label.textContent = formatChannelStatusChannelLabel(state, channelPreset);
-
-    const valueEl = document.createElement("span");
-    valueEl.textContent = formatChannelStatusValueLabel(state, valuePreset);
-
-    item.title = formatChannelStatusTooltip(state, channelPreset, valuePreset);
-
-    item.append(label, valueEl);
-    list.append(item);
-  });
-
-  channelStatusListEl.append(list);
+  if (!stageVisualizerEl) return;
+  const channelStates = computeChannelStatesAtTime(seconds);
+  updateStageVisualizer(channelStates);
 }
 
 function computeChannelStatesAtTime(targetSeconds) {
   if (!actions.length) return [];
   const epsilon = 0.001;
-  const timeline = actions
-    .map((action, index) => ({
-      action,
-      index,
-      seconds: parseTimeString(action.time),
-    }))
-    .filter((item) => item.seconds !== null && item.seconds - targetSeconds <= epsilon)
-    .sort((a, b) => {
-      if (a.seconds === b.seconds) {
+  const maxTime = targetSeconds + epsilon;
+  const timeline = [];
+
+  actions.forEach((action, index) => {
+    const baseSeconds = parseTimeString(action.time);
+    if (baseSeconds === null || baseSeconds > maxTime) {
+      return;
+    }
+
+    const pushTimelineEntry = (seconds, iteration) => {
+      if (seconds - targetSeconds > epsilon) {
+        return;
+      }
+      timeline.push({ action, index, seconds, iteration });
+    };
+
+    pushTimelineEntry(baseSeconds, 0);
+
+    const loop = action.templateLoop ? normalizeTemplateLoop(action.templateLoop) : null;
+    const loopDuration = loop ? Number(loop.duration || 0) : 0;
+    const loopActive = Boolean(
+      loop && loopDuration > 0 && (loop.enabled || loop.infinite),
+    );
+    if (!loopActive) {
+      return;
+    }
+
+    const totalIterations = loop.infinite ? Infinity : Math.max(loop.count || 0, 1);
+    const maxIterationByTime = Math.floor((maxTime - baseSeconds) / loopDuration);
+    const maxIteration = loop.infinite
+      ? maxIterationByTime
+      : Math.min(totalIterations - 1, maxIterationByTime);
+
+    for (let iteration = 1; iteration <= maxIteration; iteration += 1) {
+      const seconds = baseSeconds + iteration * loopDuration;
+      pushTimelineEntry(seconds, iteration);
+    }
+  });
+
+  timeline.sort((a, b) => {
+    if (a.seconds === b.seconds) {
+      if (a.iteration === b.iteration) {
         return a.index - b.index;
       }
-      return a.seconds - b.seconds;
-    });
+      return a.iteration - b.iteration;
+    }
+    return a.seconds - b.seconds;
+  });
 
-  const states = new Map();
-  timeline.forEach(({ action }) => {
+  const channelStates = new Map();
+  timeline.forEach(({ action, seconds }) => {
+    const fadeDuration = normalizeFadeDuration(action.fade);
     if (action.channelMasterId) {
       const master = getChannelMaster(action.channelMasterId);
       if (!master) {
         return;
       }
-      const state = ensureMasterState(action, master) || {};
-      const values = buildMasterChannelValues(master, state);
-      Object.values(master.presets).forEach((preset) => {
+      const masterState = ensureMasterState(action, master);
+      if (!masterState) {
+        return;
+      }
+      const values = buildMasterChannelValues(master, masterState);
+      const componentOrder = Array.isArray(master.componentOrder)
+        ? master.componentOrder
+        : Object.keys(master.presets || {});
+      componentOrder.forEach((componentKey) => {
+        const preset = master.presets?.[componentKey];
         if (!preset) {
           return;
         }
@@ -3318,116 +3336,678 @@ function computeChannelStatesAtTime(targetSeconds) {
         if (!Number.isFinite(channelNumber) || channelNumber < 1 || channelNumber > 512) {
           return;
         }
-        const value = clampChannelValue(values[getChannelPresetComponent(preset)] ?? 0);
-        states.set(channelNumber, {
-          channel: channelNumber,
-          value,
+        const value = clampChannelValue(values[componentKey] ?? 0);
+        applyChannelValueToState(channelStates, channelNumber, value, seconds, fadeDuration, {
           channelPresetId: preset.id,
-          valuePresetId: null,
         });
       });
       return;
     }
 
-    const channel = Number.parseInt(action.channel, 10);
-    const value = Number.parseInt(action.value, 10);
-    if (!Number.isFinite(channel) || channel < 1 || channel > 512) return;
-    if (!Number.isFinite(value)) return;
-
-    const normalizedValue = clamp(value, 0, 255);
+    const channelNumber = Number.parseInt(action.channel, 10);
+    if (!Number.isFinite(channelNumber) || channelNumber < 1 || channelNumber > 512) {
+      return;
+    }
+    const value = clampChannelValue(action.value);
     const channelPresetId =
-      typeof action.channelPresetId === "string" && action.channelPresetId
-        ? action.channelPresetId
-        : null;
+      typeof action.channelPresetId === "string" && action.channelPresetId ? action.channelPresetId : null;
     const valuePresetId =
-      typeof action.valuePresetId === "string" && action.valuePresetId
-        ? action.valuePresetId
-        : null;
-
-    states.set(channel, {
-      channel,
-      value: normalizedValue,
+      typeof action.valuePresetId === "string" && action.valuePresetId ? action.valuePresetId : null;
+    applyChannelValueToState(channelStates, channelNumber, value, seconds, fadeDuration, {
       channelPresetId,
       valuePresetId,
     });
   });
 
-  return Array.from(states.values())
-    .filter((state) => state.value > 0)
-    .sort((a, b) => a.channel - b.channel);
+  const results = [];
+  channelStates.forEach((state, channelNumber) => {
+    const value = clamp(evaluateChannelStateValue(state, targetSeconds), 0, 255);
+    results.push({
+      channel: channelNumber,
+      value,
+      channelPresetId: state.channelPresetId || null,
+      valuePresetId: state.valuePresetId || null,
+    });
+  });
+
+  return results.sort((a, b) => a.channel - b.channel);
 }
 
-function findChannelPresetForState(state) {
-  if (!state) return null;
-  if (state.channelPresetId) {
-    const preset = getChannelPreset(state.channelPresetId);
-    if (preset) {
-      return preset;
+function normalizeFadeDuration(value) {
+  const numeric = Number.parseFloat(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
+    return 0;
+  }
+  return Math.max(0, numeric);
+}
+
+function ensureChannelState(channelStates, channelNumber) {
+  let state = channelStates.get(channelNumber);
+  if (!state) {
+    state = {
+      value: 0,
+      fade: null,
+      channelPresetId: null,
+      valuePresetId: null,
+    };
+    channelStates.set(channelNumber, state);
+  }
+  return state;
+}
+
+function evaluateChannelStateValue(state, time) {
+  if (!state) {
+    return 0;
+  }
+  if (!state.fade) {
+    return Number.isFinite(state.value) ? state.value : 0;
+  }
+  const fade = state.fade;
+  if (!Number.isFinite(time)) {
+    return fade.startValue;
+  }
+  if (time <= fade.start) {
+    state.value = fade.startValue;
+    return state.value;
+  }
+  if (fade.duration <= 0 || time >= fade.end) {
+    state.fade = null;
+    state.value = fade.endValue;
+    return state.value;
+  }
+  const progress = clamp((time - fade.start) / fade.duration, 0, 1);
+  const nextValue = fade.startValue + (fade.endValue - fade.startValue) * progress;
+  state.value = nextValue;
+  return nextValue;
+}
+
+function applyChannelValueToState(channelStates, channelNumber, targetValue, seconds, fadeDuration, metadata = {}) {
+  const state = ensureChannelState(channelStates, channelNumber);
+  const startValue = evaluateChannelStateValue(state, seconds);
+  const endValue = clamp(targetValue, 0, 255);
+  if (fadeDuration > 0 && Math.abs(endValue - startValue) > 0.0001) {
+    state.fade = {
+      start: seconds,
+      duration: fadeDuration,
+      startValue,
+      endValue,
+      end: seconds + fadeDuration,
+    };
+    state.value = startValue;
+  } else {
+    state.fade = null;
+    state.value = endValue;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(metadata, "channelPresetId")) {
+    state.channelPresetId = metadata.channelPresetId || null;
+  }
+  if (Object.prototype.hasOwnProperty.call(metadata, "valuePresetId")) {
+    state.valuePresetId = metadata.valuePresetId || null;
+  }
+}
+
+function updateStageVisualizer(channelStates) {
+  if (!stageVisualizerEl) return;
+  const stateMap = buildStageStateMap(channelStates);
+  let hasOutput = false;
+  const activeFixtures = [];
+  const inactiveFixtures = [];
+
+  if (stageLightConfig) {
+    Object.values(stageLightConfig).forEach((fixture) => {
+      const isActive = applyLightBarState(fixture, stateMap);
+      if (isActive) {
+        hasOutput = true;
+        if (fixture.label) {
+          activeFixtures.push(fixture.label);
+        }
+      } else if (fixture.label) {
+        inactiveFixtures.push(fixture.label);
+      }
+    });
+  }
+
+  if (moverStageConfig) {
+    if (updateMoverStage(moverStageConfig, stateMap)) {
+      hasOutput = true;
+      if (moverStageConfig.label) {
+        activeFixtures.push(moverStageConfig.label);
+      }
+    } else if (moverStageConfig.label) {
+      inactiveFixtures.push(moverStageConfig.label);
     }
   }
-  const channelNumber = Number.parseInt(state.channel, 10);
-  if (!Number.isFinite(channelNumber)) {
-    return null;
+
+  if (stageStatusEl) {
+    if (hasOutput) {
+      const activeSummary = activeFixtures.length
+        ? `Active: ${formatFixtureList(activeFixtures)}`
+        : "Fixtures active";
+      const idleSummary = inactiveFixtures.length
+        ? `Idle: ${formatFixtureList(inactiveFixtures)}`
+        : "";
+      stageStatusEl.textContent = idleSummary ? `${activeSummary} • ${idleSummary}` : activeSummary;
+    } else {
+      stageStatusEl.textContent = "All fixtures at blackout.";
+    }
   }
-  return (
-    channelPresets.find((preset) => Number.isFinite(preset.channel) && preset.channel === channelNumber) ||
-    null
+  stageVisualizerEl.classList.toggle("is-inactive", !hasOutput);
+}
+
+function buildStageStateMap(channelStates) {
+  const map = new Map();
+  channelStates.forEach((state) => {
+    if (!state) return;
+    const numericValue = Number(state.value ?? 0);
+    if (!Number.isFinite(numericValue)) {
+      return;
+    }
+    const normalizedValue = clamp(numericValue, 0, 255);
+    if (typeof state.channelPresetId === "string" && state.channelPresetId) {
+      map.set(state.channelPresetId, normalizedValue);
+    }
+    const channelKey = `channel-${state.channel}`;
+    map.set(channelKey, normalizedValue);
+  });
+  return map;
+}
+
+function buildStageLightConfig(root) {
+  const fixtures = [
+    {
+      key: "front",
+      label: "Front Light",
+      elementId: "light-bar-1",
+      prefix: "front-light",
+      strobe: "front-light-strobe",
+      offsets: [
+        { x: 0, y: -20, blur: 20 },
+        { x: 0, y: -20, blur: 50 },
+        { x: 0, y: -3, blur: 0 },
+      ],
+    },
+    {
+      key: "back",
+      label: "Back Light",
+      elementId: "light-bar-2",
+      prefix: "back-light",
+      strobe: "back-light-strobe",
+      offsets: [{ x: 0, y: 0, blur: 40 }],
+    },
+    {
+      key: "left",
+      label: "Left Light",
+      elementId: "light-bar-3",
+      prefix: "left-light",
+      strobe: "left-light-strobe",
+      offsets: [
+        { x: 0, y: 20, blur: 20 },
+        { x: 0, y: 20, blur: 50 },
+        { x: 0, y: 3, blur: 0 },
+      ],
+    },
+    {
+      key: "right",
+      label: "Right Light",
+      elementId: "light-bar-4",
+      prefix: "right-light",
+      strobe: "right-light-strobe",
+      offsets: [
+        { x: 0, y: 20, blur: 20 },
+        { x: 0, y: 20, blur: 50 },
+        { x: 0, y: 3, blur: 0 },
+      ],
+    },
+  ];
+
+  const config = {};
+  fixtures.forEach((fixture) => {
+    const element = root.querySelector(`#${fixture.elementId}`);
+    if (!element) {
+      return;
+    }
+    const whiteElement = element.querySelector(".white-color");
+    config[fixture.key] = {
+      element,
+      whiteElement,
+      shadow: createShadowBuilder(fixture.offsets),
+      label: fixture.label || null,
+      presets: {
+        brightness: `${fixture.prefix}-dimmer`,
+        red: `${fixture.prefix}-red`,
+        green: `${fixture.prefix}-green`,
+        blue: `${fixture.prefix}-blue`,
+        white: `${fixture.prefix}-white`,
+        strobe: fixture.strobe,
+      },
+      strobeRange: fixture.strobeRange || { min: 0.08, max: 2 },
+    };
+  });
+
+  return Object.keys(config).length ? config : null;
+}
+
+function createShadowBuilder(offsets) {
+  const entries = Array.isArray(offsets) ? offsets : [];
+  return (color) =>
+    entries
+      .map((offset) => {
+        const x = Number.isFinite(offset.x) ? offset.x : 0;
+        const y = Number.isFinite(offset.y) ? offset.y : 0;
+        const blur = Number.isFinite(offset.blur) ? offset.blur : 0;
+        const spread = Number.isFinite(offset.spread) ? offset.spread : 0;
+        const spreadPart = spread ? ` ${spread}px` : "";
+        return `${x}px ${y}px ${blur}px${spreadPart} ${color}`;
+      })
+      .join(", ");
+}
+
+function applyLightBarState(config, stateMap) {
+  if (!config || !config.element) {
+    return false;
+  }
+  const red = getChannelValue(stateMap, config.presets.red);
+  const green = getChannelValue(stateMap, config.presets.green);
+  const blue = getChannelValue(stateMap, config.presets.blue);
+  const whiteValue = getChannelValue(stateMap, config.presets.white);
+  const whiteAlpha = clamp(whiteValue / 255, 0, 1);
+  const hasColor = red > 0 || green > 0 || blue > 0;
+  const brightnessValue = getOptionalChannelValue(stateMap, config.presets.brightness);
+  const brightness =
+    brightnessValue !== null ? clamp(brightnessValue / 255, 0, 1) : hasColor || whiteAlpha > 0 ? 1 : 0;
+
+  if (brightness >= 1) {
+    config.element.style.removeProperty("opacity");
+  } else {
+    const opacityValue = brightness <= 0 ? 0 : Math.round(brightness * 1000) / 1000;
+    config.element.style.opacity = `${opacityValue}`;
+  }
+
+  const strobeValue = getChannelValue(stateMap, config.presets.strobe);
+  const colorAlpha = hasColor ? 1 : 0;
+  const colorShadow = config.shadow(createRgba(red, green, blue, colorAlpha));
+  const colorShadowOff = config.shadow(createRgba(red, green, blue, 0));
+  applyShadow(
+    config.element,
+    colorShadow,
+    colorShadowOff,
+    strobeValue,
+    config.strobeRange,
+    { preferOnState: brightness > 0 && hasColor }
   );
+
+  if (config.whiteElement) {
+    const whiteShadow = config.shadow(createRgba(255, 255, 255, whiteAlpha));
+    const whiteShadowOff = config.shadow(createRgba(255, 255, 255, 0));
+    applyShadow(
+      config.whiteElement,
+      whiteShadow,
+      whiteShadowOff,
+      strobeValue,
+      config.strobeRange,
+      { preferOnState: brightness > 0 && whiteAlpha > 0 }
+    );
+  }
+
+  const isActive = brightness > 0 && (hasColor || whiteAlpha > 0);
+  config.element.classList.toggle("is-active", isActive);
+  return isActive;
 }
 
-function findValuePresetForState(state, channelPreset) {
-  if (!state || !channelPreset) return null;
-  if (state.valuePresetId) {
-    const preset = channelPreset.values?.find((value) => value.id === state.valuePresetId);
-    if (preset) {
-      return preset;
-    }
+function createRgba(red, green, blue, alpha) {
+  const r = clampChannelValue(Math.round(Number.isFinite(red) ? red : 0));
+  const g = clampChannelValue(Math.round(Number.isFinite(green) ? green : 0));
+  const b = clampChannelValue(Math.round(Number.isFinite(blue) ? blue : 0));
+  const a = clamp(Number.isFinite(alpha) ? alpha : 0, 0, 1);
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+}
+
+function formatFixtureList(fixtures) {
+  if (!Array.isArray(fixtures) || fixtures.length === 0) {
+    return "";
   }
-  const numericValue = Number.parseInt(state.value, 10);
-  if (!Number.isFinite(numericValue)) {
+  if (fixtures.length === 1) {
+    return fixtures[0];
+  }
+  if (fixtures.length === 2) {
+    return `${fixtures[0]} and ${fixtures[1]}`;
+  }
+  const allButLast = fixtures.slice(0, -1);
+  const last = fixtures[fixtures.length - 1];
+  return `${allButLast.join(", ")}, and ${last}`;
+}
+
+function getChannelValue(map, key, fallback = 0) {
+  if (!key || !map.has(key)) {
+    return fallback;
+  }
+  const numeric = Number(map.get(key));
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function getOptionalChannelValue(map, key) {
+  if (!key || !map.has(key)) {
     return null;
   }
-  if (!Array.isArray(channelPreset.values)) {
+  return getChannelValue(map, key, 0);
+}
+
+function applyShadow(element, onShadow, offShadow, strobeValue, range, options = {}) {
+  if (!element) return;
+  const preferOnState = options.preferOnState !== false;
+  const duration = computeStrobeDuration(strobeValue, range);
+  element.style.setProperty("--light-shadow-on", onShadow);
+  element.style.setProperty("--light-shadow-off", offShadow);
+  if (duration === null || onShadow === offShadow) {
+    element.classList.remove("is-strobing");
+    element.style.removeProperty("--strobe-duration");
+    element.style.boxShadow = preferOnState ? onShadow : offShadow;
+    return;
+  }
+  element.classList.add("is-strobing");
+  element.style.setProperty("--strobe-duration", `${duration}s`);
+}
+
+function clearShadow(element) {
+  if (!element) return;
+  element.classList.remove("is-strobing");
+  element.style.removeProperty("--strobe-duration");
+  element.style.removeProperty("--light-shadow-on");
+  element.style.removeProperty("--light-shadow-off");
+  element.style.boxShadow = "none";
+}
+
+function computeStrobeDuration(value, range = { min: 0.08, max: 2 }) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) {
     return null;
   }
-  return channelPreset.values.find((value) => Number.isFinite(value.value) && value.value === numericValue) || null;
+  const minDuration = Math.max(range.min ?? 0.05, 0.02);
+  const maxDuration = Math.max(range.max ?? 2, minDuration);
+  const clamped = Math.min(255, Math.max(1, numeric));
+  const normalized = (clamped - 1) / 254;
+  const inverse = 1 - normalized;
+  return minDuration + (maxDuration - minDuration) * inverse;
 }
 
-function formatChannelStatusChannelLabel(state, channelPreset) {
-  if (channelPreset) {
-    if (channelPreset.name) {
-      return channelPreset.name;
-    }
-    if (Number.isFinite(channelPreset.channel)) {
-      return `Channel ${channelPreset.channel}`;
-    }
+function buildMoverStageConfig(root) {
+  const container = root.querySelector("#mover-light");
+  if (!container) {
+    return null;
   }
-  return `Channel ${state.channel}`;
+  const beams = [
+    {
+      element: container.querySelector("#beam-1"),
+      whiteElement: container.querySelector("#beam-1 .white-color"),
+      baseAngle: 225,
+    },
+    {
+      element: container.querySelector("#beam-2"),
+      whiteElement: container.querySelector("#beam-2 .white-color"),
+      baseAngle: 315,
+    },
+    {
+      element: container.querySelector("#beam-3"),
+      whiteElement: container.querySelector("#beam-3 .white-color"),
+      baseAngle: 315,
+    },
+    {
+      element: container.querySelector("#beam-4"),
+      whiteElement: container.querySelector("#beam-4 .white-color"),
+      baseAngle: 225,
+    },
+  ];
+
+  return {
+    container,
+    beams,
+    lasers: {
+      red: root.querySelector("#red-laser"),
+      green: root.querySelector("#green-laser"),
+    },
+    ledStrip: container.querySelector("#led-strip"),
+    label: "Mover Light",
+    presets: {
+      brightness: "mover-light-beam-brightness",
+      red: "mover-light-beam-red",
+      green: "mover-light-beam-green",
+      blue: "mover-light-beam-blue",
+      white: "mover-light-beam-white",
+      strobe: "mover-light-strobe",
+      rotation: "mover-light-rotation",
+      rotationSpeed: "mover-light-rotation-speed",
+      flash: "mover-light-white-flash",
+      ledStrip: "mover-light-strip",
+      beamRotationSpeed: "mover-light-beam-rotation-speed",
+      laserRed: "mover-light-laser-red",
+      laserGreen: "mover-light-laser-green",
+    },
+    beamRotationPresets: [
+      "mover-light-beam1-rotation",
+      "mover-light-beam2-rotation",
+      "mover-light-beam3-rotation",
+      "mover-light-beam4-rotation",
+    ],
+    baseRotation: 0,
+  };
 }
 
-function formatChannelStatusValueLabel(state, valuePreset) {
-  if (valuePreset) {
-    if (valuePreset.name) {
-      return valuePreset.name;
-    }
-    if (Number.isFinite(valuePreset.value)) {
-      return String(valuePreset.value);
-    }
+function updateMoverStage(config, stateMap) {
+  if (!config || !config.container) {
+    return false;
   }
-  if (Number.isFinite(state.value)) {
-    return String(state.value);
+  const brightnessValue = getOptionalChannelValue(stateMap, config.presets.brightness);
+  const brightness = brightnessValue !== null ? clamp(brightnessValue / 255, 0, 1) : 0;
+  config.container.style.opacity = brightness;
+
+  const red = getChannelValue(stateMap, config.presets.red);
+  const green = getChannelValue(stateMap, config.presets.green);
+  const blue = getChannelValue(stateMap, config.presets.blue);
+  const beamColor = createRgba(red, green, blue, 1);
+  const whiteValue = getChannelValue(stateMap, config.presets.white);
+  const whiteAlpha = clamp(whiteValue / 255, 0, 1);
+  const strobeValue = getChannelValue(stateMap, config.presets.strobe);
+  const baseBeamSpeed = getOptionalChannelValue(stateMap, config.presets.beamRotationSpeed);
+
+  let beamsActive = false;
+  config.beams.forEach((beam, index) => {
+    if (!beam || !beam.element) {
+      return;
+    }
+    beam.element.style.backgroundColor = beamColor;
+    if (beam.whiteElement) {
+      beam.whiteElement.style.backgroundColor = createRgba(255, 255, 255, whiteAlpha);
+    }
+    applyBeamStrobe(beam.element, strobeValue);
+    const rotationValue = getOptionalChannelValue(stateMap, config.beamRotationPresets[index]);
+    const { angle, height } = calculateBeamOrientation(rotationValue, beam.baseAngle);
+    beam.element.style.height = `${height}%`;
+    const specificSpeed = getOptionalChannelValue(stateMap, `mover-light-beam${index + 1}-rotation-speed`);
+    const speedValue = specificSpeed !== null ? specificSpeed : baseBeamSpeed;
+    applyBeamRotation(beam.element, index, angle, speedValue);
+    if (brightness > 0 || whiteAlpha > 0 || red > 0 || green > 0 || blue > 0) {
+      beamsActive = true;
+    }
+  });
+
+  const rotationValue = getOptionalChannelValue(stateMap, config.presets.rotation);
+  const rotationSpeedValue = getOptionalChannelValue(stateMap, config.presets.rotationSpeed);
+  const moverAngle = rotationValue !== null ? (rotationValue / 255) * 520 : stageRotationState.mover || 0;
+  applyMoverRotation(config.container, moverAngle, rotationSpeedValue);
+
+  const flashValue = getChannelValue(stateMap, config.presets.flash);
+  let flashAlpha = 0;
+  if (flashValue <= 0) {
+    clearShadow(config.container);
+  } else {
+    flashAlpha = clamp(flashValue / 255, 0, 1);
+    const baseShadowColor = createRgba(255, 173, 0, brightness > 0 ? Math.max(brightness, 0.2) : 0);
+    const flashShadowColor = createRgba(255, 255, 255, flashAlpha);
+    applyShadow(
+      config.container,
+      createMoverShadow(flashShadowColor),
+      createMoverShadow(baseShadowColor),
+      flashValue,
+      { min: 0.08, max: 2 },
+      { preferOnState: false },
+    );
   }
-  return `${state.value ?? "0"}`;
+
+  const lasersActive = updateLasers(config, stateMap, brightness);
+  const ledActive = updateLedStrip(config, stateMap, brightness);
+
+  return beamsActive || brightness > 0 || flashAlpha > 0 || lasersActive || ledActive;
 }
 
-function formatChannelStatusTooltip(state, channelPreset, valuePreset) {
-  const channelNumber = Number.isFinite(state.channel) ? state.channel : Number.parseInt(state.channel, 10);
-  const valueNumber = Number.isFinite(state.value) ? state.value : Number.parseInt(state.value, 10);
-  const baseChannel = Number.isFinite(channelNumber) ? `Channel ${channelNumber}` : "Channel";
-  const baseValue = Number.isFinite(valueNumber) ? `Value ${valueNumber}` : "Value";
-  const channelLabel = channelPreset?.name ? `${channelPreset.name} (${baseChannel})` : baseChannel;
-  const valueLabel = valuePreset?.name ? `${valuePreset.name} (${baseValue})` : baseValue;
-  return `${channelLabel} — ${valueLabel}`;
+function createMoverShadow(color) {
+  return `0 0 40px ${color}, 0 0 60px ${color}, 0 0 90px ${color}`;
+}
+
+function applyMoverRotation(element, angle, speedValue) {
+  if (!element) return;
+  const previous = stageRotationState.mover ?? angle;
+  const delta = Math.abs(angle - previous);
+  stageRotationState.mover = angle;
+  const duration = computeRotationDuration(speedValue, delta, 520, { min: 1, max: 10 });
+  const baseTransition = "box-shadow 0.1s ease, opacity 0.1s ease";
+  if (!duration) {
+    element.style.transition = `transform 0s linear, ${baseTransition}`;
+  } else {
+    element.style.transition = `transform ${duration}s linear, ${baseTransition}`;
+  }
+  element.style.transform = `rotate(${angle}deg)`;
+}
+
+function computeRotationDuration(speedValue, deltaAngle, maxAngle, range) {
+  const baseDuration = mapDmxToDuration(speedValue, range);
+  const effectiveDuration = baseDuration === null ? range?.min ?? 0 : baseDuration;
+  if (effectiveDuration <= 0 || deltaAngle <= 0) {
+    return 0;
+  }
+  const travelRatio = maxAngle > 0 ? Math.min(deltaAngle / maxAngle, 1) : 0;
+  const scaled = effectiveDuration * travelRatio;
+  return Math.max(scaled, 0.05);
+}
+
+function mapDmxToDuration(value, range, options = {}) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return null;
+  }
+  const minDuration = range?.min ?? 0.1;
+  const maxDuration = range?.max ?? minDuration;
+  if (numeric <= 0) {
+    const fastest = Math.max(minDuration * 0.5, 0.05);
+    return fastest;
+  }
+  let normalized = 0;
+  if (numeric > 0) {
+    const clamped = Math.min(255, Math.max(1, numeric));
+    normalized = (clamped - 1) / 254;
+  }
+  const ratio = options.invert ? 1 - normalized : normalized;
+  return minDuration + (maxDuration - minDuration) * ratio;
+}
+
+function calculateBeamOrientation(rawValue, baseAngle) {
+  if (!Number.isFinite(rawValue)) {
+    return { angle: baseAngle, height: 500 };
+  }
+  const value = clamp(rawValue, 0, 255);
+  const midpoint = 127.5;
+  if (value <= midpoint) {
+    const ratio = value / midpoint;
+    const height = 500 - ratio * 450;
+    return { angle: baseAngle, height };
+  }
+  const ratio = (value - midpoint) / (255 - midpoint);
+  const height = 50 + ratio * 450;
+  const angle = baseAngle - 180 * ratio;
+  return { angle, height };
+}
+
+function applyBeamRotation(element, index, angle, speedValue) {
+  if (!element) return;
+  const previousAngles = stageRotationState.beams || [];
+  const previous = Number.isFinite(previousAngles[index]) ? previousAngles[index] : angle;
+  const delta = Math.abs(angle - previous);
+  const duration = computeRotationDuration(speedValue, delta, 180, { min: 0.3, max: 5 });
+  const baseTransition = "opacity 0.1s ease, background-color 0.1s ease";
+  if (!duration) {
+    element.style.transition = `transform 0s ease, height 0s ease, ${baseTransition}`;
+  } else {
+    element.style.transition = `transform ${duration}s ease-in-out, height ${duration}s ease-in-out, ${baseTransition}`;
+  }
+  element.style.transform = `rotate(${angle}deg)`;
+  stageRotationState.beams[index] = angle;
+}
+
+function applyBeamStrobe(element, strobeValue) {
+  if (!element) return;
+  const duration = computeStrobeDuration(strobeValue, { min: 0.08, max: 2 });
+  if (duration === null) {
+    element.classList.remove("is-strobing");
+    element.style.removeProperty("--beam-strobe-duration");
+    element.style.opacity = "1";
+    return;
+  }
+  element.classList.add("is-strobing");
+  element.style.setProperty("--beam-strobe-duration", `${duration}s`);
+}
+
+function updateLasers(config, stateMap, brightness) {
+  let active = false;
+  if (config.lasers?.red) {
+    const redValue = getChannelValue(stateMap, config.presets.laserRed);
+    const intensity = clamp(redValue / 255, 0, 1) * (brightness > 0 ? Math.max(brightness, 0.2) : 0);
+    config.lasers.red.style.opacity = intensity;
+    if (intensity > 0) {
+      active = true;
+    }
+  }
+  if (config.lasers?.green) {
+    const greenValue = getChannelValue(stateMap, config.presets.laserGreen);
+    const intensity = clamp(greenValue / 255, 0, 1) * (brightness > 0 ? Math.max(brightness, 0.2) : 0);
+    config.lasers.green.style.opacity = intensity;
+    if (intensity > 0) {
+      active = true;
+    }
+  }
+  return active;
+}
+
+function updateLedStrip(config, stateMap, brightness) {
+  const ledStrip = config.ledStrip;
+  if (!ledStrip) {
+    return false;
+  }
+  const value = getChannelValue(stateMap, config.presets.ledStrip);
+  const color = mapLedStripColor(value);
+  if (!color) {
+    ledStrip.style.outlineColor = "transparent";
+    ledStrip.style.opacity = "0";
+    return false;
+  }
+  ledStrip.style.outlineColor = color;
+  ledStrip.style.opacity = brightness > 0 ? Math.max(brightness, 0.35) : 0.35;
+  return true;
+}
+
+function mapLedStripColor(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return null;
+  }
+  if (numeric < 15) return null;
+  if (numeric <= 21) return "rgba(255, 0, 0, 1)";
+  if (numeric <= 30) return "rgba(0, 255, 0, 1)";
+  if (numeric <= 39) return "rgba(0, 0, 255, 1)";
+  if (numeric <= 48) return "rgba(255, 255, 0, 1)";
+  if (numeric <= 57) return "rgba(255, 0, 255, 1)";
+  if (numeric <= 66) return "rgba(0, 255, 255, 1)";
+  if (numeric <= 75) return "rgba(255, 255, 255, 1)";
+  return null;
 }
 
 function createInput({ type, value, placeholder, min, max, step }) {
