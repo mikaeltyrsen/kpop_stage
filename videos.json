@@ -21,6 +21,13 @@
       "file": "videos/sounds_like.mp4",
       "poster": "/static/posters/sounds_like.jpg",
       "dmx_template": "sounds_like_dmx.json"
+    },
+    {
+      "id": "04",
+      "name": "Golden",
+      "file": "videos/golden.mp4",
+      "poster": "/static/posters/golden.jpg",
+      "dmx_template": "golden_dmx.json"
     }
   ]
 }
