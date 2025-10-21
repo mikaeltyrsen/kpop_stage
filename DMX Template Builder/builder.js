@@ -197,6 +197,9 @@ const TEMPLATE_LOOP_DEFAULTS = Object.freeze({
   duration: 0,
 });
 
+const TEMPLATE_LOOP_INFINITE_DURATION_SECONDS = 600;
+const TEMPLATE_LOOP_MAX_ITERATIONS = 9999;
+
 const ICON_SVGS = {
   delete: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z"/></svg>`,
   duplicate: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M352 512L128 512L128 288L176 288L176 224L128 224C92.7 224 64 252.7 64 288L64 512C64 547.3 92.7 576 128 576L352 576C387.3 576 416 547.3 416 512L416 464L352 464L352 512zM288 416L512 416C547.3 416 576 387.3 576 352L576 128C576 92.7 547.3 64 512 64L288 64C252.7 64 224 92.7 224 128L224 352C224 387.3 252.7 416 288 416z"/></svg>`,
@@ -3261,45 +3264,258 @@ function updateChannelStatusDisplay(seconds) {
   updateStageVisualizer(channelStates);
 }
 
-function computeChannelStatesAtTime(targetSeconds) {
-  if (!actions.length) return [];
-  const epsilon = 0.001;
-  const maxTime = targetSeconds + epsilon;
-  const timeline = [];
+function isTemplateLoopActive(loop) {
+  if (!loop || typeof loop !== "object") {
+    return false;
+  }
+  const duration = Number.parseFloat(loop.duration);
+  if (!Number.isFinite(duration) || duration <= 0) {
+    return false;
+  }
+  return Boolean(loop.enabled || loop.infinite);
+}
 
-  actions.forEach((action, index) => {
-    const baseSeconds = parseTimeString(action.time);
-    if (baseSeconds === null || baseSeconds > maxTime) {
+function buildTimelineEntriesWithLoops(actionList, targetSeconds, epsilon = 0.001) {
+  if (!Array.isArray(actionList) || !actionList.length) {
+    return [];
+  }
+
+  const maxTime = targetSeconds + epsilon;
+  const parsedEntries = [];
+  const channelTimes = new Map();
+  const instances = new Map();
+
+  actionList.forEach((action, index) => {
+    if (!action || typeof action !== "object") {
+      return;
+    }
+    const seconds = parseTimeString(action.time);
+    if (seconds === null) {
       return;
     }
 
-    const pushTimelineEntry = (seconds, iteration) => {
-      if (seconds - targetSeconds > epsilon) {
+    const channelNumber = Number.parseInt(action.channel, 10);
+    const instanceId =
+      typeof action.templateInstanceId === "string" && action.templateInstanceId
+        ? action.templateInstanceId
+        : null;
+    const loopSettings = sanitizeTemplateLoop(action.templateLoop);
+
+    const entry = {
+      action,
+      index,
+      seconds,
+      channel: Number.isFinite(channelNumber) ? channelNumber : null,
+      loop: loopSettings,
+      instanceId,
+    };
+    parsedEntries.push(entry);
+
+    if (Number.isFinite(channelNumber)) {
+      const existing = channelTimes.get(channelNumber) || [];
+      existing.push({ time: seconds, entry });
+      channelTimes.set(channelNumber, existing);
+    }
+
+    if (instanceId) {
+      let info = instances.get(instanceId);
+      if (!info) {
+        info = { entries: [], loop: null };
+        instances.set(instanceId, info);
+      }
+      info.entries.push(entry);
+      if (loopSettings && isTemplateLoopActive(loopSettings)) {
+        info.loop = loopSettings;
+      }
+    }
+  });
+
+  channelTimes.forEach((items) => {
+    items.sort((a, b) => a.time - b.time);
+  });
+
+  const duplicates = [];
+  const loopEpsilon = 0.000001;
+
+  instances.forEach((info) => {
+    const loopSettings = info.loop;
+    const entries = Array.isArray(info.entries) ? info.entries : [];
+    if (!loopSettings || !isTemplateLoopActive(loopSettings) || !entries.length) {
+      return;
+    }
+
+    const duration = Number(loopSettings.duration || 0);
+    if (!Number.isFinite(duration) || duration <= 0) {
+      return;
+    }
+
+    const orderedEntries = [...entries].sort((a, b) => a.seconds - b.seconds);
+    const baseStart = orderedEntries[0]?.seconds;
+    if (!Number.isFinite(baseStart)) {
+      return;
+    }
+
+    let channels = Array.isArray(loopSettings.channels) ? [...loopSettings.channels] : [];
+    channels = channels.filter((value) => Number.isFinite(value));
+    if (!channels.length) {
+      const unique = new Set();
+      orderedEntries.forEach((entry) => {
+        if (Number.isFinite(entry.channel)) {
+          unique.add(entry.channel);
+        }
+      });
+      channels = Array.from(unique).sort((a, b) => a - b);
+    }
+    if (!channels.length) {
+      return;
+    }
+
+    const channelSet = new Set(channels);
+    const loopEntrySet = new Set();
+    const relativeOffsets = [];
+    const loopWindow = Math.max(duration - loopEpsilon, 0);
+
+    orderedEntries.forEach((entry) => {
+      if (!Number.isFinite(entry.channel) || !channelSet.has(entry.channel)) {
         return;
       }
-      timeline.push({ action, index, seconds, iteration });
-    };
+      const offset = entry.seconds - baseStart;
+      if (offset < -loopEpsilon) {
+        return;
+      }
+      if (offset > loopWindow + loopEpsilon) {
+        return;
+      }
+      relativeOffsets.push({ offset, entry });
+      loopEntrySet.add(entry);
+    });
 
-    pushTimelineEntry(baseSeconds, 0);
-
-    const loop = action.templateLoop ? normalizeTemplateLoop(action.templateLoop) : null;
-    const loopDuration = loop ? Number(loop.duration || 0) : 0;
-    const loopActive = Boolean(
-      loop && loopDuration > 0 && (loop.enabled || loop.infinite),
-    );
-    if (!loopActive) {
+    if (!relativeOffsets.length) {
       return;
     }
 
-    const totalIterations = loop.infinite ? Infinity : Math.max(loop.count || 0, 1);
-    const maxIterationByTime = Math.floor((maxTime - baseSeconds) / loopDuration);
-    const maxIteration = loop.infinite
-      ? maxIterationByTime
-      : Math.min(totalIterations - 1, maxIterationByTime);
+    const forwardOffsets = relativeOffsets
+      .slice()
+      .sort((a, b) => a.offset - b.offset)
+      .map(({ offset, entry }) => ({
+        offset: Math.max(0, offset),
+        entry,
+      }));
 
-    for (let iteration = 1; iteration <= maxIteration; iteration += 1) {
-      const seconds = baseSeconds + iteration * loopDuration;
-      pushTimelineEntry(seconds, iteration);
+    let reverseOffsets = null;
+    if (loopSettings.mode === "pingpong") {
+      reverseOffsets = forwardOffsets.slice().reverse().map(({ offset, entry }) => ({
+        offset: Math.max(0, Math.min(duration, duration - offset)),
+        entry,
+      }));
+    }
+
+    let conflictTime = null;
+    channels.forEach((channel) => {
+      const items = channelTimes.get(channel);
+      if (!items) {
+        return;
+      }
+      for (const infoEntry of items) {
+        const timeValue = infoEntry.time;
+        if (timeValue <= baseStart + loopEpsilon) {
+          continue;
+        }
+        if (loopEntrySet.has(infoEntry.entry)) {
+          continue;
+        }
+        if (conflictTime === null || timeValue < conflictTime) {
+          conflictTime = timeValue;
+        }
+        break;
+      }
+    });
+
+    let availableIterations = null;
+    if (conflictTime !== null) {
+      const availableTime = Math.max(0, conflictTime - baseStart);
+      availableIterations = Math.max(
+        1,
+        Math.floor((availableTime + loopEpsilon) / duration) + 1,
+      );
+    }
+
+    let totalIterations;
+    if (loopSettings.infinite) {
+      if (availableIterations === null) {
+        let fallbackIterations = Math.max(loopSettings.count || 0, 2);
+        if (
+          TEMPLATE_LOOP_INFINITE_DURATION_SECONDS > 0 &&
+          duration > 0 &&
+          Number.isFinite(TEMPLATE_LOOP_INFINITE_DURATION_SECONDS)
+        ) {
+          const targetIterations = Math.ceil(
+            TEMPLATE_LOOP_INFINITE_DURATION_SECONDS / duration,
+          );
+          if (Number.isFinite(targetIterations)) {
+            fallbackIterations = Math.max(fallbackIterations, targetIterations);
+          }
+        }
+        totalIterations = Math.min(fallbackIterations, TEMPLATE_LOOP_MAX_ITERATIONS);
+      } else {
+        totalIterations = availableIterations;
+      }
+    } else {
+      const requested = Math.max(1, loopSettings.count || 0);
+      totalIterations =
+        availableIterations === null ? requested : Math.min(requested, availableIterations);
+    }
+
+    if (!Number.isFinite(totalIterations) || totalIterations <= 1) {
+      return;
+    }
+
+    for (let iteration = 1; iteration < totalIterations; iteration += 1) {
+      const iterationStart = baseStart + duration * iteration;
+      if (conflictTime !== null && iterationStart >= conflictTime - loopEpsilon) {
+        break;
+      }
+      const offsets =
+        loopSettings.mode === "pingpong" && iteration % 2 === 1
+          ? reverseOffsets || forwardOffsets
+          : forwardOffsets;
+      let stopIteration = false;
+      offsets.forEach(({ offset, entry }) => {
+        if (stopIteration) {
+          return;
+        }
+        const newTime = iterationStart + offset;
+        if (conflictTime !== null && newTime >= conflictTime - loopEpsilon) {
+          stopIteration = true;
+          return;
+        }
+        duplicates.push({
+          action: entry.action,
+          index: entry.index,
+          seconds: newTime,
+          iteration,
+        });
+      });
+      if (stopIteration) {
+        break;
+      }
+    }
+  });
+
+  const timeline = [];
+  parsedEntries.forEach((entry) => {
+    if (entry.seconds <= maxTime + epsilon) {
+      timeline.push({
+        action: entry.action,
+        index: entry.index,
+        seconds: entry.seconds,
+        iteration: 0,
+      });
+    }
+  });
+  duplicates.forEach((entry) => {
+    if (entry.seconds <= maxTime + epsilon) {
+      timeline.push(entry);
     }
   });
 
@@ -3312,6 +3528,14 @@ function computeChannelStatesAtTime(targetSeconds) {
     }
     return a.seconds - b.seconds;
   });
+
+  return timeline;
+}
+
+function computeChannelStatesAtTime(targetSeconds) {
+  if (!actions.length) return [];
+  const epsilon = 0.001;
+  const timeline = buildTimelineEntriesWithLoops(actions, targetSeconds, epsilon);
 
   const channelStates = new Map();
   timeline.forEach(({ action, seconds }) => {
