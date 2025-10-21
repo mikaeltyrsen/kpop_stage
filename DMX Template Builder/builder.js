@@ -8424,16 +8424,31 @@ function createActionsFromTemplate(template, stepId, time, instanceId, options =
   entries.forEach(({ row, offset }) => {
     const absoluteSeconds = baseSeconds + offset;
     const timecode = secondsToTimecode(absoluteSeconds);
+    const channelNumber = Number.parseInt(row.channel, 10);
+    const channel = Number.isFinite(channelNumber) ? clamp(channelNumber, 1, 512) : 1;
+    const valueNumber = Number.parseInt(row.value, 10);
+    const value = Number.isFinite(valueNumber) ? clamp(valueNumber, 0, 255) : 0;
+    const fadeNumber = Number.parseFloat(row.fade);
+    const fade = Number.isFinite(fadeNumber) ? Math.max(0, fadeNumber) : 0;
+    const channelPresetId =
+      typeof row.channelPresetId === "string" && row.channelPresetId ? row.channelPresetId : null;
+    const valuePresetId =
+      typeof row.valuePresetId === "string" && row.valuePresetId ? row.valuePresetId : null;
+    const channelMasterId =
+      typeof row.channelMasterId === "string" && row.channelMasterId ? row.channelMasterId : null;
+    const masterState = channelMasterId
+      ? sanitizeTemplateMasterState(row.master, channelMasterId)
+      : null;
     const action = {
       ...DEFAULT_ACTION,
       time: timecode,
-      channel: clamp(Number.parseInt(row.channel, 10) || 1, 1, 512),
-      value: clamp(Number.parseInt(row.value, 10) || 0, 0, 255),
-      fade: Math.max(0, Number.parseFloat(row.fade) || 0),
-      channelPresetId:
-        typeof row.channelPresetId === "string" && row.channelPresetId ? row.channelPresetId : null,
-      valuePresetId:
-        typeof row.valuePresetId === "string" && row.valuePresetId ? row.valuePresetId : null,
+      channel,
+      value,
+      fade,
+      channelPresetId: channelMasterId ? null : channelPresetId,
+      valuePresetId: channelMasterId ? null : valuePresetId,
+      channelMasterId,
+      master: masterState,
       templateId: template.id,
       templateInstanceId: instanceId,
       templateRowId: row.id,
@@ -8453,6 +8468,15 @@ function createActionsFromTemplate(template, stepId, time, instanceId, options =
       action.templateLoop = mergedLoop;
     } else if (hasLoopSettings) {
       action.templateLoop = null;
+    }
+    if (action.channelMasterId) {
+      const master = getChannelMaster(action.channelMasterId);
+      if (master) {
+        ensureMasterState(action, master);
+      } else {
+        action.channelMasterId = null;
+        action.master = null;
+      }
     }
     ensureActionLocalId(action);
     setActionStepId(action, stepId);
