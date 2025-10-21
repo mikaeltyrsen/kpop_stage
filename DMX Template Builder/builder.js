@@ -2031,6 +2031,8 @@ function autoAssignPresetsToActions(list) {
       return;
     }
 
+    const hadPresetId =
+      typeof action.channelPresetId === "string" && action.channelPresetId ? true : false;
     let preset = null;
     if (action.channelPresetId) {
       preset = getChannelPreset(action.channelPresetId);
@@ -2059,7 +2061,7 @@ function autoAssignPresetsToActions(list) {
     }
 
     if (preset) {
-      applyChannelPresetToAction(action, preset);
+      applyChannelPresetToAction(action, preset, { preserveCustomValue: hadPresetId });
     } else {
       action.channelPresetId = null;
       action.valuePresetId = null;
@@ -4600,8 +4602,9 @@ function handleFadeChange(event, index) {
   queuePreviewSync();
 }
 
-function applyChannelPresetToAction(action, preset) {
+function applyChannelPresetToAction(action, preset, options = {}) {
   if (!action || !preset) return;
+  const preserveCustomValue = Boolean(options && options.preserveCustomValue);
   action.channelPresetId = preset.id;
   action.channelMasterId = null;
   action.master = null;
@@ -4619,14 +4622,20 @@ function applyChannelPresetToAction(action, preset) {
           preset.values.find((value) => Number.isFinite(value.value) && value.value === numeric) || null;
       }
     }
-    const fallbackValue = selectedValue || preset.values[0];
-    action.valuePresetId = fallbackValue.id;
-    const valueNumber = Number.parseInt(fallbackValue.value, 10);
-    if (Number.isFinite(valueNumber)) {
-      action.value = clamp(valueNumber, 0, 255);
+    if (selectedValue) {
+      action.valuePresetId = selectedValue.id;
+      action.value = clampChannelValue(selectedValue.value);
+    } else if (preserveCustomValue) {
+      action.valuePresetId = null;
+      action.value = clampChannelValue(action.value);
+    } else {
+      const fallbackValue = preset.values[0];
+      action.valuePresetId = fallbackValue.id;
+      action.value = clampChannelValue(fallbackValue.value);
     }
   } else {
     action.valuePresetId = null;
+    action.value = clampChannelValue(action.value);
   }
 }
 
