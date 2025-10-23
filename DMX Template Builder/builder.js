@@ -7682,6 +7682,20 @@ function collectTemplateChannels(template) {
   const unique = new Set();
   template.rows.forEach((row) => {
     if (row.type === TEMPLATE_ROW_TYPES.DELAY) return;
+    const masterId =
+      typeof row.channelMasterId === "string" && row.channelMasterId ? row.channelMasterId : null;
+    if (masterId) {
+      const master = getChannelMaster(masterId);
+      if (master && Array.isArray(master.channels)) {
+        master.channels.forEach((channelNumber) => {
+          const numericChannel = Number.parseInt(channelNumber, 10);
+          if (!Number.isFinite(numericChannel)) {
+            return;
+          }
+          unique.add(clamp(numericChannel, 1, 512));
+        });
+      }
+    }
     const numeric = Number.parseInt(row.channel, 10);
     if (Number.isFinite(numeric)) {
       unique.add(clamp(numeric, 1, 512));

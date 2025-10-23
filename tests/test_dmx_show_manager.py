@@ -421,6 +421,43 @@ def test_template_loop_stops_when_same_instance_changes_channel(tmp_path: Path) 
     assert times == pytest.approx([0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.2])
 
 
+def test_template_loop_includes_all_master_channels(tmp_path: Path) -> None:
+    output = DummyOutput(channel_count=8)
+    manager = create_manager(tmp_path, output)
+
+    raw_actions = [
+        {
+            "time": "00:00:00",
+            "channel": 1,
+            "value": 50,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+            "templateRowId": "row-1",
+            "channelMasterId": "master:left_light",
+            "templateLoop": {
+                "enabled": True,
+                "count": 2,
+                "mode": "forward",
+                "duration": 1.0,
+                "channels": [1],
+            },
+        },
+        {
+            "time": "00:00:00",
+            "channel": 2,
+            "value": 200,
+            "fade": 0,
+            "templateInstanceId": "loop-1",
+            "templateRowId": "row-1",
+            "channelMasterId": "master:left_light",
+        },
+    ]
+
+    expanded = manager._expand_actions_with_loops(raw_actions)
+    timeline = [(round(action.time_seconds, 6), action.channel) for action in expanded]
+    assert timeline == [(0.0, 1), (0.0, 2), (1.0, 1), (1.0, 2)]
+
+
 def test_expand_actions_with_template_loop_requires_duration(tmp_path: Path) -> None:
     output = DummyOutput(channel_count=4)
     manager = create_manager(tmp_path, output)
