@@ -41,6 +41,20 @@ const templatePickerCloseElements = Array.from(
   document.querySelectorAll("[data-template-picker-close]"),
 );
 const templateRowTemplate = document.getElementById("template-row-template");
+const duplicateDialogEl = document.getElementById("duplicate-dialog");
+const duplicateDialogForm = duplicateDialogEl ? duplicateDialogEl.querySelector("form") : null;
+const duplicateDialogBeforeInput = duplicateDialogEl
+  ? duplicateDialogEl.querySelector("[data-duplicate-before]")
+  : null;
+const duplicateDialogAfterInput = duplicateDialogEl
+  ? duplicateDialogEl.querySelector("[data-duplicate-after]")
+  : null;
+const duplicateDialogError = duplicateDialogEl
+  ? duplicateDialogEl.querySelector("[data-duplicate-error]")
+  : null;
+const duplicateDialogCloseElements = Array.from(
+  document.querySelectorAll("[data-duplicate-dialog-close]"),
+);
 const systemUpdateButton = document.getElementById("system-update");
 const systemRestartButton = document.getElementById("system-restart");
 const systemShutdownButton = document.getElementById("system-shutdown");
@@ -79,6 +93,8 @@ let lightTemplateFilterQuery = "";
 let channelFilterOpen = false;
 const activeChannelFilterIds = new Set();
 const channelFilterGroupMap = new Map();
+let duplicateDialogActionId = null;
+let duplicateDialogRestoreElement = null;
 
 const CHANNEL_COMPONENTS = Object.freeze({
   NONE: "",
@@ -128,6 +144,7 @@ const DEFAULT_SLIDER_VALUES = Object.freeze({
 const CHANNEL_COMPONENT_DEFAULT_TYPE = CHANNEL_COMPONENT_TYPES.SLIDER;
 
 const CHANNEL_MASTER_PREFIX = "master:";
+const CHANNEL_NONE_OPTION_ID = "__none__";
 
 const DEFAULT_COLOR_PRESETS = Object.freeze([
   { id: "color_red", name: "Red", iconColor: "#ff3b30", red: 255, green: 0, blue: 0 },
@@ -203,6 +220,8 @@ const TEMPLATE_LOOP_MAX_ITERATIONS = 9999;
 const ICON_SVGS = {
   delete: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M232.7 69.9L224 96L128 96C110.3 96 96 110.3 96 128C96 145.7 110.3 160 128 160L512 160C529.7 160 544 145.7 544 128C544 110.3 529.7 96 512 96L416 96L407.3 69.9C402.9 56.8 390.7 48 376.9 48L263.1 48C249.3 48 237.1 56.8 232.7 69.9zM512 208L128 208L149.1 531.1C150.7 556.4 171.7 576 197 576L443 576C468.3 576 489.3 556.4 490.9 531.1L512 208z"/></svg>`,
   duplicate: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M352 512L128 512L128 288L176 288L176 224L128 224C92.7 224 64 252.7 64 288L64 512C64 547.3 92.7 576 128 576L352 576C387.3 576 416 547.3 416 512L416 464L352 464L352 512zM288 416L512 416C547.3 416 576 387.3 576 352L576 128C576 92.7 547.3 64 512 64L288 64C252.7 64 224 92.7 224 128L224 352C224 387.3 252.7 416 288 416z"/></svg>`,
+  duplicateOffset:
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M128 512L352 512L352 464L416 464L416 512C416 547.3 387.3 576 352 576L128 576C92.7 576 64 547.3 64 512L64 288C64 252.7 92.7 224 128 224L176 224L176 288L128 288L128 512zM224 352L224 128C224 92.7 252.7 64 288 64L512 64C547.3 64 576 92.7 576 128L576 352C576 387.3 547.3 416 512 416L288 416C252.7 416 224 387.3 224 352zM400 144C386.7 144 376 154.7 376 168L376 216L328 216C314.7 216 304 226.7 304 240C304 253.3 314.7 264 328 264L376 264L376 312C376 325.3 386.7 336 400 336C413.3 336 424 325.3 424 312L424 264L472 264C485.3 264 496 253.3 496 240C496 226.7 485.3 216 472 216L424 216L424 168C424 154.7 413.3 144 400 144z"/></svg>`,
   go: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M187.2 100.9C174.8 94.1 159.8 94.4 147.6 101.6C135.4 108.8 128 121.9 128 136L128 504C128 518.1 135.5 531.2 147.6 538.4C159.7 545.6 174.8 545.9 187.2 539.1L523.2 355.1C536 348.1 544 334.6 544 320C544 305.4 536 291.9 523.2 284.9L187.2 100.9z"/></svg>`,
   edit: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path d="M535.6 85.7C513.7 63.8 478.3 63.8 456.4 85.7L432 110.1L529.9 208L554.3 183.6C576.2 161.7 576.2 126.3 554.3 104.4L535.6 85.7zM236.4 305.7C230.3 311.8 225.6 319.3 222.9 327.6L193.3 416.4C190.4 425 192.7 434.5 199.1 441C205.5 447.5 215 449.7 223.7 446.8L312.5 417.2C320.7 414.5 328.2 409.8 334.4 403.7L496 241.9L398.1 144L236.4 305.7zM160 128C107 128 64 171 64 224L64 480C64 533 107 576 160 576L416 576C469 576 512 533 512 480L512 384C512 366.3 497.7 352 480 352C462.3 352 448 366.3 448 384L448 480C448 497.7 433.7 512 416 512L160 512C142.3 512 128 497.7 128 480L128 224C128 206.3 142.3 192 160 192L256 192C273.7 192 288 177.7 288 160C288 142.3 273.7 128 256 128L160 128z"/></svg>`,
 };
@@ -840,8 +859,15 @@ function deriveMasterStateFromActions(componentActions, master) {
   return state;
 }
 
-function getChannelSelectionOptions() {
+function getChannelSelectionOptions({ includeNone = true } = {}) {
   const options = [];
+  if (includeNone) {
+    options.push({
+      type: "none",
+      id: CHANNEL_NONE_OPTION_ID,
+      label: "No Light Selected",
+    });
+  }
   const masters = Array.isArray(channelMasters) ? [...channelMasters] : [];
   masters.forEach((master) => {
     options.push({
@@ -1047,6 +1073,219 @@ function openChannelFilter() {
   }
 }
 
+function initDuplicateDialog() {
+  if (!duplicateDialogEl) {
+    return;
+  }
+
+  if (duplicateDialogForm) {
+    duplicateDialogForm.addEventListener("submit", handleDuplicateDialogSubmit);
+  }
+
+  duplicateDialogCloseElements.forEach((element) => {
+    element.addEventListener("click", () => closeDuplicateDialog());
+  });
+}
+
+function openDuplicateDialog(actionId) {
+  if (!duplicateDialogEl) {
+    return;
+  }
+  const index = findActionIndexById(actionId);
+  if (index === -1) {
+    return;
+  }
+  const action = actions[index];
+  if (!action || isActionChannelUnassigned(action)) {
+    return;
+  }
+
+  duplicateDialogActionId = actionId;
+  duplicateDialogRestoreElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+  if (duplicateDialogBeforeInput instanceof HTMLInputElement) {
+    duplicateDialogBeforeInput.value = "";
+  }
+  if (duplicateDialogAfterInput instanceof HTMLInputElement) {
+    duplicateDialogAfterInput.value = "";
+  }
+  if (duplicateDialogError) {
+    duplicateDialogError.textContent = "";
+    duplicateDialogError.hidden = true;
+  }
+
+  duplicateDialogEl.hidden = false;
+  duplicateDialogEl.setAttribute("aria-hidden", "false");
+  duplicateDialogEl.classList.add("is-visible");
+  document.addEventListener("keydown", handleDuplicateDialogKeydown, true);
+
+  window.requestAnimationFrame(() => {
+    const focusTarget =
+      duplicateDialogAfterInput instanceof HTMLInputElement
+        ? duplicateDialogAfterInput
+        : duplicateDialogBeforeInput instanceof HTMLInputElement
+          ? duplicateDialogBeforeInput
+          : null;
+    if (focusTarget) {
+      try {
+        focusTarget.focus({ preventScroll: true });
+      } catch (error) {
+        focusTarget.focus();
+      }
+      focusTarget.select?.();
+    }
+  });
+}
+
+function closeDuplicateDialog(options = {}) {
+  if (!duplicateDialogEl) {
+    return;
+  }
+  duplicateDialogEl.classList.remove("is-visible");
+  duplicateDialogEl.hidden = true;
+  duplicateDialogEl.setAttribute("aria-hidden", "true");
+  document.removeEventListener("keydown", handleDuplicateDialogKeydown, true);
+
+  if (duplicateDialogError) {
+    duplicateDialogError.textContent = "";
+    duplicateDialogError.hidden = true;
+  }
+
+  const restoreFocus = options.restoreFocus !== false;
+  const focusTarget = duplicateDialogRestoreElement;
+  duplicateDialogRestoreElement = null;
+  duplicateDialogActionId = null;
+
+  if (restoreFocus && focusTarget instanceof HTMLElement) {
+    try {
+      focusTarget.focus({ preventScroll: true });
+    } catch (error) {
+      focusTarget.focus();
+    }
+  }
+}
+
+function handleDuplicateDialogKeydown(event) {
+  if (!duplicateDialogEl || duplicateDialogEl.hidden) {
+    return;
+  }
+
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeDuplicateDialog();
+    return;
+  }
+
+  if (event.key !== "Tab") {
+    return;
+  }
+
+  const focusableSelectors =
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  const focusableElements = Array.from(
+    duplicateDialogEl.querySelectorAll(focusableSelectors),
+  ).filter((element) => element instanceof HTMLElement && element.offsetParent !== null);
+
+  if (!focusableElements.length) {
+    return;
+  }
+
+  const first = focusableElements[0];
+  const last = focusableElements[focusableElements.length - 1];
+  const target = event.target;
+
+  if (!duplicateDialogEl.contains(target)) {
+    return;
+  }
+
+  if (event.shiftKey) {
+    if (target === first) {
+      event.preventDefault();
+      last.focus();
+    }
+  } else if (target === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function handleDuplicateDialogSubmit(event) {
+  event.preventDefault();
+  if (!duplicateDialogEl) {
+    return;
+  }
+
+  const actionId = duplicateDialogActionId;
+  if (!actionId) {
+    closeDuplicateDialog({ restoreFocus: false });
+    return;
+  }
+
+  const parseOffset = (input) => {
+    if (!(input instanceof HTMLInputElement)) {
+      return null;
+    }
+    const raw = input.value;
+    if (raw === "" || raw === null || raw === undefined) {
+      return null;
+    }
+    const parsed = Number.parseFloat(raw);
+    if (!Number.isFinite(parsed)) {
+      return NaN;
+    }
+    if (parsed < 0) {
+      return NaN;
+    }
+    if (parsed === 0) {
+      return 0;
+    }
+    return Number(parsed.toFixed(3));
+  };
+
+  const beforeSeconds = parseOffset(duplicateDialogBeforeInput);
+  const afterSeconds = parseOffset(duplicateDialogAfterInput);
+  const offsets = [];
+
+  if (Number.isNaN(beforeSeconds) || Number.isNaN(afterSeconds)) {
+    if (duplicateDialogError) {
+      duplicateDialogError.textContent = "Enter a valid number of seconds.";
+      duplicateDialogError.hidden = false;
+    }
+    return;
+  }
+
+  if (beforeSeconds && beforeSeconds > 0) {
+    offsets.push(-beforeSeconds);
+  }
+  if (afterSeconds && afterSeconds > 0) {
+    offsets.push(afterSeconds);
+  }
+
+  if (!offsets.length) {
+    if (duplicateDialogError) {
+      duplicateDialogError.textContent = "Add an offset to duplicate this cue.";
+      duplicateDialogError.hidden = false;
+    }
+    return;
+  }
+
+  closeDuplicateDialog({ restoreFocus: false });
+
+  let lastResult = null;
+  offsets.forEach((offset) => {
+    const result = duplicateActionWithOffset(actionId, offset);
+    if (result) {
+      lastResult = result;
+    }
+  });
+
+  if (lastResult && lastResult.actionId) {
+    window.requestAnimationFrame(() => {
+      scrollActionIntoView(lastResult.actionId, { behavior: "smooth" });
+    });
+  }
+}
+
 function closeChannelFilter() {
   if (!channelFilterOpen) {
     return;
@@ -1110,6 +1349,7 @@ async function init() {
   initTabs();
   initSystemControls();
   initChannelFilterUI();
+  initDuplicateDialog();
   try {
     await initColorPresetsUI();
   } catch (error) {
@@ -1380,6 +1620,13 @@ function getActionLocalId(action) {
   return ensureActionLocalId(action);
 }
 
+function findActionIndexById(actionId) {
+  if (typeof actionId !== "string" || !actionId) {
+    return -1;
+  }
+  return actions.findIndex((action) => getActionLocalId(action) === actionId);
+}
+
 function describeFocusedActionField(element) {
   if (!element || !element.dataset) return null;
   const { actionId, groupId, field } = element.dataset;
@@ -1526,6 +1773,75 @@ function scrollStepIntoView(stepId, options = {}) {
   }
 }
 
+function scrollActionIntoView(actionId, options = {}) {
+  if (!actionId || !actionsBody) {
+    return;
+  }
+
+  const target = actionsBody.querySelector(`[data-action-id="${actionId}"]`);
+  if (!target) {
+    return;
+  }
+
+  const containerOption = options.container;
+  let container = null;
+  if (containerOption instanceof HTMLElement) {
+    container = containerOption;
+  } else if (actionsTableWrapper instanceof HTMLElement) {
+    container = actionsTableWrapper;
+  }
+
+  const behavior = options.behavior || "smooth";
+
+  if (container) {
+    const containerRect =
+      typeof container.getBoundingClientRect === "function"
+        ? container.getBoundingClientRect()
+        : null;
+    const targetRect =
+      typeof target.getBoundingClientRect === "function" ? target.getBoundingClientRect() : null;
+
+    if (containerRect && targetRect) {
+      const margin =
+        typeof options.margin === "number" && Number.isFinite(options.margin)
+          ? options.margin
+          : 16;
+      const topDelta = targetRect.top - containerRect.top - margin;
+      const bottomDelta = targetRect.bottom - containerRect.bottom + margin;
+
+      if (topDelta < 0) {
+        if (typeof container.scrollBy === "function") {
+          container.scrollBy({ top: topDelta, behavior });
+        } else {
+          container.scrollTop += topDelta;
+        }
+        return;
+      }
+
+      if (bottomDelta > 0) {
+        if (typeof container.scrollBy === "function") {
+          container.scrollBy({ top: bottomDelta, behavior });
+        } else {
+          container.scrollTop += bottomDelta;
+        }
+        return;
+      }
+
+      return;
+    }
+  }
+
+  try {
+    target.scrollIntoView({
+      behavior,
+      block: options.block || "nearest",
+      inline: "nearest",
+    });
+  } catch (error) {
+    target.scrollIntoView();
+  }
+}
+
 function handleAddStep() {
   const time = getCurrentVideoTimecode();
   const stepId = generateStepId();
@@ -1535,6 +1851,7 @@ function handleAddStep() {
     {
       stepId,
       focusDescriptor: { kind: "group", groupId: stepId, field: "step-time" },
+      allowUnassigned: true,
     },
   );
   if (result && result.stepId) {
@@ -2719,6 +3036,8 @@ function createActionRow(action, index, group) {
   row.dataset.groupId = group.id;
   row.dataset.groupTime = group.time;
   row.classList.add("action-group-item");
+  const unassigned = isActionChannelUnassigned(action);
+  row.classList.toggle("action-group-item--unassigned", unassigned);
   if (action.templateInstanceId) {
     row.dataset.templateInstanceId = action.templateInstanceId;
     row.dataset.templateId = action.templateId || "";
@@ -2758,6 +3077,13 @@ function createActionRow(action, index, group) {
   const tools = document.createElement("div");
   tools.className = "row-tools";
 
+  const duplicateOffsetButton = document.createElement("button");
+  duplicateOffsetButton.type = "button";
+  setActionFieldMetadata(duplicateOffsetButton, actionId, "duplicate-offset");
+  duplicateOffsetButton.addEventListener("click", () => handleOpenDuplicateDialog(actionId));
+  duplicateOffsetButton.addEventListener("focus", () => setHighlightedAction(index));
+  applyIconButton(duplicateOffsetButton, "duplicateOffset", "Duplicate cue before/after");
+
   const duplicateButton = document.createElement("button");
   duplicateButton.type = "button";
   duplicateButton.addEventListener("click", () => duplicateAction(index));
@@ -2768,7 +3094,7 @@ function createActionRow(action, index, group) {
   removeButton.addEventListener("click", () => removeAction(index));
   applyIconButton(removeButton, "delete", "Delete cue");
 
-  tools.append(duplicateButton, removeButton);
+  tools.append(duplicateOffsetButton, duplicateButton, removeButton);
   if (toolsCell) {
     toolsCell.append(tools);
   }
@@ -3289,6 +3615,9 @@ function buildTimelineEntriesWithLoops(actionList, targetSeconds, epsilon = 0.00
     if (!action || typeof action !== "object") {
       return;
     }
+    if (isActionChannelUnassigned(action)) {
+      return;
+    }
     const seconds = parseTimeString(action.time);
     if (seconds === null) {
       return;
@@ -3540,6 +3869,9 @@ function computeChannelStatesAtTime(targetSeconds) {
   const channelStates = new Map();
   timeline.forEach(({ action, seconds }) => {
     const fadeDuration = normalizeFadeDuration(action.fade);
+    if (isActionChannelUnassigned(action)) {
+      return;
+    }
     if (action.channelMasterId) {
       const master = getChannelMaster(action.channelMasterId);
       if (!master) {
@@ -4249,6 +4581,27 @@ function createInput({ type, value, placeholder, min, max, step }) {
   return input;
 }
 
+function isActionChannelUnassigned(action) {
+  if (!action || typeof action !== "object") {
+    return true;
+  }
+  const hasMaster = typeof action.channelMasterId === "string" && action.channelMasterId;
+  const hasPreset = typeof action.channelPresetId === "string" && action.channelPresetId;
+  return !hasMaster && !hasPreset;
+}
+
+function clearActionChannel(action) {
+  if (!action || typeof action !== "object") {
+    return;
+  }
+  action.channelPresetId = null;
+  action.valuePresetId = null;
+  action.channelMasterId = null;
+  action.master = null;
+  action.channel = null;
+  action.value = 0;
+}
+
 function createChannelField(action, index, actionId) {
   const wrapper = document.createElement("div");
   wrapper.className = "preset-select";
@@ -4259,6 +4612,7 @@ function createChannelField(action, index, actionId) {
   select.addEventListener("change", (event) => handleChannelPresetChange(event, index));
 
   const optionData = getChannelSelectionOptions();
+  const hasNoneOption = optionData.some((option) => option.type === "none");
   let selectedPreset = null;
   let selectedMaster = null;
 
@@ -4266,7 +4620,9 @@ function createChannelField(action, index, actionId) {
     const option = document.createElement("option");
     option.value = optionInfo.id;
     option.textContent = optionInfo.label;
-    if (optionInfo.type === "master") {
+    if (optionInfo.type === "none") {
+      option.dataset.channelOptionType = "none";
+    } else if (optionInfo.type === "master") {
       option.dataset.channelOptionType = "master";
       option.dataset.channelMasterId = optionInfo.id;
       if (
@@ -4291,15 +4647,20 @@ function createChannelField(action, index, actionId) {
   } else if (selectedPreset) {
     select.value = selectedPreset.id;
   } else {
-    const fallbackPreset = optionData.find((option) => option.type === "preset");
-    if (fallbackPreset) {
-      applyChannelPresetToAction(action, fallbackPreset.preset);
-      select.value = fallbackPreset.id;
+    if (hasNoneOption) {
+      clearActionChannel(action);
+      select.value = CHANNEL_NONE_OPTION_ID;
     } else {
-      const fallbackMaster = optionData.find((option) => option.type === "master");
-      if (fallbackMaster) {
-        ensureMasterState(action, fallbackMaster.master);
-        select.value = fallbackMaster.id;
+      const fallbackPreset = optionData.find((option) => option.type === "preset");
+      if (fallbackPreset) {
+        applyChannelPresetToAction(action, fallbackPreset.preset);
+        select.value = fallbackPreset.id;
+      } else {
+        const fallbackMaster = optionData.find((option) => option.type === "master");
+        if (fallbackMaster) {
+          ensureMasterState(action, fallbackMaster.master);
+          select.value = fallbackMaster.id;
+        }
       }
     }
   }
@@ -4311,6 +4672,11 @@ function createChannelField(action, index, actionId) {
 function createValueField(action, index, actionId) {
   const wrapper = document.createElement("div");
   wrapper.className = "preset-select";
+
+  if (isActionChannelUnassigned(action)) {
+    wrapper.classList.add("preset-select--inactive");
+    return wrapper;
+  }
 
   const master = action.channelMasterId ? getChannelMaster(action.channelMasterId) : null;
   if (master) {
@@ -4727,14 +5093,20 @@ function handleAddRowToGroup(stepId) {
       ? groupInfo.indices[groupInfo.indices.length - 1] + 1
       : actions.length;
   collapsedStepIds.delete(stepId);
-  addAction(
+  const result = addAction(
     { time },
     {
       stepId,
       insertIndex,
       focusField: "channelPreset",
+      allowUnassigned: true,
     },
   );
+  if (result && result.actionId) {
+    window.requestAnimationFrame(() => {
+      scrollActionIntoView(result.actionId, { behavior: "smooth" });
+    });
+  }
 }
 
 function handleAddTemplateToGroup(stepId) {
@@ -4900,6 +5272,12 @@ function handleChannelPresetChange(event, index) {
 
   const selectedOption = select.options[select.selectedIndex];
   const optionType = selectedOption?.dataset?.channelOptionType;
+  if (optionType === "none") {
+    clearActionChannel(action);
+    renderActions();
+    queuePreviewSync();
+    return;
+  }
   if (optionType === "master") {
     const masterId = selectedOption?.dataset?.channelMasterId || select.value;
     const master = getChannelMaster(masterId);
@@ -4926,8 +5304,7 @@ function handleChannelPresetChange(event, index) {
   if (fallback) {
     applyChannelPresetToAction(action, fallback);
   } else {
-    action.channelPresetId = null;
-    action.valuePresetId = null;
+    clearActionChannel(action);
   }
   renderActions();
   queuePreviewSync();
@@ -4990,15 +5367,20 @@ function addAction(action, options = {}) {
       newAction.master = null;
     }
   }
+  const allowUnassigned = options.allowUnassigned === true;
   if (!newAction.channelPresetId && !newAction.channelMasterId) {
-    const optionsList = getChannelSelectionOptions();
-    const fallbackPreset = optionsList.find((option) => option.type === "preset");
-    if (fallbackPreset) {
-      applyChannelPresetToAction(newAction, fallbackPreset.preset);
+    if (allowUnassigned) {
+      clearActionChannel(newAction);
     } else {
-      const fallbackMaster = optionsList.find((option) => option.type === "master");
-      if (fallbackMaster) {
-        ensureMasterState(newAction, fallbackMaster.master);
+      const optionsList = getChannelSelectionOptions();
+      const fallbackPreset = optionsList.find((option) => option.type === "preset");
+      if (fallbackPreset) {
+        applyChannelPresetToAction(newAction, fallbackPreset.preset);
+      } else {
+        const fallbackMaster = optionsList.find((option) => option.type === "master");
+        if (fallbackMaster) {
+          ensureMasterState(newAction, fallbackMaster.master);
+        }
       }
     }
   }
@@ -5037,26 +5419,74 @@ function removeAction(index) {
   queuePreviewSync();
 }
 
+function cloneActionForDuplicate(action) {
+  if (!action) {
+    return null;
+  }
+  return {
+    time: action.time,
+    channel: action.channel,
+    value: action.value,
+    fade: action.fade,
+    channelPresetId: action.channelPresetId,
+    valuePresetId: action.valuePresetId,
+    channelMasterId: action.channelMasterId,
+    master: action.master ? { ...action.master } : null,
+    templateId: action.templateId,
+    templateInstanceId: action.templateInstanceId,
+    templateRowId: action.templateRowId,
+    templateLoop: action.templateLoop ? { ...action.templateLoop } : null,
+    stepTitle: typeof action.stepTitle === "string" ? action.stepTitle : "",
+  };
+}
+
 function duplicateAction(index) {
   const original = actions[index];
   if (!original) return;
   const stepId = getActionStepId(original);
-  const copy = {
-    time: original.time,
-    channel: original.channel,
-    value: original.value,
-    fade: original.fade,
-    channelPresetId: original.channelPresetId,
-    valuePresetId: original.valuePresetId,
-    channelMasterId: original.channelMasterId,
-    master: original.master ? { ...original.master } : null,
-    templateId: original.templateId,
-    templateInstanceId: original.templateInstanceId,
-    templateRowId: original.templateRowId,
-    templateLoop: original.templateLoop ? { ...original.templateLoop } : null,
-    stepTitle: typeof original.stepTitle === "string" ? original.stepTitle : "",
-  };
+  const copy = cloneActionForDuplicate(original);
+  if (!copy) return;
   addAction(copy, { stepId, insertIndex: index + 1, focusField: "channelPreset" });
+}
+
+function duplicateActionWithOffset(actionId, offsetSeconds) {
+  const index = findActionIndexById(actionId);
+  if (index === -1) {
+    return null;
+  }
+  const original = actions[index];
+  if (!original) {
+    return null;
+  }
+  const baseSeconds = parseTimeString(original.time);
+  if (baseSeconds === null) {
+    return null;
+  }
+  const numericOffset = Number(offsetSeconds);
+  if (!Number.isFinite(numericOffset)) {
+    return null;
+  }
+  const targetSeconds = Math.max(0, Number((baseSeconds + numericOffset).toFixed(6)));
+  const copy = cloneActionForDuplicate(original);
+  if (!copy) {
+    return null;
+  }
+  copy.time = secondsToTimecode(targetSeconds);
+  const stepId = generateStepId();
+  collapsedStepIds.delete(stepId);
+  return addAction(copy, { stepId, focusField: "channelPreset" });
+}
+
+function handleOpenDuplicateDialog(actionId) {
+  const index = findActionIndexById(actionId);
+  if (index === -1) {
+    return;
+  }
+  const action = actions[index];
+  if (!action || isActionChannelUnassigned(action)) {
+    return;
+  }
+  openDuplicateDialog(actionId);
 }
 
 function sortActions(list) {
@@ -6871,7 +7301,7 @@ function createTemplateRowDefaults(overrides = {}) {
   }
 
   if (!row.channelPresetId && !row.channelMasterId) {
-    const optionsList = getChannelSelectionOptions();
+    const optionsList = getChannelSelectionOptions({ includeNone: false });
     const fallbackPreset = optionsList.find((option) => option.type === "preset");
     if (fallbackPreset) {
       applyChannelPresetToTemplateRow(row, fallbackPreset.preset);
@@ -7455,7 +7885,7 @@ function createTemplateChannelField(templateId, row) {
     handleTemplateRowChannelPresetChange(templateId, row.id, event),
   );
 
-  const optionData = getChannelSelectionOptions();
+  const optionData = getChannelSelectionOptions({ includeNone: false });
   let selectedPreset = null;
   let selectedMaster = null;
 
@@ -8156,6 +8586,17 @@ function handleTemplateRowChannelPresetChange(templateId, rowId, event) {
   const select = event.target;
   const selectedOption = select.options[select.selectedIndex];
   const optionType = selectedOption?.dataset?.channelOptionType;
+  if (optionType === "none") {
+    row.channelPresetId = null;
+    row.valuePresetId = null;
+    row.channelMasterId = null;
+    row.master = null;
+    const focusDescriptor = describeFocusedTemplateField(select);
+    saveLightTemplates();
+    renderLightTemplates({ preserveFocus: focusDescriptor });
+    syncTemplateInstances(templateId);
+    return;
+  }
   if (optionType === "master") {
     const masterId = selectedOption?.dataset?.channelMasterId || select.value;
     const master = getChannelMaster(masterId);
@@ -8176,7 +8617,7 @@ function handleTemplateRowChannelPresetChange(templateId, rowId, event) {
   if (preset) {
     applyChannelPresetToTemplateRow(row, preset);
   } else {
-    const optionsList = getChannelSelectionOptions();
+    const optionsList = getChannelSelectionOptions({ includeNone: false });
     const fallbackPreset = optionsList.find((option) => option.type === "preset");
     if (fallbackPreset) {
       applyChannelPresetToTemplateRow(row, fallbackPreset.preset);
@@ -8782,6 +9223,9 @@ async function fetchFromApiCandidates(path) {
 function prepareActionsForSave() {
   const prepared = [];
   actions.forEach((action, index) => {
+    if (isActionChannelUnassigned(action)) {
+      return;
+    }
     const seconds = parseTimeString(action.time);
     if (seconds === null) {
       throw new Error(`Row ${index + 1}: invalid time format.`);
