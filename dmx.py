@@ -20,7 +20,7 @@ import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, cast
 
 LOGGER = logging.getLogger("kpop_stage.dmx")
 
@@ -825,10 +825,24 @@ class DMXShowManager:
             instance_raw = raw.get("templateInstanceId")
             instance_id = instance_raw if isinstance(instance_raw, str) and instance_raw else None
             loop_settings = _normalize_template_loop_settings(raw.get("templateLoop"))
+            channel_master_raw = raw.get("channelMasterId")
+            if isinstance(channel_master_raw, str):
+                channel_master_id = channel_master_raw.strip() or None
+            else:
+                channel_master_id = None
+
+            template_row_raw = raw.get("templateRowId")
+            if isinstance(template_row_raw, str):
+                template_row_id = template_row_raw.strip() or None
+            else:
+                template_row_id = None
+
             entry = {
                 "action": action,
                 "instance_id": instance_id,
                 "loop": loop_settings,
+                "channel_master_id": channel_master_id,
+                "template_row_id": template_row_id,
             }
             parsed_entries.append(entry)
             channel_times.setdefault(action.channel, []).append(
@@ -869,13 +883,42 @@ class DMXShowManager:
             if not channels:
                 continue
 
+            channel_set: Set[int] = set(channels)
+            allowed_master_ids: Set[str] = set()
+            allowed_row_ids: Set[str] = set()
+
+            for item in ordered_entries:
+                if item["action"].channel in channel_set:
+                    master_id = item.get("channel_master_id")
+                    if master_id:
+                        allowed_master_ids.add(master_id)
+                    row_id = item.get("template_row_id")
+                    if row_id:
+                        allowed_row_ids.add(row_id)
+
+            if allowed_master_ids or allowed_row_ids:
+                for item in ordered_entries:
+                    master_id = item.get("channel_master_id")
+                    row_id = item.get("template_row_id")
+                    if (
+                        (master_id and master_id in allowed_master_ids)
+                        or (row_id and row_id in allowed_row_ids)
+                    ):
+                        channel_set.add(item["action"].channel)
+
+            channels = sorted(channel_set)
+            if not channels:
+                continue
+
+            channel_set = set(channels)
+
             relative_offsets: List[tuple[float, DMXAction]] = []
             loop_entry_ids: set[int] = set()
             loop_window = max(duration - epsilon, 0.0)
 
             for entry in ordered_entries:
                 action = entry["action"]
-                if action.channel not in channels:
+                if action.channel not in channel_set:
                     continue
                 offset = action.time_seconds - base_start
                 if offset < -epsilon:
