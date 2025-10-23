@@ -318,6 +318,68 @@
       </div>
     </template>
 
+    <div id="duplicate-dialog" class="duplicate-dialog" hidden aria-hidden="true">
+      <div class="duplicate-dialog__backdrop" data-duplicate-dialog-close></div>
+      <div
+        class="duplicate-dialog__dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="duplicate-dialog-title"
+      >
+        <header class="duplicate-dialog__header">
+          <h2 id="duplicate-dialog-title">Duplicate Cue</h2>
+          <button
+            type="button"
+            class="duplicate-dialog__close"
+            data-duplicate-dialog-close
+            aria-label="Close duplicate cue dialog"
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+        </header>
+        <form class="duplicate-dialog__form">
+          <div class="duplicate-dialog__body">
+            <p class="duplicate-dialog__description">
+              Choose offsets in seconds to duplicate this cue before or after the current step.
+            </p>
+            <div class="duplicate-dialog__field">
+              <label for="duplicate-before-input">Duplicate before (-)</label>
+              <div class="duplicate-dialog__input">
+                <input
+                  type="number"
+                  id="duplicate-before-input"
+                  data-duplicate-before
+                  min="0"
+                  step="0.1"
+                  inputmode="decimal"
+                />
+                <span>s</span>
+              </div>
+            </div>
+            <div class="duplicate-dialog__field">
+              <label for="duplicate-after-input">Duplicate after (+)</label>
+              <div class="duplicate-dialog__input">
+                <input
+                  type="number"
+                  id="duplicate-after-input"
+                  data-duplicate-after
+                  min="0"
+                  step="0.1"
+                  inputmode="decimal"
+                />
+                <span>s</span>
+              </div>
+            </div>
+            <p class="duplicate-dialog__error" data-duplicate-error role="alert" hidden></p>
+          </div>
+          <div class="duplicate-dialog__footer">
+            <button type="submit" class="primary">Duplicate</button>
+            <button type="button" class="secondary" data-duplicate-dialog-close>Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <div id="template-picker" class="template-picker" hidden aria-hidden="true">
       <div class="template-picker__backdrop" data-template-picker-close></div>
       <div class="template-picker__dialog" role="dialog" aria-modal="true" aria-labelledby="template-picker-title">
