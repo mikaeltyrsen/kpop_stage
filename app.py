@@ -12,7 +12,7 @@ import time
 import uuid
 import re
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 
 from flask import (
     Flask,
@@ -34,6 +34,7 @@ DMX_BUILDER_DIR = BASE_DIR / "DMX Template Builder"
 CHANNEL_PRESETS_FILE = BASE_DIR / "channel_presets.json"
 LIGHT_TEMPLATES_FILE = BASE_DIR / "light_templates.json"
 COLOR_PRESETS_FILE = BASE_DIR / "color_presets.json"
+RELAY_PRESETS_FILE = BASE_DIR / "relay_presets.json"
 WARNING_VIDEO_PATH = MEDIA_DIR / "warning.mp4"
 DEFAULT_LOOP_TEMPLATE_PATH = DMX_TEMPLATE_DIR / "default_loop_dmx.json"
 
@@ -43,6 +44,7 @@ DMX_TEMPLATE_DIR.mkdir(parents=True, exist_ok=True)
 DMX_BUILDER_DIR.mkdir(parents=True, exist_ok=True)
 LIGHT_TEMPLATES_FILE.parent.mkdir(parents=True, exist_ok=True)
 COLOR_PRESETS_FILE.parent.mkdir(parents=True, exist_ok=True)
+RELAY_PRESETS_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 LOGGER = logging.getLogger("kpop_stage")
@@ -638,6 +640,110 @@ def save_color_presets_to_disk(presets: Iterable[Dict[str, Any]]) -> None:
             json.dump({"presets": sanitized}, fh, indent=2)
     except OSError:
         LOGGER.exception("Unable to write color presets file")
+        raise
+
+
+def sanitize_relay_preset(raw: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    if not isinstance(raw, dict):
+        return None
+
+    preset_id = raw.get("id")
+    if not isinstance(preset_id, str) or not preset_id:
+        preset_id = f"relay_{uuid.uuid4().hex}"
+
+    name = raw.get("name") if isinstance(raw.get("name"), str) else ""
+
+    commands: List[Dict[str, str]] = []
+    raw_commands = raw.get("commands")
+    if isinstance(raw_commands, list):
+        for entry in raw_commands:
+            if not isinstance(entry, dict):
+                continue
+            command_id = entry.get("id") if isinstance(entry.get("id"), str) else ""
+            if not command_id:
+                command_id = f"cmd_{uuid.uuid4().hex}"
+            label = entry.get("label") if isinstance(entry.get("label"), str) else ""
+            url_value = entry.get("url") if isinstance(entry.get("url"), str) else entry.get("value")
+            if not isinstance(url_value, str):
+                continue
+            url_text = url_value.strip()
+            if not url_text:
+                continue
+            commands.append({"id": command_id, "label": label, "url": url_text})
+    else:
+        for key, default_label in (("on", "On"), ("off", "Off")):
+            url_value = raw.get(f"{key}_url")
+            if not isinstance(url_value, str):
+                url_value = raw.get(key)
+            if not isinstance(url_value, str):
+                continue
+            url_text = url_value.strip()
+            if not url_text:
+                continue
+            commands.append({"id": key, "label": default_label, "url": url_text})
+
+    if not commands:
+        return None
+
+    normalized: List[Dict[str, str]] = []
+    seen_ids: Set[str] = set()
+    for command in commands:
+        command_id = command.get("id") or f"cmd_{uuid.uuid4().hex}"
+        if command_id in seen_ids:
+            command_id = f"cmd_{uuid.uuid4().hex}"
+        seen_ids.add(command_id)
+        label = command.get("label") or command_id.replace("_", " ").title()
+        normalized.append({"id": command_id, "label": label, "url": command["url"]})
+
+    return {"id": preset_id, "name": name, "commands": normalized}
+
+
+def load_relay_presets_from_disk() -> List[Dict[str, Any]]:
+    if not RELAY_PRESETS_FILE.exists():
+        return []
+
+    try:
+        with RELAY_PRESETS_FILE.open("r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, json.JSONDecodeError):
+        LOGGER.exception("Unable to read relay presets file")
+        return []
+
+    if isinstance(data, dict):
+        raw_presets = data.get("presets", [])
+    else:
+        raw_presets = data
+
+    if not isinstance(raw_presets, list):
+        LOGGER.warning("Relay presets file did not contain a list of presets")
+        return []
+
+    sanitized: List[Dict[str, Any]] = []
+    for entry in raw_presets:
+        preset = sanitize_relay_preset(entry)
+        if preset:
+            sanitized.append(preset)
+    return sanitized
+
+
+def save_relay_presets_to_disk(presets: Iterable[Dict[str, Any]]) -> None:
+    items = list(presets)
+    sanitized: List[Dict[str, Any]] = []
+    for entry in items:
+        preset = sanitize_relay_preset(entry)
+        if not preset and entry:
+            raise ValueError("Relay presets must include valid commands")
+        if preset:
+            sanitized.append(preset)
+
+    if items and not sanitized:
+        raise ValueError("No valid relay presets were provided")
+
+    try:
+        with RELAY_PRESETS_FILE.open("w", encoding="utf-8") as fh:
+            json.dump({"presets": sanitized}, fh, indent=2)
+    except OSError:
+        LOGGER.exception("Unable to write relay presets file")
         raise
 
 
@@ -1326,6 +1432,13 @@ playback_session = PlaybackSession()
 
 def _handle_default_start(_: Path) -> None:
     playback_session.clear()
+    default_entry = get_video_entry_by_path(DEFAULT_VIDEO_PATH)
+    if default_entry:
+        try:
+            dmx_manager.start_show_for_video(default_entry)
+            return
+        except Exception:
+            LOGGER.exception("Unable to start DMX show for default loop video")
     dmx_manager.start_default_show(DEFAULT_LOOP_TEMPLATE_PATH)
 
 
@@ -1474,6 +1587,37 @@ def api_put_color_presets() -> Any:
         return jsonify({"error": "Unable to save color presets"}), 500
 
     presets = load_color_presets_from_disk()
+    return jsonify({"presets": presets})
+
+
+@app.route("/api/relay-presets", methods=["GET"])
+def api_get_relay_presets() -> Any:
+    presets = load_relay_presets_from_disk()
+    return jsonify({"presets": presets})
+
+
+@app.route("/api/relay-presets", methods=["PUT"])
+def api_put_relay_presets() -> Any:
+    data = request.get_json(silent=True)  # type: ignore[no-untyped-call]
+    if data is None:
+        return jsonify({"error": "Request body must be JSON"}), 400
+
+    if isinstance(data, list):
+        raw_presets = data
+    else:
+        raw_presets = data.get("presets")
+
+    if not isinstance(raw_presets, list):
+        return jsonify({"error": "Request must include a list of presets"}), 400
+
+    try:
+        save_relay_presets_to_disk(raw_presets)
+    except ValueError as exc:
+        return jsonify({"error": str(exc) or "Invalid relay presets"}), 400
+    except OSError:
+        return jsonify({"error": "Unable to save relay presets"}), 500
+
+    presets = load_relay_presets_from_disk()
     return jsonify({"presets": presets})
 
 
@@ -1790,10 +1934,12 @@ def api_dmx_template(video_id: str) -> Any:
     if request.method == "GET":
         try:
             actions = dmx_manager.load_show_for_video(video_entry)
+            relay_actions = dmx_manager.load_relay_actions_for_video(video_entry)
         except RuntimeError as exc:
             return jsonify({"error": str(exc)}), 500
 
         stored_actions: List[Dict[str, Any]] = []
+        stored_relay_actions: List[Dict[str, Any]] = []
         if template_path.exists():
             try:
                 with template_path.open("r", encoding="utf-8") as fh:
@@ -1804,6 +1950,9 @@ def api_dmx_template(video_id: str) -> Any:
                 raw_actions = payload.get("actions") if isinstance(payload, dict) else None
                 if isinstance(raw_actions, list):
                     stored_actions = raw_actions
+                raw_relay = payload.get("relay_actions") if isinstance(payload, dict) else None
+                if isinstance(raw_relay, list):
+                    stored_relay_actions = raw_relay
 
         try:
             relative_path = template_path.relative_to(BASE_DIR)
@@ -1813,6 +1962,9 @@ def api_dmx_template(video_id: str) -> Any:
 
         if not stored_actions:
             stored_actions = dmx_manager.serialize_actions(actions)
+
+        if not stored_relay_actions:
+            stored_relay_actions = dmx_manager.serialize_relay_actions(relay_actions)
 
         response = {
             "video": {
@@ -1826,6 +1978,7 @@ def api_dmx_template(video_id: str) -> Any:
             },
             "template_exists": template_path.exists(),
             "actions": stored_actions,
+            "relay_actions": stored_relay_actions,
         }
         return jsonify(response)
 
@@ -1834,8 +1987,14 @@ def api_dmx_template(video_id: str) -> Any:
     if not isinstance(actions_payload, list):
         return jsonify({"error": "Request body must include an 'actions' list"}), 400
 
+    relay_payload = data.get("relay_actions")
+    if relay_payload is None:
+        relay_payload = []
+    if not isinstance(relay_payload, list):
+        return jsonify({"error": "Relay actions must be provided as a list"}), 400
+
     try:
-        dmx_manager.save_actions(template_path, actions_payload)
+        dmx_manager.save_template(template_path, actions=actions_payload, relay_actions=relay_payload)
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
     except Exception:

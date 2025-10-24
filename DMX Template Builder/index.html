@@ -47,6 +47,15 @@
         class="builder-tab"
         role="tab"
         aria-selected="false"
+        data-tab="relays"
+      >
+        Relay Presets
+      </button>
+      <button
+        type="button"
+        class="builder-tab"
+        role="tab"
+        aria-selected="false"
         data-tab="templates"
       >
         Light Templates
@@ -263,6 +272,31 @@
         </div>
       </header>
       <div id="color-presets" class="color-settings__list" aria-live="polite"></div>
+    </section>
+
+    <section
+      id="relay-presets-panel"
+      class="preset-settings tab-panel preset-settings--relay"
+      data-tab-panel="relays"
+      aria-labelledby="relay-presets-heading"
+      hidden
+      aria-hidden="true"
+    >
+      <header class="preset-settings__header">
+        <div>
+          <h2 id="relay-presets-heading">Relay Presets</h2>
+          <p>
+            Configure simple on/off HTTP commands for devices like snow machines or relays.
+            These presets can be added to timeline cues alongside your lighting steps.
+          </p>
+        </div>
+        <div class="preset-settings__actions">
+          <button id="add-relay-preset" type="button" class="secondary">
+            Add Relay Preset
+          </button>
+        </div>
+      </header>
+      <div id="relay-presets" class="relay-settings__list" aria-live="polite"></div>
     </section>
 
     <section

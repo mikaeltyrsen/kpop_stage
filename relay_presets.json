@@ -1,0 +1,20 @@
+{
+  "presets": [
+    {
+      "id": "relay_snow_machine",
+      "name": "Snow Machine",
+      "commands": [
+        {
+          "id": "on",
+          "label": "On",
+          "url": "http://192.168.8.100/relay/0?turn=on"
+        },
+        {
+          "id": "off",
+          "label": "Off",
+          "url": "http://192.168.8.100/relay/0?turn=off"
+        }
+      ]
+    }
+  ]
+}
