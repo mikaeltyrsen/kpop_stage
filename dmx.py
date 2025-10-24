@@ -765,10 +765,15 @@ class DMXShowRunner:
 
 
 class RelayCommandRunner:
-    def __init__(self) -> None:
+    def __init__(self, callback: Optional[Callable[[RelayAction], None]] = None) -> None:
         self._lock = threading.Lock()
         self._thread: Optional[threading.Thread] = None
         self._stop_event: Optional[threading.Event] = None
+        self._callback: Optional[Callable[[RelayAction], None]] = callback
+
+    def set_callback(self, callback: Optional[Callable[[RelayAction], None]]) -> None:
+        with self._lock:
+            self._callback = callback
 
     def start(self, actions: Iterable[RelayAction]) -> None:
         ordered = sorted(actions, key=lambda action: action.time_seconds)
@@ -803,6 +808,17 @@ class RelayCommandRunner:
         if thread and thread.is_alive():
             thread.join(timeout=1.0)
 
+    def _notify(self, action: RelayAction) -> None:
+        callback: Optional[Callable[[RelayAction], None]]
+        with self._lock:
+            callback = self._callback
+        if not callback:
+            return
+        try:
+            callback(action)
+        except Exception:  # pragma: no cover - defensive logging
+            LOGGER.exception("Relay callback raised an exception")
+
     def _run(self, actions: List[RelayAction], stop_event: threading.Event) -> None:
         start_time = time.monotonic()
         for action in actions:
@@ -814,10 +830,11 @@ class RelayCommandRunner:
                 return
             if stop_event.is_set():
                 break
-            self._trigger_action(action)
+            if self._trigger_action(action):
+                self._notify(action)
 
     @staticmethod
-    def _trigger_action(action: RelayAction) -> None:
+    def _trigger_action(action: RelayAction) -> bool:
         request = urllib.request.Request(action.url)
         try:
             with urllib.request.urlopen(request, timeout=3.0) as response:
@@ -825,8 +842,11 @@ class RelayCommandRunner:
                 response.read(1)
         except urllib.error.URLError:
             LOGGER.error("Failed to trigger relay URL %s", action.url)
+            return False
         except Exception:  # pragma: no cover - defensive logging for unexpected errors
             LOGGER.exception("Error while triggering relay URL %s", action.url)
+            return False
+        return True
 
 
 class DMXShowManager:
@@ -842,7 +862,8 @@ class DMXShowManager:
         self.templates_dir.mkdir(parents=True, exist_ok=True)
         self.output = output
         self.runner = DMXShowRunner(output)
-        self.relay_runner = RelayCommandRunner()
+        self._relay_action_callback: Optional[Callable[[RelayAction], None]] = None
+        self.relay_runner = RelayCommandRunner(callback=self._relay_runner_triggered)
         self._lock = threading.Lock()
         self._has_active_show = False
         self._baseline_levels: List[int] = [0] * self.output.channel_count
@@ -860,6 +881,12 @@ class DMXShowManager:
         self._smoke_reset_timer: Optional[threading.Timer] = None
         self._smoke_active = False
 
+    def has_active_show(self) -> bool:
+        """Return True if a DMX show with actions is currently running."""
+
+        with self._lock:
+            return self._has_active_show
+
     def update_baseline_levels(self, levels: Iterable[int]) -> None:
         """Replace the stored baseline DMX levels used when starting shows."""
 
@@ -867,6 +894,23 @@ class DMXShowManager:
         if len(values) != self.output.channel_count:
             raise ValueError("Baseline levels must match DMX channel count")
         self._baseline_levels = [_clamp(value, 0, 255) for value in values]
+
+    def _relay_runner_triggered(self, action: RelayAction) -> None:
+        callback = self._relay_action_callback
+        if not callback:
+            return
+        try:
+            callback(action)
+        except Exception:  # pragma: no cover - defensive logging
+            LOGGER.exception("Relay action callback raised an exception")
+
+    def set_relay_action_callback(self, callback: Optional[Callable[[RelayAction], None]]) -> None:
+        self._relay_action_callback = callback
+        if hasattr(self.relay_runner, "set_callback"):
+            if callback:
+                self.relay_runner.set_callback(self._relay_runner_triggered)
+            else:
+                self.relay_runner.set_callback(None)
 
     def is_smoke_available(self) -> bool:
         return self._smoke_channel is not None

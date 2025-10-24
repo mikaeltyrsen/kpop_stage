@@ -82,10 +82,21 @@ def create_manager(tmp_path: Path, output: DummyOutput) -> DMXShowManager:
 def test_relay_runner_triggers_urls_in_order(monkeypatch: pytest.MonkeyPatch) -> None:
     triggered: List[str] = []
 
-    def fake_trigger(action: RelayAction) -> None:
-        triggered.append(action.url)
+    class DummyResponse:
+        def __enter__(self) -> "DummyResponse":  # pragma: no cover - simple stub
+            return self
 
-    monkeypatch.setattr(dmx.RelayCommandRunner, "_trigger_action", staticmethod(fake_trigger))
+        def __exit__(self, exc_type, exc, exc_tb) -> None:  # pragma: no cover - simple stub
+            return None
+
+        def read(self, _size: int = 1) -> bytes:  # pragma: no cover - simple stub
+            return b""
+
+    def fake_urlopen(request: object, timeout: float = 0.0) -> DummyResponse:
+        triggered.append(getattr(request, "full_url", ""))
+        return DummyResponse()
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
     runner = dmx.RelayCommandRunner()
     actions = [
         RelayAction(time_seconds=0.0, url="http://example.invalid/on"),
@@ -123,6 +134,32 @@ def test_start_show_resets_levels_before_running(tmp_path: Path) -> None:
     relay_runner: DummyRelayRunner = manager.relay_runner  # type: ignore[assignment]
     assert relay_runner.stop_calls == 1
     assert relay_runner.started_actions == []
+
+
+def test_has_active_show_tracks_running_state(tmp_path: Path) -> None:
+    output = DummyOutput(channel_count=4)
+    manager = create_manager(tmp_path, output)
+    manager.update_baseline_levels([0] * output.channel_count)
+    actions = [
+        DMXAction(time_seconds=0.0, channel=1, value=255, fade=0.0),
+    ]
+    manager.load_show_for_video = lambda _: actions  # type: ignore[assignment]
+
+    manager.start_show_for_video({"id": "video"})
+    assert manager.has_active_show() is True
+
+    manager.stop_show()
+    assert manager.has_active_show() is False
+
+
+def test_show_without_actions_does_not_mark_active(tmp_path: Path) -> None:
+    output = DummyOutput(channel_count=4)
+    manager = create_manager(tmp_path, output)
+    manager.update_baseline_levels([0] * output.channel_count)
+    manager.load_show_for_video = lambda _: []  # type: ignore[assignment]
+
+    manager.start_show_for_video({"id": "video"})
+    assert manager.has_active_show() is False
 
 
 def test_soda_pop_uses_template_without_custom_actions(tmp_path: Path) -> None:
