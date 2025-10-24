@@ -35,6 +35,7 @@ CHANNEL_PRESETS_FILE = BASE_DIR / "channel_presets.json"
 LIGHT_TEMPLATES_FILE = BASE_DIR / "light_templates.json"
 COLOR_PRESETS_FILE = BASE_DIR / "color_presets.json"
 WARNING_VIDEO_PATH = MEDIA_DIR / "warning.mp4"
+DEFAULT_LOOP_TEMPLATE_PATH = DMX_TEMPLATE_DIR / "default_loop_dmx.json"
 
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 (MEDIA_DIR / "videos").mkdir(parents=True, exist_ok=True)
@@ -923,6 +924,9 @@ class PlaybackController:
         self._on_video_start = on_video_start
         self._on_default_start = on_default_start
         self._warning_video = warning_video
+        self._pending_video_start: Optional[Path] = None
+        self._pending_requires_playlist_advance = False
+        self._start_callback_fired = False
         self._default_missing_message = (
             f"Default loop video not found: {self.default_video}. "
             "Update videos.json or copy the file into the media directory."
@@ -984,6 +988,12 @@ class PlaybackController:
             raise FileNotFoundError(f"Video not found: {video_path}")
 
         self._ensure_player_running()
+        if loop:
+            self._clear_pending_video_start()
+        else:
+            self._pending_video_start = video_path
+            self._pending_requires_playlist_advance = bool(pre_roll_path)
+            self._start_callback_fired = False
         try:
             if pre_roll_path:
                 self._send_ipc_command("loadfile", str(pre_roll_path), "replace")
@@ -1010,15 +1020,12 @@ class PlaybackController:
                     LOGGER.exception("Default start callback failed")
         else:
             self._start_idle_monitor_locked()
-            if self._on_video_start:
-                try:
-                    self._on_video_start(video_path)
-                except Exception:  # pragma: no cover - defensive logging
-                    LOGGER.exception("Video start callback failed")
 
     def _start_default_locked(self) -> None:
         if not self.default_video.exists():
             raise FileNotFoundError(self._default_missing_message)
+
+        self._clear_pending_video_start()
 
         if (
             self._process
@@ -1028,6 +1035,54 @@ class PlaybackController:
             return
 
         self._play_video_locked(self.default_video, loop=True)
+
+    def _clear_pending_video_start(self) -> None:
+        self._pending_video_start = None
+        self._pending_requires_playlist_advance = False
+        self._start_callback_fired = False
+
+    def _maybe_fire_video_start(self, idle: bool) -> None:
+        if idle:
+            return
+
+        with self._lock:
+            pending = self._pending_video_start
+            requires_advance = self._pending_requires_playlist_advance
+            callback = self._on_video_start
+            already_fired = self._start_callback_fired
+
+        if already_fired or pending is None or callback is None:
+            return
+
+        if requires_advance:
+            try:
+                response = self._send_ipc_command("get_property", "playlist-pos")
+            except OSError:
+                return
+            if response.get("error") != "success":
+                return
+            try:
+                position = int(response.get("data"))
+            except (TypeError, ValueError):
+                return
+            if position <= 0:
+                return
+
+        with self._lock:
+            if self._start_callback_fired:
+                return
+            pending = self._pending_video_start
+            callback = self._on_video_start
+            if pending is None or callback is None:
+                return
+            self._pending_video_start = None
+            self._pending_requires_playlist_advance = False
+            self._start_callback_fired = True
+
+        try:
+            callback(pending)
+        except Exception:  # pragma: no cover - defensive logging
+            LOGGER.exception("Video start callback failed")
 
     def _ensure_player_running(self) -> None:
         if self._process and self._process.poll() is None:
@@ -1214,6 +1269,8 @@ class PlaybackController:
                 idle_response.get("data")
             )
 
+            self._maybe_fire_video_start(idle)
+
             if not has_started_playing:
                 # mpv reports eof-reached=True for a short window after a file ends,
                 # even immediately after loading a new file.  Ignore idle/eof until
@@ -1269,11 +1326,25 @@ playback_session = PlaybackSession()
 
 def _handle_default_start(_: Path) -> None:
     playback_session.clear()
-    dmx_manager.stop_show()
+    dmx_manager.start_default_show(DEFAULT_LOOP_TEMPLATE_PATH)
+
+
+def _handle_video_start(video_path: Path) -> None:
+    video_entry = get_video_entry_by_path(video_path)
+    if not video_entry:
+        LOGGER.warning("Unable to locate video entry for %s", video_path)
+        return
+    try:
+        dmx_manager.start_show_for_video(video_entry)
+    except Exception:
+        LOGGER.exception(
+            "Unable to start DMX show for video %s", video_entry.get("name", video_entry.get("id"))
+        )
 
 
 controller = PlaybackController(
     DEFAULT_VIDEO_PATH,
+    on_video_start=_handle_video_start,
     on_default_start=_handle_default_start,
     warning_video=WARNING_VIDEO_PATH,
 )
@@ -1530,6 +1601,11 @@ def api_play() -> Any:
         return jsonify({"error": "Video file not found on server"}), 404
 
     try:
+        dmx_manager.fade_all_to_value(0, 1.5)
+    except Exception:
+        LOGGER.exception("Unable to fade lights before playback")
+
+    try:
         controller.play(video_path)
     except FileNotFoundError:
         LOGGER.error('Video player command not found. Install mpv or set VIDEO_PLAYER_CMD.')
@@ -1537,11 +1613,6 @@ def api_play() -> Any:
     except Exception:
         LOGGER.exception('Unable to start playback')
         return jsonify({"error": "Unable to start playback"}), 500
-
-    try:
-        dmx_manager.start_show_for_video(video_entry)
-    except Exception:
-        LOGGER.exception("Unable to start DMX show for video %s", video_entry.get("name"))
 
     playback_session.start(key, video_id)
 

@@ -740,6 +740,8 @@ class DMXShowManager:
         self._lock = threading.Lock()
         self._has_active_show = False
         self._baseline_levels: List[int] = [0] * self.output.channel_count
+        self._fade_lock = threading.Lock()
+        self._active_fade: Optional[threading.Event] = None
         if smoke_channel and (smoke_channel < 1 or smoke_channel > self.output.channel_count):
             LOGGER.warning(
                 "Configured smoke channel %s is outside of available range. Smoke trigger disabled.",
@@ -1060,6 +1062,62 @@ class DMXShowManager:
 
         return []
 
+    def _wait_for_active_fade(self) -> None:
+        with self._fade_lock:
+            fade_event = self._active_fade
+        if fade_event:
+            fade_event.wait()
+
+    def fade_all_to_value(self, value: int, duration: float) -> None:
+        """Fade all DMX channels to the given value over the specified duration."""
+
+        clamped_value = _clamp(int(value), 0, 255)
+        duration_value = max(0.0, float(duration))
+
+        with self._fade_lock:
+            active = self._active_fade
+        if active:
+            active.wait()
+
+        self.runner.stop()
+        with self._lock:
+            self._has_active_show = False
+
+        current_levels = self.output.get_levels()
+        if all(level == clamped_value for level in current_levels):
+            return
+
+        if duration_value <= 0:
+            self.output.set_levels([clamped_value] * self.output.channel_count)
+            return
+
+        fade_event = threading.Event()
+
+        def _worker() -> None:
+            try:
+                steps = max(int(duration_value * DMX_FPS), 1)
+                step_duration = duration_value / steps
+                for step in range(1, steps + 1):
+                    ratio = step / steps
+                    levels = [
+                        round(start + (clamped_value - start) * ratio)
+                        for start in current_levels
+                    ]
+                    self.output.set_levels(levels)
+                    if step < steps:
+                        time.sleep(step_duration)
+            finally:
+                fade_event.set()
+                with self._fade_lock:
+                    if self._active_fade is fade_event:
+                        self._active_fade = None
+
+        with self._fade_lock:
+            self._active_fade = fade_event
+
+        thread = threading.Thread(target=_worker, daemon=True)
+        thread.start()
+
     def start_show_for_video(self, video_entry: Dict[str, object]) -> None:
         try:
             actions = self.load_show_for_video(video_entry)
@@ -1075,6 +1133,10 @@ class DMXShowManager:
                 video_entry.get("name", video_entry.get("id")),
             )
             actions = actions + custom_actions
+        self._run_actions(actions, context=video_entry.get("name"))
+
+    def _run_actions(self, actions: List[DMXAction], context: Optional[object] = None) -> None:
+        self._wait_for_active_fade()
         self.runner.stop()
 
         initial_levels = list(self._baseline_levels)
@@ -1093,10 +1155,26 @@ class DMXShowManager:
         if actions:
             self.runner.start(actions)
         else:
-            LOGGER.info(
-                "No DMX template for video '%s'. Running blackout.",
-                video_entry.get("name"),
-            )
+            name = context if isinstance(context, str) and context else "show"
+            LOGGER.info("No DMX template for %s. Running blackout.", name)
+
+    def start_default_show(self, template_path: Optional[Path] = None) -> None:
+        if template_path is None:
+            template_path = self.templates_dir / "default_loop_dmx.json"
+        try:
+            actions = self.load_actions(template_path)
+        except FileNotFoundError:
+            self._wait_for_active_fade()
+            LOGGER.info("Default DMX template not found at %s", template_path)
+            self.output.blackout()
+            return
+        except Exception:
+            self._wait_for_active_fade()
+            LOGGER.exception("Unable to load default DMX template %s", template_path)
+            self.output.blackout()
+            return
+
+        self._run_actions(actions, context="default loop")
 
     def start_preview(
         self,
