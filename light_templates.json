@@ -3758,6 +3758,72 @@
           "master": null
         }
       ]
+    },
+    {
+      "id": "template_w8uhfe32",
+      "name": "Default Loop",
+      "rows": [
+        {
+          "id": "templateRow_0ophb5u3",
+          "type": "action",
+          "channel": 20,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:back_light",
+          "master": {
+            "id": "master:back_light",
+            "color": "#007aff",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_6vulups0",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:left_light",
+          "master": {
+            "id": "master:left_light",
+            "color": "#c800c8",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_9ad7gzt9",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:right_light",
+          "master": {
+            "id": "master:right_light",
+            "color": "#c800c8",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        }
+      ]
     }
   ]
 }
