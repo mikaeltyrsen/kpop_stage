@@ -1675,6 +1675,77 @@
           "value": 251
         }
       ]
+    },
+    {
+      "id": "preset_3er5nq5w",
+      "name": "",
+      "group": "",
+      "channel": 9,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
+      "values": []
+    },
+    {
+      "id": "preset_gptpgxjy",
+      "name": "",
+      "group": "",
+      "channel": 18,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
+      "values": []
+    },
+    {
+      "id": "preset_snd6rtqa",
+      "name": "",
+      "group": "",
+      "channel": 19,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
+      "values": []
+    },
+    {
+      "id": "preset_0b9jrcsn",
+      "name": "",
+      "group": "",
+      "channel": 28,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
+      "values": []
+    },
+    {
+      "id": "preset_ltxoot6z",
+      "name": "",
+      "group": "",
+      "channel": 29,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
+      "values": []
+    },
+    {
+      "id": "preset_114yz9gq",
+      "name": "Smoke Machine",
+      "group": "",
+      "channel": 128,
+      "component": "",
+      "componentType": "",
+      "componentName": "",
+      "values": [
+        {
+          "id": "value_0j6xtqj0",
+          "name": "Off",
+          "value": 0
+        },
+        {
+          "id": "value_b3rmnfe4",
+          "name": "On",
+          "value": 255
+        }
+      ]
     }
   ]
 }

@@ -1567,7 +1567,7 @@
           "channelMasterId": "master:back_light",
           "master": {
             "id": "master:back_light",
-            "color": "#ffffff",
+            "color": "#000000",
             "brightness": 0,
             "white": 0,
             "sliders": {
@@ -1587,7 +1587,7 @@
           "channelMasterId": "master:front_light",
           "master": {
             "id": "master:front_light",
-            "color": "#ffffff",
+            "color": "#000000",
             "brightness": 0,
             "white": 0,
             "sliders": {
@@ -1607,7 +1607,7 @@
           "channelMasterId": "master:right_light",
           "master": {
             "id": "master:right_light",
-            "color": "#ffffff",
+            "color": "#000000",
             "brightness": 0,
             "white": 0,
             "sliders": {
@@ -1627,7 +1627,7 @@
           "channelMasterId": "master:left_light",
           "master": {
             "id": "master:left_light",
-            "color": "#ffffff",
+            "color": "#000000",
             "brightness": 0,
             "white": 0,
             "sliders": {
@@ -1647,7 +1647,7 @@
           "channelMasterId": "master:movers",
           "master": {
             "id": "master:movers",
-            "color": "#ffffff",
+            "color": "#000000",
             "brightness": 0,
             "white": 0,
             "sliders": {
@@ -1686,6 +1686,17 @@
           "fade": 0.0,
           "channelPresetId": "mover-light-white-flash",
           "valuePresetId": "mover-light-white-flash-none",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_71vgqh4d",
+          "type": "action",
+          "channel": 53,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-laser-pattern",
+          "valuePresetId": null,
           "channelMasterId": null,
           "master": null
         }
@@ -2307,6 +2318,1444 @@
               "white": 0
             }
           }
+        }
+      ]
+    },
+    {
+      "id": "template_40kr02m4",
+      "name": "Soda Pop \u2013\u00a0Color Changing",
+      "rows": [
+        {
+          "id": "templateRow_72symt5e",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:left_light",
+          "master": {
+            "id": "master:left_light",
+            "color": "#c800c8",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_f63pwlzr",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:right_light",
+          "master": {
+            "id": "master:right_light",
+            "color": "#00ade6",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_ts2d060y",
+          "type": "action",
+          "channel": 20,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:back_light",
+          "master": {
+            "id": "master:back_light",
+            "color": "#00ff00",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_kesvjwxu",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "templateRow_th0xj4be",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:right_light",
+          "master": {
+            "id": "master:right_light",
+            "color": "#ff5700",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_2y31tjm7",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:left_light",
+          "master": {
+            "id": "master:left_light",
+            "color": "#00ff00",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_yzqn4nw0",
+          "type": "action",
+          "channel": 20,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:back_light",
+          "master": {
+            "id": "master:back_light",
+            "color": "#c800c8",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_tzkzsgic",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "templateRow_2h1fpqbw",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:left_light",
+          "master": {
+            "id": "master:left_light",
+            "color": "#00ade6",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_5uw1ulh9",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:right_light",
+          "master": {
+            "id": "master:right_light",
+            "color": "#c800c8",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_8a7xbwvm",
+          "type": "action",
+          "channel": 20,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:back_light",
+          "master": {
+            "id": "master:back_light",
+            "color": "#ff5700",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_xailo6u5",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "templateRow_0aul7qkd",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:left_light",
+          "master": {
+            "id": "master:left_light",
+            "color": "#ff5700",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_2hoba3dt",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:right_light",
+          "master": {
+            "id": "master:right_light",
+            "color": "#00ade6",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_ejd9r2l2",
+          "type": "action",
+          "channel": 20,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:back_light",
+          "master": {
+            "id": "master:back_light",
+            "color": "#c800c8",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_l1tznfk3",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "templateRow_6dtigsj9",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:left_light",
+          "master": {
+            "id": "master:left_light",
+            "color": "#00ff00",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_xnsis2b1",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:right_light",
+          "master": {
+            "id": "master:right_light",
+            "color": "#c800c8",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_5m7p2s7n",
+          "type": "action",
+          "channel": 20,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:back_light",
+          "master": {
+            "id": "master:back_light",
+            "color": "#00ade6",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_spoa5ugb",
+          "type": "delay",
+          "duration": 0.5
+        }
+      ]
+    },
+    {
+      "id": "template_ihwzypnt",
+      "name": "",
+      "rows": []
+    },
+    {
+      "id": "template_7eowg6mb",
+      "name": "Soda Pop \u2013\u00a0Color Changing Strobe",
+      "rows": [
+        {
+          "id": "templateRow_2n61dgby",
+          "type": "action",
+          "channel": 6,
+          "value": 185,
+          "fade": 0.0,
+          "channelPresetId": "left-light-strobe",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_x6s18qrc",
+          "type": "action",
+          "channel": 15,
+          "value": 209,
+          "fade": 0.0,
+          "channelPresetId": "right-light-strobe",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_nhjm2klv",
+          "type": "action",
+          "channel": 25,
+          "value": 234,
+          "fade": 0.0,
+          "channelPresetId": "back-light-strobe",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_um4nfn9n",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:left_light",
+          "master": {
+            "id": "master:left_light",
+            "color": "#c800c8",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_yvbk39ft",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:right_light",
+          "master": {
+            "id": "master:right_light",
+            "color": "#00ade6",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_4zakflom",
+          "type": "action",
+          "channel": 20,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:back_light",
+          "master": {
+            "id": "master:back_light",
+            "color": "#00ff00",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_cilskn0u",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "templateRow_04gsmhgs",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:right_light",
+          "master": {
+            "id": "master:right_light",
+            "color": "#ff5700",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_x6sieivm",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:left_light",
+          "master": {
+            "id": "master:left_light",
+            "color": "#00ff00",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_x3sphn40",
+          "type": "action",
+          "channel": 20,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:back_light",
+          "master": {
+            "id": "master:back_light",
+            "color": "#c800c8",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_t2a4qj1c",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "templateRow_9iqy32j3",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:left_light",
+          "master": {
+            "id": "master:left_light",
+            "color": "#00ade6",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_axxhrpp6",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:right_light",
+          "master": {
+            "id": "master:right_light",
+            "color": "#c800c8",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_w245dzqy",
+          "type": "action",
+          "channel": 20,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:back_light",
+          "master": {
+            "id": "master:back_light",
+            "color": "#ff5700",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_sstw1hth",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "templateRow_yd8mogzy",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:left_light",
+          "master": {
+            "id": "master:left_light",
+            "color": "#ff5700",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_by5b1k68",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:right_light",
+          "master": {
+            "id": "master:right_light",
+            "color": "#00ade6",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_eiup83gv",
+          "type": "action",
+          "channel": 20,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:back_light",
+          "master": {
+            "id": "master:back_light",
+            "color": "#c800c8",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_0tmejiu8",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "templateRow_pkfllaw3",
+          "type": "action",
+          "channel": 1,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:left_light",
+          "master": {
+            "id": "master:left_light",
+            "color": "#00ff00",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_uel0v6a5",
+          "type": "action",
+          "channel": 10,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:right_light",
+          "master": {
+            "id": "master:right_light",
+            "color": "#c800c8",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_twzg7cc0",
+          "type": "action",
+          "channel": 20,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:back_light",
+          "master": {
+            "id": "master:back_light",
+            "color": "#00ade6",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_yuzygp4d",
+          "type": "delay",
+          "duration": 0.5
+        }
+      ]
+    },
+    {
+      "id": "template_7179egyq",
+      "name": "Soda Pop - 8 Hit Mover",
+      "rows": [
+        {
+          "id": "templateRow_wcewlbjc",
+          "type": "action",
+          "channel": 41,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation-speed",
+          "valuePresetId": "mover-light-rotation-speed-none",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_lbbb4c0r",
+          "type": "action",
+          "channel": 47,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:movers",
+          "master": {
+            "id": "master:movers",
+            "color": "#007aff",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_0u35ryva",
+          "type": "action",
+          "channel": 43,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam1-rotation",
+          "valuePresetId": "mover-light-beam-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_t4m9tepa",
+          "type": "action",
+          "channel": 44,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam2-rotation",
+          "valuePresetId": "mover-light-beam2-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_cujm1m7m",
+          "type": "action",
+          "channel": 45,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam3-rotation",
+          "valuePresetId": "mover-light-beam3-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_na7w35t5",
+          "type": "action",
+          "channel": 46,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam4-rotation",
+          "valuePresetId": "mover-light-beam4-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_6zqoqme4",
+          "type": "delay",
+          "duration": 0.3
+        },
+        {
+          "id": "templateRow_w5vgv8r0",
+          "type": "action",
+          "channel": 47,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:movers",
+          "master": {
+            "id": "master:movers",
+            "color": "#00d158",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_uems45en",
+          "type": "action",
+          "channel": 43,
+          "value": 127,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam1-rotation",
+          "valuePresetId": "mover-light-beam-rotation-90",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_y5ljrdo7",
+          "type": "action",
+          "channel": 44,
+          "value": 127,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam2-rotation",
+          "valuePresetId": "mover-light-beam2-rotation-90",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_ynj14c4w",
+          "type": "action",
+          "channel": 45,
+          "value": 127,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam3-rotation",
+          "valuePresetId": "mover-light-beam3-rotation-90",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_xhk1zajo",
+          "type": "action",
+          "channel": 46,
+          "value": 127,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam4-rotation",
+          "valuePresetId": "mover-light-beam4-rotation-90",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_tc5ayguv",
+          "type": "delay",
+          "duration": 0.3
+        },
+        {
+          "id": "templateRow_m8p8n2gs",
+          "type": "action",
+          "channel": 47,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:movers",
+          "master": {
+            "id": "master:movers",
+            "color": "#ff5700",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_zzb2jecr",
+          "type": "action",
+          "channel": 43,
+          "value": 192,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam1-rotation",
+          "valuePresetId": "mover-light-beam-rotation-135",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_cl2tkil0",
+          "type": "action",
+          "channel": 44,
+          "value": 192,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam2-rotation",
+          "valuePresetId": "mover-light-beam2-rotation-135",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_zxhq058k",
+          "type": "action",
+          "channel": 45,
+          "value": 192,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam3-rotation",
+          "valuePresetId": "mover-light-beam3-rotation-135",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_08up2jv0",
+          "type": "action",
+          "channel": 46,
+          "value": 192,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam4-rotation",
+          "valuePresetId": "mover-light-beam4-rotation-135",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_woko4kvc",
+          "type": "delay",
+          "duration": 0.3
+        },
+        {
+          "id": "templateRow_xhhkm1gx",
+          "type": "action",
+          "channel": 47,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:movers",
+          "master": {
+            "id": "master:movers",
+            "color": "#00d158",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_p3xwvm88",
+          "type": "action",
+          "channel": 43,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam1-rotation",
+          "valuePresetId": "mover-light-beam-rotation-180",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_0natj6ns",
+          "type": "action",
+          "channel": 44,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam2-rotation",
+          "valuePresetId": "mover-light-beam2-rotation-180",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_o0xqix9t",
+          "type": "action",
+          "channel": 45,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam3-rotation",
+          "valuePresetId": "mover-light-beam3-rotation-180",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_8m9bffza",
+          "type": "action",
+          "channel": 46,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam4-rotation",
+          "valuePresetId": "mover-light-beam4-rotation-180",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_q66wgpbg",
+          "type": "delay",
+          "duration": 0.2
+        },
+        {
+          "id": "templateRow_lqf5m6be",
+          "type": "action",
+          "channel": 47,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:movers",
+          "master": {
+            "id": "master:movers",
+            "color": "#000000",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_zuyjkilt",
+          "type": "delay",
+          "duration": 0.2
+        },
+        {
+          "id": "templateRow_pheacj6b",
+          "type": "action",
+          "channel": 47,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:movers",
+          "master": {
+            "id": "master:movers",
+            "color": "#c800c8",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_byvlumsd",
+          "type": "action",
+          "channel": 40,
+          "value": 70,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_4bbatpzb",
+          "type": "action",
+          "channel": 43,
+          "value": 127,
+          "fade": 0.4,
+          "channelPresetId": "mover-light-beam1-rotation",
+          "valuePresetId": "mover-light-beam-rotation-90",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_9lis2kdg",
+          "type": "action",
+          "channel": 44,
+          "value": 127,
+          "fade": 0.4,
+          "channelPresetId": "mover-light-beam2-rotation",
+          "valuePresetId": "mover-light-beam2-rotation-90",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_b9dc1cia",
+          "type": "action",
+          "channel": 45,
+          "value": 127,
+          "fade": 0.4,
+          "channelPresetId": "mover-light-beam3-rotation",
+          "valuePresetId": "mover-light-beam3-rotation-90",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_fkdydijt",
+          "type": "action",
+          "channel": 46,
+          "value": 127,
+          "fade": 0.4,
+          "channelPresetId": "mover-light-beam4-rotation",
+          "valuePresetId": "mover-light-beam4-rotation-90",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_8wpvnz26",
+          "type": "delay",
+          "duration": 0.4
+        },
+        {
+          "id": "templateRow_g55htccr",
+          "type": "action",
+          "channel": 47,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:movers",
+          "master": {
+            "id": "master:movers",
+            "color": "#000000",
+            "brightness": 0,
+            "white": 0,
+            "sliders": {
+              "brightness": 0,
+              "white": 0
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "template_xo3jpaxl",
+      "name": "Soda Pop \u2013 Mover Beams Spin and Turn",
+      "rows": [
+        {
+          "id": "templateRow_130nowwf",
+          "type": "action",
+          "channel": 47,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:movers",
+          "master": {
+            "id": "master:movers",
+            "color": "#c800c8",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_qg5oalnj",
+          "type": "action",
+          "channel": 43,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam1-rotation",
+          "valuePresetId": "mover-light-beam-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_puw1gkpa",
+          "type": "action",
+          "channel": 44,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam2-rotation",
+          "valuePresetId": "mover-light-beam2-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_6aws04xb",
+          "type": "action",
+          "channel": 45,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam3-rotation",
+          "valuePresetId": "mover-light-beam3-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_jppt14hs",
+          "type": "action",
+          "channel": 46,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam4-rotation",
+          "valuePresetId": "mover-light-beam4-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_h8xjsyhe",
+          "type": "action",
+          "channel": 40,
+          "value": 0,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation",
+          "valuePresetId": "mover-light-rotation-0",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_1q0p9236",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "templateRow_pju90vi4",
+          "type": "action",
+          "channel": 47,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:movers",
+          "master": {
+            "id": "master:movers",
+            "color": "#00d158",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_90r0wuj9",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "templateRow_4njoz68a",
+          "type": "action",
+          "channel": 43,
+          "value": 192,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam1-rotation",
+          "valuePresetId": "mover-light-beam-rotation-135",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_9b4kr2fg",
+          "type": "action",
+          "channel": 44,
+          "value": 192,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam2-rotation",
+          "valuePresetId": "mover-light-beam2-rotation-135",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_mc3vzhs3",
+          "type": "action",
+          "channel": 45,
+          "value": 192,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam3-rotation",
+          "valuePresetId": "mover-light-beam3-rotation-135",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_76aoy3yt",
+          "type": "action",
+          "channel": 46,
+          "value": 192,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam4-rotation",
+          "valuePresetId": "mover-light-beam4-rotation-135",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_4w147yv9",
+          "type": "action",
+          "channel": 40,
+          "value": 138,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation",
+          "valuePresetId": "mover-light-rotation-270",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_s086iswj",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "templateRow_41k87bfa",
+          "type": "action",
+          "channel": 47,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:movers",
+          "master": {
+            "id": "master:movers",
+            "color": "#ff5700",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_i71hm02x",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "templateRow_fpckhtgl",
+          "type": "action",
+          "channel": 43,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam1-rotation",
+          "valuePresetId": "mover-light-beam-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_4db6w0es",
+          "type": "action",
+          "channel": 44,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam2-rotation",
+          "valuePresetId": "mover-light-beam2-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_eq8xp45e",
+          "type": "action",
+          "channel": 45,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam3-rotation",
+          "valuePresetId": "mover-light-beam3-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_0vjczl0f",
+          "type": "action",
+          "channel": 46,
+          "value": 63,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-beam4-rotation",
+          "valuePresetId": "mover-light-beam4-rotation-45",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_h5skgnco",
+          "type": "action",
+          "channel": 40,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": "mover-light-rotation",
+          "valuePresetId": "mover-light-rotation-540",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_6cy6bp99",
+          "type": "delay",
+          "duration": 0.5
+        },
+        {
+          "id": "templateRow_npv0stjj",
+          "type": "action",
+          "channel": 47,
+          "value": 255,
+          "fade": 0.0,
+          "channelPresetId": null,
+          "valuePresetId": null,
+          "channelMasterId": "master:movers",
+          "master": {
+            "id": "master:movers",
+            "color": "#007aff",
+            "brightness": 255,
+            "white": 0,
+            "sliders": {
+              "brightness": 255,
+              "white": 0
+            }
+          }
+        },
+        {
+          "id": "templateRow_uqesj024",
+          "type": "delay",
+          "duration": 0.5
+        }
+      ]
+    },
+    {
+      "id": "template_6vsr6b09",
+      "name": "Soda Pop \u2013 Front Light Anime",
+      "rows": [
+        {
+          "id": "templateRow_c2z31nc3",
+          "type": "action",
+          "channel": 30,
+          "value": 37,
+          "fade": 0.0,
+          "channelPresetId": "front-light-dimmer",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_lcm7aqzc",
+          "type": "action",
+          "channel": 36,
+          "value": 101,
+          "fade": 0.0,
+          "channelPresetId": "front-light-effects",
+          "valuePresetId": "front-light-effects-color-jump",
+          "channelMasterId": null,
+          "master": null
+        },
+        {
+          "id": "templateRow_vi4bfifx",
+          "type": "action",
+          "channel": 37,
+          "value": 251,
+          "fade": 0.0,
+          "channelPresetId": "front-light-effect-speed",
+          "valuePresetId": null,
+          "channelMasterId": null,
+          "master": null
         }
       ]
     }
