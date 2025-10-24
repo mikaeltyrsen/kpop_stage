@@ -25,6 +25,7 @@ from flask import (
 )
 
 from dmx import DMXShowManager, create_manager
+from snow import SnowMachineController
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_FILE = BASE_DIR / "videos.json"
@@ -37,6 +38,7 @@ COLOR_PRESETS_FILE = BASE_DIR / "color_presets.json"
 RELAY_PRESETS_FILE = BASE_DIR / "relay_presets.json"
 WARNING_VIDEO_PATH = MEDIA_DIR / "warning.mp4"
 DEFAULT_LOOP_TEMPLATE_PATH = DMX_TEMPLATE_DIR / "default_loop_dmx.json"
+SNOW_MACHINE_PRESET_ID = os.environ.get("SNOW_MACHINE_PRESET_ID", "relay_snow_machine")
 
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 (MEDIA_DIR / "videos").mkdir(parents=True, exist_ok=True)
@@ -147,8 +149,23 @@ def _parse_float_env(name: str, default: float, *, minimum: float) -> float:
     return max(minimum, value)
 
 
+def _coerce_bool(value: object) -> Optional[bool]:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+    return None
+
+
 SMOKE_TRIGGER_LEVEL = _parse_int_env("SMOKE_TRIGGER_LEVEL", 255, minimum=0, maximum=255)
 SMOKE_TRIGGER_DURATION = _parse_float_env("SMOKE_TRIGGER_DURATION", 3.0, minimum=0.0)
+SNOW_MACHINE_TIMEOUT = _parse_float_env("SNOW_MACHINE_TIMEOUT", 3.0, minimum=0.5)
 
 
 def _format_command(command: Iterable[str]) -> str:
@@ -1429,6 +1446,13 @@ dmx_manager: DMXShowManager = create_manager(DMX_TEMPLATE_DIR, universe=DMX_UNIV
 user_registry = UserRegistry()
 playback_session = PlaybackSession()
 
+snow_machine_controller = SnowMachineController(
+    load_relay_presets_from_disk,
+    preset_id=SNOW_MACHINE_PRESET_ID,
+    request_timeout=SNOW_MACHINE_TIMEOUT,
+)
+dmx_manager.set_relay_action_callback(snow_machine_controller.handle_relay_action)
+
 
 def _handle_default_start(_: Path) -> None:
     playback_session.clear()
@@ -1436,7 +1460,11 @@ def _handle_default_start(_: Path) -> None:
     if default_entry:
         try:
             dmx_manager.start_show_for_video(default_entry)
-            return
+            if dmx_manager.has_active_show():
+                return
+            LOGGER.info(
+                "Default loop video DMX template had no actions; using default loop template instead."
+            )
         except Exception:
             LOGGER.exception("Unable to start DMX show for default loop video")
     dmx_manager.start_default_show(DEFAULT_LOOP_TEMPLATE_PATH)
@@ -1616,6 +1644,8 @@ def api_put_relay_presets() -> Any:
         return jsonify({"error": str(exc) or "Invalid relay presets"}), 400
     except OSError:
         return jsonify({"error": "Unable to save relay presets"}), 500
+
+    snow_machine_controller.reload()
 
     presets = load_relay_presets_from_disk()
     return jsonify({"presets": presets})
@@ -1847,6 +1877,8 @@ def api_status() -> Any:
 
     payload["smoke_active"] = dmx_manager.is_smoke_active()
     payload["smoke_available"] = dmx_manager.is_smoke_available()
+    payload["snow_machine_active"] = snow_machine_controller.is_active()
+    payload["snow_machine_available"] = snow_machine_controller.is_available()
 
     if mode != "video":
         playback_session.clear()
@@ -1921,6 +1953,42 @@ def api_dmx_smoke() -> Any:
         return jsonify({"error": "Unable to trigger smoke effect"}), 500
 
     return jsonify({"status": "triggered", "duration": duration, "active": duration > 0})
+
+
+@app.route("/api/relay/snow-machine", methods=["POST"])
+def api_relay_snow_machine() -> Any:
+    if not snow_machine_controller.is_available():
+        return jsonify({"error": "Snow machine relay is not configured on the server."}), 400
+
+    data = request.get_json(force=True, silent=True) or {}
+    key = data.get("key") or request.args.get("key")
+    user = user_registry.get(key)
+    if not user:
+        return jsonify({"error": "Unknown user key"}), 403
+    if not user.get("admin"):
+        return jsonify({"error": "Only admins may control the snow machine"}), 403
+
+    desired_raw = data.get("active")
+    desired_state: Optional[bool]
+    if desired_raw is None:
+        desired_state = None
+    else:
+        desired_state = _coerce_bool(desired_raw)
+        if desired_state is None:
+            return jsonify({"error": "Invalid 'active' value; expected true/false."}), 400
+
+    try:
+        if desired_state is None:
+            new_state = snow_machine_controller.toggle()
+        else:
+            new_state = snow_machine_controller.set_active(desired_state)
+    except RuntimeError as exc:
+        message = str(exc) or "Unable to control snow machine"
+        return jsonify({"error": message}), 500
+
+    status_text = "on" if new_state else "off"
+    message = f"Snow machine turned {status_text}"
+    return jsonify({"status": status_text, "active": new_state, "message": message})
 
 
 @app.route("/api/dmx/templates/<video_id>", methods=["GET", "POST"])

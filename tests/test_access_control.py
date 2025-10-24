@@ -42,18 +42,24 @@ class StubDMXManager:
     def __init__(self) -> None:
         self.started_for = []
         self.stop_calls = 0
+        self.active = False
 
     def start_show_for_video(self, video: Dict[str, Any]) -> None:
         self.started_for.append(video)
+        self.active = True
 
     def stop_show(self) -> None:
         self.stop_calls += 1
+        self.active = False
 
     def is_smoke_active(self) -> bool:
         return False
 
     def is_smoke_available(self) -> bool:
         return False
+
+    def has_active_show(self) -> bool:
+        return self.active
 
 
 @pytest.fixture()

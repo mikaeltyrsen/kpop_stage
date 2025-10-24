@@ -12,6 +12,7 @@ const totalTimeEl = document.querySelector(".player-time-total");
 const volumeSlider = document.getElementById("volume-slider");
 const playerStopButton = document.getElementById("player-stop-button");
 const smokeButton = document.getElementById("smoke-button");
+const snowMachineButton = document.getElementById("snow-machine-button");
 const searchParams = new URLSearchParams(window.location.search);
 const adminParam = (searchParams.get("admin") || "").toLowerCase();
 const isAdmin = ["1", "true", "yes", "on"].includes(adminParam);
@@ -26,6 +27,7 @@ let volumeUpdateTimer = null;
 let pendingVolumeValue = null;
 let latestStatus = null;
 let isTriggeringSmoke = false;
+let isTogglingSnowMachine = false;
 
 function showToast(message, type = "info") {
   toastEl.textContent = message;
@@ -64,6 +66,9 @@ function applyAdminVisibility() {
   }
   if (smokeButton && !isAdmin) {
     smokeButton.hidden = true;
+  }
+  if (snowMachineButton && !isAdmin) {
+    snowMachineButton.hidden = true;
   }
 }
 
@@ -244,11 +249,58 @@ function updateSmokeButton(status) {
   smokeButton.textContent = busy ? "Smoking…" : "Smoke";
 }
 
+function updateSnowMachineButton(status) {
+  if (!snowMachineButton) {
+    return;
+  }
+  if (!isAdmin) {
+    snowMachineButton.hidden = true;
+    return;
+  }
+
+  let available = false;
+  let active = false;
+
+  if (status && typeof status === "object") {
+    if (Object.prototype.hasOwnProperty.call(status, "snow_machine_available")) {
+      available = Boolean(status.snow_machine_available);
+    }
+    if (Object.prototype.hasOwnProperty.call(status, "snow_machine_active")) {
+      active = Boolean(status.snow_machine_active);
+    }
+  }
+
+  if (!available && latestStatus && typeof latestStatus === "object") {
+    if (Object.prototype.hasOwnProperty.call(latestStatus, "snow_machine_available")) {
+      available = Boolean(latestStatus.snow_machine_available);
+    }
+    if (!active && Object.prototype.hasOwnProperty.call(latestStatus, "snow_machine_active")) {
+      active = Boolean(latestStatus.snow_machine_active);
+    }
+  }
+
+  snowMachineButton.hidden = !available;
+  snowMachineButton.setAttribute("aria-pressed", active ? "true" : "false");
+
+  if (!available) {
+    snowMachineButton.disabled = true;
+    snowMachineButton.textContent = "Snow Machine";
+    return;
+  }
+
+  const busy = isTogglingSnowMachine;
+  snowMachineButton.disabled = busy;
+  snowMachineButton.textContent = busy
+    ? "Snow Machine…"
+    : `Snow Machine: ${active ? "On" : "Off"}`;
+}
+
 function updatePlayerUI(status) {
   if (status && typeof status === "object") {
     latestStatus = status;
   }
   updateSmokeButton(status);
+  updateSnowMachineButton(status);
   updatePlayButtons(status);
 
   const controls =
@@ -448,6 +500,72 @@ async function triggerSmoke() {
   }
 }
 
+async function toggleSnowMachine() {
+  if (isTogglingSnowMachine) {
+    return;
+  }
+  if (!isAdmin || !snowMachineButton) {
+    return;
+  }
+  if (!userKey) {
+    showToast("Unable to control snow machine right now", "error");
+    return;
+  }
+
+  const currentActive =
+    latestStatus && typeof latestStatus === "object" && Object.prototype.hasOwnProperty.call(latestStatus, "snow_machine_active")
+      ? Boolean(latestStatus.snow_machine_active)
+      : false;
+  const desired = !currentActive;
+
+  isTogglingSnowMachine = true;
+  const previousStatus =
+    latestStatus && typeof latestStatus === "object"
+      ? { ...latestStatus }
+      : latestStatus;
+  const interimStatus = {
+    ...(latestStatus && typeof latestStatus === "object" ? latestStatus : {}),
+    snow_machine_available: true,
+    snow_machine_active: desired,
+  };
+  latestStatus = interimStatus;
+  updateSnowMachineButton(interimStatus);
+
+  try {
+    const response = await fetch("/api/relay/snow-machine", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: userKey, active: desired }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.error || `Unable to toggle snow machine (${response.status})`);
+    }
+    const activeValue = Object.prototype.hasOwnProperty.call(payload, "active")
+      ? Boolean(payload.active)
+      : desired;
+    latestStatus = {
+      ...(latestStatus && typeof latestStatus === "object" ? latestStatus : {}),
+      snow_machine_available: true,
+      snow_machine_active: activeValue,
+    };
+    updateSnowMachineButton(latestStatus);
+    const message = typeof payload.message === "string" && payload.message
+      ? payload.message
+      : `Snow machine turned ${activeValue ? "on" : "off"}`;
+    showToast(message);
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || "Unable to control snow machine", "error");
+    latestStatus = previousStatus;
+    updateSnowMachineButton(previousStatus && typeof previousStatus === "object" ? previousStatus : null);
+  } finally {
+    isTogglingSnowMachine = false;
+    updateSnowMachineButton(latestStatus);
+    fetchStatus();
+  }
+}
+
 if (playerStopButton) {
   playerStopButton.addEventListener("click", stopPlayback);
 }
@@ -472,6 +590,12 @@ if (smokeButton && isAdmin) {
   smokeButton.addEventListener("click", triggerSmoke);
 } else if (smokeButton) {
   smokeButton.hidden = true;
+}
+
+if (snowMachineButton && isAdmin) {
+  snowMachineButton.addEventListener("click", toggleSnowMachine);
+} else if (snowMachineButton) {
+  snowMachineButton.hidden = true;
 }
 
 async function initializeController() {
