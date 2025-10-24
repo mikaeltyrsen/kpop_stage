@@ -29,6 +29,9 @@ const colorPresetsPanel = document.getElementById("color-presets-panel");
 const colorPresetsList = document.getElementById("color-presets");
 const addColorPresetButton = document.getElementById("add-color-preset");
 const resetColorPresetsButton = document.getElementById("reset-color-presets");
+const relayPresetsPanel = document.getElementById("relay-presets-panel");
+const relayPresetsList = document.getElementById("relay-presets");
+const addRelayPresetButton = document.getElementById("add-relay-preset");
 const timelineEmptyState = document.getElementById("timeline-empty-state");
 const lightTemplatesContainer = document.getElementById("light-templates");
 const templateDetailContainer = document.getElementById("template-detail");
@@ -76,6 +79,7 @@ let previewActivationPromise = null;
 let suppressPreviewPause = false;
 let channelPresets = [];
 let colorPresets = [];
+let relayPresets = [];
 let activeTab = "timeline";
 const collapsedChannelPresetIds = new Set();
 const collapsedStepIds = new Set();
@@ -182,6 +186,7 @@ const API_BASE_CANDIDATES = [
 const CHANNEL_PRESET_STORAGE_KEY = "dmxTemplateBuilder.channelPresets";
 
 const COLOR_PRESET_STORAGE_KEY = "dmxTemplateBuilder.colorPresets";
+const RELAY_PRESET_STORAGE_KEY = "dmxTemplateBuilder.relayPresets";
 
 const LIGHT_TEMPLATE_STORAGE_KEY = "dmxTemplateBuilder.lightTemplates";
 
@@ -198,6 +203,10 @@ const DEFAULT_ACTION = Object.freeze({
   templateId: null,
   templateInstanceId: null,
   templateRowId: null,
+  relayPresetId: null,
+  relayCommandId: null,
+  relayUrl: "",
+  relayLabel: "",
   templateLoop: null,
 });
 
@@ -669,6 +678,7 @@ function ensureMasterState(action, master) {
   if (!action || !master) {
     return null;
   }
+  clearRelayState(action);
   const state = createDefaultMasterState(master, action.master);
   action.master = state;
   action.channelMasterId = master.id;
@@ -887,6 +897,17 @@ function getChannelSelectionOptions({ includeNone = true } = {}) {
       preset,
     });
   });
+
+  if (Array.isArray(relayPresets) && relayPresets.length) {
+    relayPresets.forEach((preset) => {
+      options.push({
+        type: "relay",
+        id: preset.id,
+        label: `${formatRelayPresetTitle(preset)} (Relay)`,
+        preset,
+      });
+    });
+  }
 
   return options;
 }
@@ -1359,6 +1380,11 @@ async function init() {
     await initChannelPresetsUI();
   } catch (error) {
     console.error("Unable to initialize channel presets", error);
+  }
+  try {
+    await initRelayPresetsUI();
+  } catch (error) {
+    console.error("Unable to initialize relay presets", error);
   }
   try {
     await initLightTemplatesUI();
@@ -2308,8 +2334,12 @@ async function loadTemplate(videoId) {
     collapsedStepIds.clear();
     stepInfoById.clear();
     draggingActionId = null;
-    actions = (data.actions || []).map((action) => ({ ...DEFAULT_ACTION, ...action }));
-    actions = collapseMasterActions(actions);
+    const dmxActions = (data.actions || []).map((action) => ({ ...DEFAULT_ACTION, ...action }));
+    const relayRaw = Array.isArray(data.relay_actions) ? data.relay_actions : [];
+    const relayActionsLoaded = relayRaw
+      .map((entry) => sanitizeLoadedRelayAction(entry))
+      .filter(Boolean);
+    actions = collapseMasterActions([...dmxActions, ...relayActionsLoaded]);
     actions.forEach((action) => {
       if (action.templateLoop) {
         action.templateLoop = normalizeTemplateLoop(action.templateLoop);
@@ -2370,6 +2400,14 @@ function autoAssignPresetsToActions(list) {
 
   list.forEach((action) => {
     if (!action || typeof action !== "object") return;
+
+    if (action.relayPresetId) {
+      const preset = getRelayPreset(action.relayPresetId);
+      if (preset) {
+        ensureRelayState(action, preset);
+      }
+      return;
+    }
 
     if (action.channelMasterId) {
       const master = getChannelMaster(action.channelMasterId);
@@ -3069,6 +3107,13 @@ function createActionRow(action, index, group) {
   row.classList.add("action-group-item");
   const unassigned = isActionChannelUnassigned(action);
   row.classList.toggle("action-group-item--unassigned", unassigned);
+  const isRelayAction = Boolean(action.relayPresetId);
+  row.classList.toggle("action-group-item--relay", isRelayAction);
+  if (isRelayAction) {
+    row.dataset.relayPresetId = action.relayPresetId;
+  } else {
+    delete row.dataset.relayPresetId;
+  }
   if (action.templateInstanceId) {
     row.dataset.templateInstanceId = action.templateInstanceId;
     row.dataset.templateId = action.templateId || "";
@@ -3102,6 +3147,14 @@ function createActionRow(action, index, group) {
   fadeInput.classList.add("input--compact-number");
   setActionFieldMetadata(fadeInput, actionId, "fade");
   fadeInput.addEventListener("change", (event) => handleFadeChange(event, index));
+  if (isRelayAction) {
+    fadeInput.value = "0";
+    fadeInput.disabled = true;
+    fadeInput.title = "Relay commands do not support fades.";
+  } else {
+    fadeInput.disabled = false;
+    fadeInput.title = "";
+  }
   appendToColumn(row, "fade", fadeInput);
 
   const toolsCell = row.querySelector('[data-column="tools"]');
@@ -4624,6 +4677,10 @@ function isActionChannelUnassigned(action) {
   if (!action || typeof action !== "object") {
     return true;
   }
+  const hasRelay = typeof action.relayPresetId === "string" && action.relayPresetId;
+  if (hasRelay) {
+    return false;
+  }
   const hasMaster = typeof action.channelMasterId === "string" && action.channelMasterId;
   const hasPreset = typeof action.channelPresetId === "string" && action.channelPresetId;
   return !hasMaster && !hasPreset;
@@ -4639,6 +4696,35 @@ function clearActionChannel(action) {
   action.master = null;
   action.channel = null;
   action.value = 0;
+  action.fade = 0;
+  clearRelayState(action);
+}
+
+function clearRelayState(action) {
+  if (!action || typeof action !== "object") {
+    return;
+  }
+  action.relayPresetId = null;
+  action.relayCommandId = null;
+  action.relayUrl = "";
+  action.relayLabel = "";
+}
+
+function ensureRelayState(action, preset) {
+  if (!action || !preset) {
+    return;
+  }
+  const command = getRelayCommand(preset, action.relayCommandId) || preset.commands?.[0] || null;
+  action.relayPresetId = preset.id;
+  if (command) {
+    action.relayCommandId = command.id;
+    action.relayLabel = command.label || "";
+    action.relayUrl = command.url || "";
+  } else {
+    action.relayCommandId = null;
+    action.relayLabel = "";
+    action.relayUrl = "";
+  }
 }
 
 function createChannelField(action, index, actionId) {
@@ -4654,6 +4740,7 @@ function createChannelField(action, index, actionId) {
   const hasNoneOption = optionData.some((option) => option.type === "none");
   let selectedPreset = null;
   let selectedMaster = null;
+  let selectedRelayValue = null;
 
   optionData.forEach((optionInfo) => {
     const option = document.createElement("option");
@@ -4670,6 +4757,12 @@ function createChannelField(action, index, actionId) {
       ) {
         selectedMaster = optionInfo.master;
       }
+    } else if (optionInfo.type === "relay") {
+      option.dataset.channelOptionType = "relay";
+      option.dataset.relayPresetId = optionInfo.id;
+      if (optionInfo.preset && action.relayPresetId === optionInfo.preset.id) {
+        selectedRelayValue = option.value;
+      }
     } else {
       option.dataset.channelOptionType = "preset";
       option.dataset.channelPresetId = optionInfo.id;
@@ -4680,7 +4773,18 @@ function createChannelField(action, index, actionId) {
     select.append(option);
   });
 
-  if (selectedMaster) {
+  if (selectedRelayValue) {
+    select.value = selectedRelayValue;
+  } else if (action.relayPresetId && !selectedRelayValue) {
+    const placeholder = document.createElement("option");
+    placeholder.value = action.relayPresetId;
+    placeholder.dataset.channelOptionType = "relay";
+    placeholder.dataset.relayPresetId = action.relayPresetId;
+    placeholder.textContent = "Missing relay preset";
+    placeholder.classList.add("channel-option--missing");
+    select.append(placeholder);
+    select.value = action.relayPresetId;
+  } else if (selectedMaster) {
     ensureMasterState(action, selectedMaster);
     select.value = selectedMaster.id;
   } else if (selectedPreset) {
@@ -4708,6 +4812,116 @@ function createChannelField(action, index, actionId) {
   return wrapper;
 }
 
+function createRelayValueField(action, index, actionId) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "relay-value";
+
+  const preset = action.relayPresetId ? getRelayPreset(action.relayPresetId) : null;
+  if (preset) {
+    ensureRelayState(action, preset);
+  }
+
+  const select = document.createElement("select");
+  select.className = "relay-value__select";
+  setActionFieldMetadata(select, actionId, "relayCommand");
+  select.addEventListener("change", (event) => handleRelayCommandChange(event, index));
+
+  let availableCommands = Array.isArray(preset?.commands) ? preset.commands : [];
+  if (!availableCommands.length && action.relayCommandId && action.relayUrl) {
+    availableCommands = [
+      { id: action.relayCommandId, label: action.relayLabel || "Command", url: action.relayUrl },
+    ];
+  }
+
+  availableCommands.forEach((command) => {
+    const option = document.createElement("option");
+    option.value = command.id;
+    option.dataset.relayCommandId = command.id;
+    option.textContent = command.label || command.id;
+    select.append(option);
+  });
+
+  if (availableCommands.length) {
+    const currentCommand = availableCommands.find((cmd) => cmd.id === action.relayCommandId);
+    if (currentCommand) {
+      select.value = currentCommand.id;
+      action.relayLabel = currentCommand.label || "";
+      action.relayUrl = currentCommand.url || action.relayUrl || "";
+    } else {
+      const fallback = availableCommands[0];
+      select.value = fallback.id;
+      action.relayCommandId = fallback.id;
+      action.relayLabel = fallback.label || "";
+      action.relayUrl = fallback.url || "";
+    }
+  } else {
+    select.disabled = true;
+    select.append(new Option("No relay commands", ""));
+  }
+
+  const urlInput = document.createElement("input");
+  urlInput.type = "url";
+  urlInput.className = "relay-value__url";
+  urlInput.readOnly = true;
+  urlInput.tabIndex = -1;
+  urlInput.value = action.relayUrl || "";
+  urlInput.placeholder = availableCommands.length
+    ? "Relay command URL"
+    : "Configure relay preset to provide URL";
+  urlInput.title = action.relayUrl
+    ? action.relayUrl
+    : "Relay preset does not include a URL";
+  setActionFieldMetadata(urlInput, actionId, "relayUrl");
+
+  wrapper.append(select, urlInput);
+
+  if (!preset) {
+    wrapper.classList.add("relay-value--missing");
+    const note = document.createElement("p");
+    note.className = "relay-value__note";
+    note.textContent = "Relay preset unavailable. Update or reassign in the Relay Presets tab.";
+    wrapper.append(note);
+  }
+
+  return wrapper;
+}
+
+function handleRelayCommandChange(event, index) {
+  const select = event.target;
+  if (!(select instanceof HTMLSelectElement)) {
+    return;
+  }
+  const action = actions[index];
+  if (!action) {
+    return;
+  }
+  const commandId = select.value;
+  const preset = action.relayPresetId ? getRelayPreset(action.relayPresetId) : null;
+  let command = null;
+  if (preset) {
+    command = getRelayCommand(preset, commandId);
+  }
+  if (command) {
+    action.relayCommandId = command.id;
+    action.relayLabel = command.label || "";
+    action.relayUrl = command.url || "";
+  } else {
+    action.relayCommandId = commandId || null;
+    action.relayLabel = commandId || "";
+  }
+  const wrapper = select.closest(".relay-value");
+  if (wrapper) {
+    const urlInput = wrapper.querySelector("input[data-field=\"relayUrl\"]");
+    if (urlInput instanceof HTMLInputElement) {
+      urlInput.value = action.relayUrl || "";
+      urlInput.title = action.relayUrl
+        ? action.relayUrl
+        : "Relay preset does not include a URL";
+    }
+  }
+  queuePreviewSync();
+}
+
 function createValueField(action, index, actionId) {
   const wrapper = document.createElement("div");
   wrapper.className = "preset-select";
@@ -4715,6 +4929,10 @@ function createValueField(action, index, actionId) {
   if (isActionChannelUnassigned(action)) {
     wrapper.classList.add("preset-select--inactive");
     return wrapper;
+  }
+
+  if (typeof action.relayPresetId === "string" && action.relayPresetId) {
+    return createRelayValueField(action, index, actionId);
   }
 
   const master = action.channelMasterId ? getChannelMaster(action.channelMasterId) : null;
@@ -5240,6 +5458,7 @@ function handleFadeChange(event, index) {
 function applyChannelPresetToAction(action, preset, options = {}) {
   if (!action || !preset) return;
   const preserveCustomValue = Boolean(options && options.preserveCustomValue);
+  clearRelayState(action);
   action.channelPresetId = preset.id;
   action.channelMasterId = null;
   action.master = null;
@@ -5314,6 +5533,27 @@ function handleChannelPresetChange(event, index) {
   if (optionType === "none") {
     clearActionChannel(action);
     renderActions();
+    queuePreviewSync();
+    return;
+  }
+  if (optionType === "relay") {
+    const presetId = selectedOption?.dataset?.relayPresetId || select.value || action.relayPresetId;
+    action.channelPresetId = null;
+    action.channelMasterId = null;
+    action.master = null;
+    action.valuePresetId = null;
+    action.channel = null;
+    action.value = 0;
+    action.fade = 0;
+    if (presetId) {
+      const preset = getRelayPreset(presetId);
+      if (preset) {
+        ensureRelayState(action, preset);
+      } else {
+        action.relayPresetId = presetId;
+      }
+    }
+    renderActions({ preserveFocus: true });
     queuePreviewSync();
     return;
   }
@@ -5476,6 +5716,10 @@ function cloneActionForDuplicate(action) {
     templateRowId: action.templateRowId,
     templateLoop: action.templateLoop ? { ...action.templateLoop } : null,
     stepTitle: typeof action.stepTitle === "string" ? action.stepTitle : "",
+    relayPresetId: action.relayPresetId,
+    relayCommandId: action.relayCommandId,
+    relayUrl: action.relayUrl,
+    relayLabel: action.relayLabel,
   };
 }
 
@@ -5654,12 +5898,20 @@ function showStatus(message, type = "info") {
 
 async function handleSaveTemplate() {
   if (!currentVideo) return;
+  let payload;
   try {
-    const prepared = prepareActionsForSave();
+    payload = buildTemplateSavePayload();
+  } catch (error) {
+    console.error(error);
+    const message = (error && error.message) || "Unable to save template";
+    showStatus(message, "error");
+    return;
+  }
+  try {
     const response = await fetchApi(`/dmx/templates/${encodeURIComponent(currentVideo.id)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ actions: prepared }),
+      body: JSON.stringify(payload),
     });
     if (!response.ok) {
       const payload = await response.json().catch(() => ({}));
@@ -5670,30 +5922,33 @@ async function handleSaveTemplate() {
     console.error(error);
     const message = (error && error.message) || "Unable to save template";
     showStatus(`${message}. A JSON download has been generated instead.`, "error");
-    exportTemplate(undefined, { silent: true });
+    exportTemplate(payload, { silent: true });
   }
 }
 
-function exportTemplate(preparedActions, options = {}) {
+function exportTemplate(preparedPayload, options = {}) {
   if (!currentVideo) return;
-  let actionsToExport = preparedActions;
-  if (!actionsToExport) {
+  let payload = preparedPayload;
+  if (!payload) {
     try {
-      actionsToExport = prepareActionsForSave();
+      payload = buildTemplateSavePayload();
     } catch (error) {
       console.error(error);
       showStatus(error.message || "Unable to export template", "error");
       return;
     }
   }
-  const payload = {
+  const actionsToExport = payload.actions || [];
+  const relayActionsToExport = payload.relay_actions || [];
+  const exportPayload = {
     video: {
       id: currentVideo.id,
       name: currentVideo.name,
     },
     actions: actionsToExport,
+    relay_actions: relayActionsToExport,
   };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: "application/json" });
   const filename = `${slugify(currentVideo.name || currentVideo.id)}_dmx.json`;
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -6373,6 +6628,402 @@ async function initColorPresetsUI() {
   notifyColorPresetChange();
 }
 
+async function initRelayPresetsUI() {
+  if (!relayPresetsPanel || !relayPresetsList) {
+    relayPresets = [];
+    return;
+  }
+
+  relayPresets = await loadRelayPresets();
+  renderRelayPresets();
+
+  if (addRelayPresetButton) {
+    addRelayPresetButton.addEventListener("click", () => addRelayPreset());
+  }
+}
+
+function renderRelayPresets() {
+  if (!relayPresetsList) return;
+
+  relayPresetsList.innerHTML = "";
+
+  if (!Array.isArray(relayPresets) || !relayPresets.length) {
+    const empty = document.createElement("div");
+    empty.className = "preset-settings__empty";
+    empty.textContent = "No relay presets yet. Use “Add Relay Preset” to create one.";
+    relayPresetsList.append(empty);
+    return;
+  }
+
+  relayPresets.forEach((preset) => {
+    const card = document.createElement("article");
+    card.className = "relay-card";
+    card.dataset.relayPresetId = preset.id;
+
+    const header = document.createElement("div");
+    header.className = "relay-card__header";
+
+    const title = document.createElement("h3");
+    title.className = "relay-card__title";
+    title.textContent = formatRelayPresetTitle(preset);
+    header.append(title);
+
+    const actionsEl = document.createElement("div");
+    actionsEl.className = "relay-card__actions";
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.addEventListener("click", () => removeRelayPreset(preset.id));
+    applyIconButton(removeButton, "delete", "Remove relay preset");
+    actionsEl.append(removeButton);
+    header.append(actionsEl);
+
+    const body = document.createElement("div");
+    body.className = "relay-card__body";
+
+    const nameField = document.createElement("label");
+    nameField.className = "relay-card__field";
+    const nameLabel = document.createElement("span");
+    nameLabel.textContent = "Name";
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.placeholder = "Snow Machine";
+    nameInput.value = preset.name || "";
+    nameInput.addEventListener("input", (event) => handleRelayPresetNameInput(event, preset.id));
+    nameField.append(nameLabel, nameInput);
+    body.append(nameField);
+
+    const commands = Array.isArray(preset.commands) ? preset.commands : [];
+    commands.forEach((command) => {
+      const field = document.createElement("label");
+      field.className = "relay-card__field relay-card__field--command";
+      const fieldLabel = document.createElement("span");
+      fieldLabel.textContent = `${command.label || command.id} URL`;
+      const urlInput = document.createElement("input");
+      urlInput.type = "url";
+      urlInput.placeholder = "http://192.168.x.x/relay/0?turn=on";
+      urlInput.value = command.url || "";
+      urlInput.dataset.relayCommandId = command.id;
+      urlInput.addEventListener("input", (event) =>
+        handleRelayPresetUrlInput(event, preset.id, command.id, { commit: false })
+      );
+      urlInput.addEventListener("change", (event) =>
+        handleRelayPresetUrlInput(event, preset.id, command.id, { commit: true })
+      );
+      field.append(fieldLabel, urlInput);
+      body.append(field);
+    });
+
+    card.append(header, body);
+    relayPresetsList.append(card);
+  });
+}
+
+function formatRelayPresetTitle(preset) {
+  if (preset && typeof preset.name === "string" && preset.name.trim()) {
+    return preset.name.trim();
+  }
+  return "Relay Device";
+}
+
+function addRelayPreset() {
+  const preset = createRelayPresetDefaults();
+  relayPresets.push(preset);
+  renderRelayPresets();
+  saveRelayPresets();
+  showStatus("Added relay preset.", "success");
+}
+
+function createRelayPresetDefaults() {
+  return {
+    id: generateId("relay"),
+    name: "",
+    commands: [
+      { id: "on", label: "On", url: "" },
+      { id: "off", label: "Off", url: "" },
+    ],
+  };
+}
+
+function removeRelayPreset(presetId) {
+  const index = relayPresets.findIndex((preset) => preset.id === presetId);
+  if (index === -1) {
+    return;
+  }
+  relayPresets.splice(index, 1);
+  saveRelayPresets();
+  renderRelayPresets();
+  actions.forEach((action) => {
+    if (action && action.relayPresetId === presetId) {
+      clearRelayState(action);
+    }
+  });
+  renderActions({ preserveFocus: true });
+  showStatus("Removed relay preset.", "info");
+}
+
+function handleRelayPresetNameInput(event, presetId) {
+  const preset = getRelayPreset(presetId);
+  if (!preset) return;
+  preset.name = event.target.value || "";
+  saveRelayPresets();
+  const card = event.target.closest(".relay-card");
+  updateRelayPresetCardTitle(card, preset);
+  notifyRelayPresetChange(presetId);
+}
+
+function handleRelayPresetUrlInput(event, presetId, commandId, options = {}) {
+  const preset = getRelayPreset(presetId);
+  if (!preset) return;
+  const command = getRelayCommand(preset, commandId) || { id: commandId, label: "", url: "" };
+  command.url = event.target.value || "";
+  if (options.commit) {
+    saveRelayPresets();
+    notifyRelayPresetChange(presetId);
+  }
+  const card = event.target.closest(".relay-card");
+  updateRelayPresetUrlDisplay(card, command.id, command.url);
+}
+
+function updateRelayPresetCardTitle(card, preset) {
+  if (!card) return;
+  const title = card.querySelector(".relay-card__title");
+  if (title) {
+    title.textContent = formatRelayPresetTitle(preset);
+  }
+}
+
+function updateRelayPresetUrlDisplay(card, commandId, url) {
+  if (!card) return;
+  const input = card.querySelector(
+    `.relay-card__field--command input[data-relay-command-id="${commandId}"]`
+  );
+  if (input) {
+    input.value = url || "";
+  }
+}
+
+function sanitizeRelayCommand(raw, fallbackId, fallbackLabel) {
+  const id = typeof raw?.id === "string" && raw.id ? raw.id : fallbackId || generateId("relayCommand");
+  const label = typeof raw?.label === "string" && raw.label ? raw.label : fallbackLabel || "";
+  let url = "";
+  if (raw && typeof raw === "object") {
+    if (typeof raw.url === "string") {
+      url = raw.url.trim();
+    } else if (typeof raw.value === "string") {
+      url = raw.value.trim();
+    }
+  }
+  return { id, label, url };
+}
+
+function sanitizeRelayPreset(raw) {
+  if (!raw || typeof raw !== "object") return null;
+
+  const id = typeof raw.id === "string" && raw.id ? raw.id : generateId("relay");
+  const name = typeof raw.name === "string" ? raw.name : "";
+
+  const commandMap = new Map();
+
+  const addCommand = (commandId, label, url) => {
+    const normalizedId =
+      typeof commandId === "string" && commandId.trim() ? commandId.trim() : generateId("relayCommand");
+    const existing = commandMap.get(normalizedId);
+    const normalizedLabel =
+      typeof label === "string" && label.trim()
+        ? label.trim()
+        : existing?.label || normalizedId.replace(/[_-]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+    const normalizedUrl = typeof url === "string" && url.trim() ? url.trim() : existing?.url || "";
+    commandMap.set(normalizedId, { id: normalizedId, label: normalizedLabel, url: normalizedUrl });
+  };
+
+  if (Array.isArray(raw.commands)) {
+    raw.commands.forEach((command, index) => {
+      const fallbackId = index === 0 ? "on" : index === 1 ? "off" : "";
+      const fallbackLabel = fallbackId === "on" ? "On" : fallbackId === "off" ? "Off" : "";
+      const sanitized = sanitizeRelayCommand(command, fallbackId, fallbackLabel);
+      addCommand(sanitized.id, sanitized.label, sanitized.url);
+    });
+  }
+
+  const legacyOn =
+    typeof raw.on === "string"
+      ? raw.on
+      : typeof raw.on_url === "string"
+      ? raw.on_url
+      : typeof raw.value_on === "string"
+      ? raw.value_on
+      : "";
+  const legacyOff =
+    typeof raw.off === "string"
+      ? raw.off
+      : typeof raw.off_url === "string"
+      ? raw.off_url
+      : typeof raw.value_off === "string"
+      ? raw.value_off
+      : "";
+
+  if (legacyOn) {
+    addCommand("on", "On", legacyOn);
+  }
+  if (legacyOff) {
+    addCommand("off", "Off", legacyOff);
+  }
+
+  if (!commandMap.has("on")) {
+    addCommand("on", "On", "");
+  }
+  if (!commandMap.has("off")) {
+    addCommand("off", "Off", "");
+  }
+
+  const ordered = [];
+  if (commandMap.has("on")) {
+    ordered.push(commandMap.get("on"));
+  }
+  if (commandMap.has("off")) {
+    ordered.push(commandMap.get("off"));
+  }
+  const extras = [];
+  commandMap.forEach((command, commandId) => {
+    if (commandId !== "on" && commandId !== "off") {
+      extras.push(command);
+    }
+  });
+  extras.sort((a, b) => (a.label || a.id).localeCompare(b.label || b.id));
+  ordered.push(...extras);
+
+  return { id, name, commands: ordered };
+}
+
+function buildRelayPresetPayload() {
+  return relayPresets.map((preset) => ({
+    id: preset.id,
+    name: preset.name || "",
+    commands: Array.isArray(preset.commands)
+      ? preset.commands.map((command) => ({
+          id: command.id,
+          label: command.label || "",
+          url: command.url || "",
+        }))
+      : [
+          { id: "on", label: "On", url: "" },
+          { id: "off", label: "Off", url: "" },
+        ],
+  }));
+}
+
+function loadRelayPresetsFromLocalStorage() {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return [];
+  }
+  try {
+    const raw = window.localStorage.getItem(RELAY_PRESET_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((item) => sanitizeRelayPreset(item)).filter(Boolean);
+  } catch (error) {
+    console.error("Unable to load relay presets from local storage", error);
+    return [];
+  }
+}
+
+function saveRelayPresetsToLocalStorage(presets) {
+  if (typeof window === "undefined" || !window.localStorage) {
+    return;
+  }
+  try {
+    const sanitized = presets.map((item) => sanitizeRelayPreset(item)).filter(Boolean);
+    window.localStorage.setItem(RELAY_PRESET_STORAGE_KEY, JSON.stringify(sanitized));
+  } catch (error) {
+    console.error("Unable to cache relay presets locally", error);
+  }
+}
+
+async function loadRelayPresets() {
+  const fallback = loadRelayPresetsFromLocalStorage();
+  try {
+    const { payload } = await fetchFromApiCandidates("/relay-presets");
+    const presets = Array.isArray(payload?.presets) ? payload.presets : [];
+    const sanitized = presets.map((item) => sanitizeRelayPreset(item)).filter(Boolean);
+    saveRelayPresetsToLocalStorage(sanitized);
+    return sanitized;
+  } catch (error) {
+    console.error("Unable to load relay presets from server", error);
+    return fallback;
+  }
+}
+
+function saveRelayPresets() {
+  const payload = buildRelayPresetPayload();
+  saveRelayPresetsToLocalStorage(payload);
+  persistRelayPresets(payload).catch((error) => {
+    console.error("Unable to save relay presets", error);
+  });
+}
+
+async function persistRelayPresets(presets) {
+  const response = await fetchApi("/relay-presets", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ presets }),
+  });
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+  try {
+    const payload = await response.json();
+    if (payload && Array.isArray(payload.presets)) {
+      const sanitized = payload.presets.map((item) => sanitizeRelayPreset(item)).filter(Boolean);
+      saveRelayPresetsToLocalStorage(sanitized);
+    }
+  } catch (error) {
+    console.error("Unable to parse relay preset save response", error);
+  }
+}
+
+function getRelayPreset(presetId) {
+  return relayPresets.find((preset) => preset.id === presetId) || null;
+}
+
+function getRelayCommand(preset, commandId) {
+  if (!preset || !Array.isArray(preset.commands)) return null;
+  if (commandId) {
+    const match = preset.commands.find((command) => command.id === commandId);
+    if (match) {
+      return match;
+    }
+  }
+  return preset.commands[0] || null;
+}
+
+function notifyRelayPresetChange(presetId) {
+  if (!presetId) {
+    renderActions({ preserveFocus: true });
+    return;
+  }
+  const preset = getRelayPreset(presetId);
+  actions.forEach((action) => {
+    if (!action || action.relayPresetId !== presetId) {
+      return;
+    }
+    if (!preset) {
+      clearRelayState(action);
+      return;
+    }
+    const command = getRelayCommand(preset, action.relayCommandId) || preset.commands[0] || null;
+    if (command) {
+      action.relayPresetId = preset.id;
+      action.relayCommandId = command.id;
+      action.relayLabel = command.label || "";
+      action.relayUrl = command.url || "";
+    } else {
+      clearRelayState(action);
+    }
+  });
+  renderActions({ preserveFocus: true });
+}
+
 function renderChannelFilterControls() {
   if (!(channelFilterGroupsContainer instanceof HTMLElement)) {
     return;
@@ -6599,6 +7250,9 @@ function buildChannelFilterLookup() {
 
 function doesActionMatchChannelFilter(action, channelLookup) {
   if (!isChannelFilterActive()) {
+    return true;
+  }
+  if (action && action.relayPresetId) {
     return true;
   }
   if (action.channelMasterId) {
@@ -9276,6 +9930,9 @@ async function fetchFromApiCandidates(path) {
 function prepareActionsForSave() {
   const prepared = [];
   actions.forEach((action, index) => {
+    if (action.relayPresetId) {
+      return;
+    }
     if (isActionChannelUnassigned(action)) {
       return;
     }
@@ -9344,6 +10001,119 @@ function prepareActionsForSave() {
     prepared.push(entry);
   });
   return sortActions(prepared);
+}
+
+function collectRelayActionsForSave() {
+  const entries = [];
+  actions.forEach((action, index) => {
+    if (!action || !action.relayPresetId) {
+      return;
+    }
+    const seconds = parseTimeString(action.time);
+    if (seconds === null) {
+      throw new Error(`Row ${index + 1}: invalid time format.`);
+    }
+    const preset = getRelayPreset(action.relayPresetId);
+    const command = preset ? getRelayCommand(preset, action.relayCommandId) : null;
+    let url = "";
+    if (command && typeof command.url === "string") {
+      url = command.url;
+    } else if (typeof action.relayUrl === "string") {
+      url = action.relayUrl;
+    }
+    url = url ? url.trim() : "";
+    if (!url) {
+      throw new Error(`Row ${index + 1}: relay command is missing a URL.`);
+    }
+    action.relayUrl = url;
+    if (command?.id) {
+      action.relayCommandId = command.id;
+      action.relayLabel = command.label || action.relayLabel || "";
+    }
+    const entry = {
+      time: secondsToTimecode(seconds),
+      url,
+    };
+    if (action.relayPresetId) {
+      entry.relayPresetId = action.relayPresetId;
+    }
+    if (command?.id) {
+      entry.relayCommandId = command.id;
+    } else if (action.relayCommandId) {
+      entry.relayCommandId = action.relayCommandId;
+    }
+    const label = command?.label || action.relayLabel || "";
+    if (label) {
+      entry.label = label;
+    }
+    const stepTitle = typeof action.stepTitle === "string" ? action.stepTitle.trim() : "";
+    if (stepTitle) {
+      entry.stepTitle = stepTitle;
+      if (stepTitle !== action.stepTitle) {
+        action.stepTitle = stepTitle;
+      }
+    }
+    entries.push(entry);
+  });
+  entries.sort((a, b) => {
+    const aSeconds = parseTimeString(a.time) ?? 0;
+    const bSeconds = parseTimeString(b.time) ?? 0;
+    if (aSeconds === bSeconds) {
+      return 0;
+    }
+    return aSeconds - bSeconds;
+  });
+  return entries;
+}
+
+function buildTemplateSavePayload() {
+  const actionsPayload = prepareActionsForSave();
+  const relayPayload = collectRelayActionsForSave();
+  return {
+    actions: actionsPayload,
+    relay_actions: relayPayload,
+  };
+}
+
+function sanitizeLoadedRelayAction(entry) {
+  if (!entry || typeof entry !== "object") {
+    return null;
+  }
+  const seconds = parseTimeString(entry.time);
+  const timecode = seconds === null ? DEFAULT_ACTION.time : secondsToTimecode(seconds);
+  const relayPresetId =
+    typeof entry.relayPresetId === "string" && entry.relayPresetId ? entry.relayPresetId : null;
+  const relayCommandId =
+    typeof entry.relayCommandId === "string" && entry.relayCommandId ? entry.relayCommandId : null;
+  const relayUrl = typeof entry.url === "string" ? entry.url : "";
+  const relayLabel = typeof entry.label === "string" ? entry.label : "";
+  const stepTitle = typeof entry.stepTitle === "string" ? entry.stepTitle.trim() : "";
+  const action = {
+    ...DEFAULT_ACTION,
+    time: timecode,
+    channel: null,
+    value: 0,
+    fade: 0,
+    relayPresetId,
+    relayCommandId,
+    relayUrl,
+    relayLabel,
+    stepTitle,
+  };
+  if (relayPresetId) {
+    const preset = getRelayPreset(relayPresetId);
+    if (preset) {
+      ensureRelayState(action, preset);
+      if (!action.relayUrl) {
+        const command = getRelayCommand(preset, relayCommandId);
+        if (command) {
+          action.relayUrl = command.url || action.relayUrl;
+          action.relayLabel = command.label || action.relayLabel;
+        }
+      }
+    }
+  }
+  return action;
 }
 
 function parseTimeString(value) {

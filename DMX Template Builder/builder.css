@@ -869,6 +869,63 @@ input::-webkit-inner-spin-button {
   gap: 1rem;
 }
 
+.relay-settings__list {
+  display: grid;
+  gap: 1rem;
+}
+
+.relay-card {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.relay-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.relay-card__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #bfdbfe;
+}
+
+.relay-card__actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.relay-card__body {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.relay-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.relay-card__field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: rgba(191, 219, 254, 0.85);
+}
+
+.relay-card__field--command input {
+  font-family: "Fira Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.9rem;
+}
+
 .preset-settings__empty {
   padding: 1rem 1.25rem;
   border-radius: 0.6rem;
@@ -1760,6 +1817,35 @@ input::-webkit-inner-spin-button {
   flex: 0 0 auto;
 }
 
+.relay-value {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.relay-value__select {
+  min-width: 8rem;
+}
+
+.relay-value__url {
+  width: 100%;
+  min-width: 14rem;
+  font-family: "Fira Code", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.9rem;
+}
+
+.relay-value__note {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #facc15;
+}
+
+.relay-value--missing .relay-value__select,
+.relay-value--missing .relay-value__url {
+  border-color: rgba(250, 204, 21, 0.45);
+}
+
 .actions-grid__header-cell {
   align-items: center;
   justify-content: flex-start;
@@ -1954,6 +2040,23 @@ input::-webkit-inner-spin-button {
 .action-group-item--unassigned .actions-grid__cell-group > [data-column="value"],
 .action-group-item--unassigned .actions-grid__cell-group > [data-column="fade"] {
   display: none;
+}
+
+.action-group-item--relay {
+  border-left: 3px solid rgba(96, 165, 250, 0.6);
+}
+
+.action-group-item--relay .actions-grid__cell-group {
+  background: rgba(96, 165, 250, 0.12);
+}
+
+.action-group-item--relay [data-column="channel"] select {
+  border-color: rgba(96, 165, 250, 0.45);
+}
+
+.action-group-item--relay .relay-value__url {
+  background: rgba(30, 41, 59, 0.65);
+  border-color: rgba(96, 165, 250, 0.45);
 }
 
 .action-row__drag-handle {

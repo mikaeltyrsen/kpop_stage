@@ -18,9 +18,11 @@ import math
 import os
 import threading
 import time
+import urllib.error
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Set, cast
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, cast
 
 LOGGER = logging.getLogger("kpop_stage.dmx")
 
@@ -291,6 +293,44 @@ class DMXAction:
             raise ValueError("Fade duration must be zero or positive")
 
         return cls(time_seconds=time_seconds, channel=channel, value=value, fade=fade)
+
+
+@dataclass
+class RelayAction:
+    time_seconds: float
+    url: str
+    preset_id: str = ""
+    command_id: str = ""
+    label: str = ""
+    step_title: str = ""
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, object]) -> "RelayAction":
+        if not isinstance(data, dict):
+            raise ValueError("Relay action must be an object")
+        if "time" not in data:
+            raise ValueError("Relay action is missing required 'time' field")
+        if "url" not in data:
+            raise ValueError("Relay action is missing required 'url' field")
+
+        time_seconds = parse_timecode(str(data["time"]))
+        url_raw = str(data["url"]).strip()
+        if not url_raw:
+            raise ValueError("Relay action URL must be a non-empty string")
+
+        preset_id = str(data.get("relayPresetId") or data.get("presetId") or "").strip()
+        command_id = str(data.get("relayCommandId") or data.get("commandId") or "").strip()
+        label = str(data.get("label") or data.get("relayLabel") or "").strip()
+        step_title = str(data.get("stepTitle") or data.get("step_title") or "").strip()
+
+        return cls(
+            time_seconds=time_seconds,
+            url=url_raw,
+            preset_id=preset_id,
+            command_id=command_id,
+            label=label,
+            step_title=step_title,
+        )
 
 
 @dataclass
@@ -724,6 +764,71 @@ class DMXShowRunner:
             LOGGER.info("Stopped DMX show")
 
 
+class RelayCommandRunner:
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._thread: Optional[threading.Thread] = None
+        self._stop_event: Optional[threading.Event] = None
+
+    def start(self, actions: Iterable[RelayAction]) -> None:
+        ordered = sorted(actions, key=lambda action: action.time_seconds)
+        if not ordered:
+            self.stop()
+            return
+
+        self.stop()
+
+        stop_event = threading.Event()
+        thread = threading.Thread(
+            target=self._run,
+            args=(ordered, stop_event),
+            daemon=True,
+        )
+
+        with self._lock:
+            self._stop_event = stop_event
+            self._thread = thread
+
+        thread.start()
+
+    def stop(self) -> None:
+        with self._lock:
+            stop_event = self._stop_event
+            thread = self._thread
+            self._stop_event = None
+            self._thread = None
+
+        if stop_event:
+            stop_event.set()
+        if thread and thread.is_alive():
+            thread.join(timeout=1.0)
+
+    def _run(self, actions: List[RelayAction], stop_event: threading.Event) -> None:
+        start_time = time.monotonic()
+        for action in actions:
+            if stop_event.is_set():
+                break
+            elapsed = time.monotonic() - start_time
+            wait_time = action.time_seconds - elapsed
+            if wait_time > 0 and stop_event.wait(wait_time):
+                return
+            if stop_event.is_set():
+                break
+            self._trigger_action(action)
+
+    @staticmethod
+    def _trigger_action(action: RelayAction) -> None:
+        request = urllib.request.Request(action.url)
+        try:
+            with urllib.request.urlopen(request, timeout=3.0) as response:
+                # Consume a small portion of the response to ensure the request is sent.
+                response.read(1)
+        except urllib.error.URLError:
+            LOGGER.error("Failed to trigger relay URL %s", action.url)
+        except Exception:  # pragma: no cover - defensive logging for unexpected errors
+            LOGGER.exception("Error while triggering relay URL %s", action.url)
+
+
 class DMXShowManager:
     """Handles loading, saving, and running DMX shows for videos."""
 
@@ -737,6 +842,7 @@ class DMXShowManager:
         self.templates_dir.mkdir(parents=True, exist_ok=True)
         self.output = output
         self.runner = DMXShowRunner(output)
+        self.relay_runner = RelayCommandRunner()
         self._lock = threading.Lock()
         self._has_active_show = False
         self._baseline_levels: List[int] = [0] * self.output.channel_count
@@ -1023,26 +1129,87 @@ class DMXShowManager:
         expanded.sort(key=lambda action: action.time_seconds)
         return expanded
 
-    def load_actions(self, template_path: Path) -> List[DMXAction]:
+    def _load_template_payload(self, template_path: Path) -> Dict[str, Any]:
         if not template_path.exists():
-            return []
+            raise FileNotFoundError(str(template_path))
         with template_path.open("r", encoding="utf-8") as fh:
             payload = json.load(fh)
+        if isinstance(payload, dict):
+            return payload
+        if isinstance(payload, list):
+            return {"actions": payload}
+        raise ValueError("Template file must contain a JSON object or list of actions")
+
+    def _parse_relay_actions(self, raw_actions: Iterable[Dict[str, object]]) -> List[RelayAction]:
+        actions: List[RelayAction] = []
+        for raw in raw_actions:
+            if not isinstance(raw, dict):
+                raise ValueError("Relay actions must be objects")
+            action = RelayAction.from_dict(raw)
+            actions.append(action)
+        actions.sort(key=lambda item: item.time_seconds)
+        return actions
+
+    def load_actions(self, template_path: Path) -> List[DMXAction]:
+        try:
+            payload = self._load_template_payload(template_path)
+        except FileNotFoundError:
+            return []
         actions_data = payload.get("actions", [])
         if not isinstance(actions_data, list):
             raise ValueError("Template actions must be provided as a list")
         return self._expand_actions_with_loops(actions_data)
 
-    def load_show_for_video(self, video_entry: Dict[str, object]) -> List[DMXAction]:
-        path = self.template_path_for_video(video_entry)
+    def load_relay_actions(self, template_path: Path) -> List[RelayAction]:
         try:
-            actions = self.load_actions(path)
+            payload = self._load_template_payload(template_path)
         except FileNotFoundError:
             return []
+        raw_actions = payload.get("relay_actions", [])
+        if raw_actions in (None, ""):
+            return []
+        if not isinstance(raw_actions, list):
+            raise ValueError("Relay actions must be provided as a list")
+        return self._parse_relay_actions(raw_actions)
+
+    def load_show_for_video(self, video_entry: Dict[str, object]) -> List[DMXAction]:
+        actions, _ = self._load_show_components(video_entry)
+        return actions
+
+    def load_relay_actions_for_video(self, video_entry: Dict[str, object]) -> List[RelayAction]:
+        _, relay_actions = self._load_show_components(video_entry)
+        return relay_actions
+
+    def _load_show_components(
+        self, video_entry: Dict[str, object]
+    ) -> Tuple[List[DMXAction], List[RelayAction]]:
+        path = self.template_path_for_video(video_entry)
+        try:
+            payload = self._load_template_payload(path)
+        except FileNotFoundError:
+            return [], []
         except Exception as exc:
             LOGGER.exception("Unable to load DMX template %s", path)
             raise RuntimeError(f"Invalid DMX template: {exc}") from exc
-        return actions
+
+        actions_data = payload.get("actions", [])
+        if not isinstance(actions_data, list):
+            raise RuntimeError("Invalid DMX template: 'actions' must be a list")
+
+        relay_raw = payload.get("relay_actions", [])
+        if relay_raw in (None, ""):
+            relay_raw = []
+        if relay_raw and not isinstance(relay_raw, list):
+            raise RuntimeError("Invalid DMX template: 'relay_actions' must be a list")
+
+        actions = self._expand_actions_with_loops(actions_data)
+        relay_actions = []
+        if relay_raw:
+            try:
+                relay_actions = self._parse_relay_actions(relay_raw)
+            except ValueError as exc:
+                raise RuntimeError(f"Invalid relay action: {exc}") from exc
+        return actions, relay_actions
 
     @staticmethod
     def _normalize_identifier(raw: object) -> str:
@@ -1121,6 +1288,7 @@ class DMXShowManager:
     def start_show_for_video(self, video_entry: Dict[str, object]) -> None:
         try:
             actions = self.load_show_for_video(video_entry)
+            relay_actions = self.load_relay_actions_for_video(video_entry)
         except RuntimeError:
             LOGGER.error("Skipping DMX show due to template error")
             return
@@ -1133,11 +1301,17 @@ class DMXShowManager:
                 video_entry.get("name", video_entry.get("id")),
             )
             actions = actions + custom_actions
-        self._run_actions(actions, context=video_entry.get("name"))
+        self._run_actions(actions, context=video_entry.get("name"), relay_actions=relay_actions)
 
-    def _run_actions(self, actions: List[DMXAction], context: Optional[object] = None) -> None:
+    def _run_actions(
+        self,
+        actions: List[DMXAction],
+        context: Optional[object] = None,
+        relay_actions: Optional[List[RelayAction]] = None,
+    ) -> None:
         self._wait_for_active_fade()
         self.runner.stop()
+        self.relay_runner.stop()
 
         initial_levels = list(self._baseline_levels)
         epsilon = 0.001
@@ -1158,23 +1332,50 @@ class DMXShowManager:
             name = context if isinstance(context, str) and context else "show"
             LOGGER.info("No DMX template for %s. Running blackout.", name)
 
+        relay_list = relay_actions or []
+        if relay_list:
+            self.relay_runner.start(relay_list)
+
     def start_default_show(self, template_path: Optional[Path] = None) -> None:
         if template_path is None:
             template_path = self.templates_dir / "default_loop_dmx.json"
         try:
-            actions = self.load_actions(template_path)
+            payload = self._load_template_payload(template_path)
         except FileNotFoundError:
             self._wait_for_active_fade()
             LOGGER.info("Default DMX template not found at %s", template_path)
             self.output.blackout()
+            self.relay_runner.stop()
             return
         except Exception:
             self._wait_for_active_fade()
             LOGGER.exception("Unable to load default DMX template %s", template_path)
             self.output.blackout()
+            self.relay_runner.stop()
             return
 
-        self._run_actions(actions, context="default loop")
+        actions_data = payload.get("actions", [])
+        relay_raw = payload.get("relay_actions", [])
+
+        try:
+            if not isinstance(actions_data, list):
+                raise ValueError("Template actions must be provided as a list")
+            actions = self._expand_actions_with_loops(actions_data)
+            relay_actions: List[RelayAction] = []
+            if relay_raw in (None, ""):
+                relay_raw = []
+            if relay_raw:
+                if not isinstance(relay_raw, list):
+                    raise ValueError("Relay actions must be provided as a list")
+                relay_actions = self._parse_relay_actions(relay_raw)
+        except Exception:
+            self._wait_for_active_fade()
+            LOGGER.exception("Unable to process default DMX template %s", template_path)
+            self.output.blackout()
+            self.relay_runner.stop()
+            return
+
+        self._run_actions(actions, context="default loop", relay_actions=relay_actions)
 
     def start_preview(
         self,
@@ -1242,6 +1443,7 @@ class DMXShowManager:
 
     def stop_show(self) -> None:
         self.runner.stop()
+        self.relay_runner.stop()
         should_blackout = False
         with self._lock:
             if self._has_active_show:
@@ -1263,6 +1465,24 @@ class DMXShowManager:
             )
         return serialized
 
+    def serialize_relay_actions(self, actions: Iterable[RelayAction]) -> List[Dict[str, object]]:
+        serialized: List[Dict[str, object]] = []
+        for action in actions:
+            entry: Dict[str, object] = {
+                "time": self.format_timecode(action.time_seconds),
+                "url": action.url,
+            }
+            if action.preset_id:
+                entry["relayPresetId"] = action.preset_id
+            if action.command_id:
+                entry["relayCommandId"] = action.command_id
+            if action.label:
+                entry["label"] = action.label
+            if action.step_title:
+                entry["stepTitle"] = action.step_title
+            serialized.append(entry)
+        return serialized
+
     @staticmethod
     def format_timecode(value: float) -> str:
         milliseconds = int(round((value - int(value)) * 1000))
@@ -1274,7 +1494,37 @@ class DMXShowManager:
             return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
         return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
-    def save_actions(self, template_path: Path, actions: Iterable[Dict[str, object]]) -> None:
+    def _normalize_relay_actions_for_save(
+        self, relay_actions: Iterable[Dict[str, object]]
+    ) -> List[Dict[str, object]]:
+        entries: List[Dict[str, object]] = []
+        for raw in relay_actions:
+            if not isinstance(raw, dict):
+                raise ValueError("Relay actions must be objects")
+            action = RelayAction.from_dict(raw)
+            entry: Dict[str, object] = {
+                "time": self.format_timecode(action.time_seconds),
+                "url": action.url,
+            }
+            if action.preset_id:
+                entry["relayPresetId"] = action.preset_id
+            if action.command_id:
+                entry["relayCommandId"] = action.command_id
+            if action.label:
+                entry["label"] = action.label
+            if action.step_title:
+                entry["stepTitle"] = action.step_title
+            entries.append(entry)
+        entries.sort(key=lambda item: parse_timecode(str(item["time"])))
+        return entries
+
+    def save_template(
+        self,
+        template_path: Path,
+        *,
+        actions: Iterable[Dict[str, object]],
+        relay_actions: Optional[Iterable[Dict[str, object]]] = None,
+    ) -> None:
         normalized: List[Dict[str, object]] = []
         for raw in actions:
             action = DMXAction.from_dict(raw)
@@ -1305,13 +1555,26 @@ class DMXShowManager:
 
             normalized.append(entry)
 
-        payload = {"actions": sorted(normalized, key=lambda item: parse_timecode(str(item["time"])))}
+        payload: Dict[str, Any] = {
+            "actions": sorted(normalized, key=lambda item: parse_timecode(str(item["time"]))),
+        }
+
+        if relay_actions is not None:
+            relay_payload = self._normalize_relay_actions_for_save(relay_actions)
+            if relay_payload:
+                payload["relay_actions"] = relay_payload
+            else:
+                payload["relay_actions"] = []
+
         template_path.parent.mkdir(parents=True, exist_ok=True)
         tmp_path = template_path.with_suffix(".tmp")
         with tmp_path.open("w", encoding="utf-8") as fh:
             json.dump(payload, fh, indent=2)
             fh.write("\n")
         tmp_path.replace(template_path)
+
+    def save_actions(self, template_path: Path, actions: Iterable[Dict[str, object]]) -> None:
+        self.save_template(template_path, actions=actions, relay_actions=None)
 
 
 def create_manager(templates_dir: Path, universe: int = 0) -> DMXShowManager:
