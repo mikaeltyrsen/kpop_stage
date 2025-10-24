@@ -1,3 +1,73 @@
 {
-  "actions": []
+  "actions": [
+    {
+      "time": "00:00:00",
+      "channel": 20,
+      "value": 255,
+      "fade": 0.0,
+      "channelMasterId": "master:back_light",
+      "templateId": "template_w8uhfe32",
+      "templateInstanceId": "template-instance-default-loop",
+      "templateRowId": "templateRow_0ophb5u3",
+      "stepTitle": "Default Loop Back",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          20,
+          1,
+          10
+        ]
+      }
+    },
+    {
+      "time": "00:00:01",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "channelMasterId": "master:left_light",
+      "templateId": "template_w8uhfe32",
+      "templateInstanceId": "template-instance-default-loop",
+      "templateRowId": "templateRow_6vulups0",
+      "stepTitle": "Default Loop Left",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          20,
+          1,
+          10
+        ]
+      }
+    },
+    {
+      "time": "00:00:02",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "channelMasterId": "master:right_light",
+      "templateId": "template_w8uhfe32",
+      "templateInstanceId": "template-instance-default-loop",
+      "templateRowId": "templateRow_9ad7gzt9",
+      "stepTitle": "Default Loop Right",
+      "templateLoop": {
+        "enabled": true,
+        "count": 1,
+        "infinite": true,
+        "mode": "forward",
+        "duration": 3.0,
+        "channels": [
+          20,
+          1,
+          10
+        ]
+      }
+    }
+  ]
 }
