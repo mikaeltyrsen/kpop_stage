@@ -584,7 +584,9 @@ def test_resolve_serial_port_via_serial_number(monkeypatch: pytest.MonkeyPatch) 
     assert resolved == "/dev/ttyUSB0"
 
 
-def test_create_manager_applies_default_startup_levels(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_create_manager_has_zero_default_startup_levels(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
     class StartupOutput:
         def __init__(self, universe: int = 0, channel_count: int = dmx.DEFAULT_CHANNELS) -> None:
             self.universe = universe
@@ -612,7 +614,7 @@ def test_create_manager_applies_default_startup_levels(monkeypatch: pytest.Monke
     manager = dmx.create_manager(tmp_path, universe=1)
     output = manager.output
     assert isinstance(output, StartupOutput)
-    assert output.applied == [(1, 255), (2, 255), (3, 255)]
+    assert output.applied == []
 
 
 def test_create_manager_honours_startup_levels_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
