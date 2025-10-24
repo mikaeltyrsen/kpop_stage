@@ -225,21 +225,29 @@ def perform_git_update() -> Tuple[bool, str]:
 
 
 def build_power_command(mode: str) -> Optional[List[str]]:
-    shutdown_binary = shutil.which("shutdown")
-    if not shutdown_binary:
-        return None
-
-    command: List[str] = [shutdown_binary]
-    if mode == "restart":
-        command.extend(["-r", "now"])
-    else:
-        command.extend(["-h", "now"])
-
     needs_privilege = True
     try:
         needs_privilege = os.geteuid() != 0  # type: ignore[attr-defined]
     except AttributeError:
         needs_privilege = True
+
+    command: Optional[List[str]] = None
+
+    if mode == "restart":
+        reboot_binary = shutil.which("reboot")
+        if reboot_binary:
+            command = [reboot_binary]
+        else:
+            shutdown_binary = shutil.which("shutdown")
+            if shutdown_binary:
+                command = [shutdown_binary, "-r", "now"]
+    else:
+        shutdown_binary = shutil.which("shutdown")
+        if shutdown_binary:
+            command = [shutdown_binary, "-h", "now"]
+
+    if not command:
+        return None
 
     if needs_privilege:
         sudo_binary = shutil.which("sudo")

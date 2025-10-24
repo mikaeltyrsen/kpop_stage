@@ -13,9 +13,11 @@ const volumeSlider = document.getElementById("volume-slider");
 const playerStopButton = document.getElementById("player-stop-button");
 const smokeButton = document.getElementById("smoke-button");
 const snowMachineButton = document.getElementById("snow-machine-button");
+const rebootButton = document.getElementById("player-reboot-button");
 const searchParams = new URLSearchParams(window.location.search);
 const adminParam = (searchParams.get("admin") || "").toLowerCase();
 const isAdmin = ["1", "true", "yes", "on"].includes(adminParam);
+const rebootButtonDefaultLabel = rebootButton ? rebootButton.textContent.trim() : "Restart Pi";
 
 let userKey = null;
 const videoButtons = new Map();
@@ -28,6 +30,7 @@ let pendingVolumeValue = null;
 let latestStatus = null;
 let isTriggeringSmoke = false;
 let isTogglingSnowMachine = false;
+let isSendingReboot = false;
 
 function showToast(message, type = "info") {
   toastEl.textContent = message;
@@ -69,6 +72,9 @@ function applyAdminVisibility() {
   }
   if (snowMachineButton && !isAdmin) {
     snowMachineButton.hidden = true;
+  }
+  if (rebootButton) {
+    rebootButton.hidden = !isAdmin;
   }
 }
 
@@ -199,6 +205,38 @@ async function stopPlayback() {
   } catch (err) {
     console.error(err);
     showToast(err.message, "error");
+  }
+}
+
+async function requestSystemReboot() {
+  if (!rebootButton || isSendingReboot) {
+    return;
+  }
+  const confirmed = window.confirm("Restart the Raspberry Pi now?");
+  if (!confirmed) {
+    return;
+  }
+
+  isSendingReboot = true;
+  rebootButton.disabled = true;
+  rebootButton.textContent = "Restarting…";
+
+  try {
+    const response = await fetch("/api/system/restart", { method: "POST" });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = payload.error || `Unable to restart (${response.status})`;
+      throw new Error(message);
+    }
+    const message =
+      payload.message || "Restart command sent. The Raspberry Pi will reboot shortly.";
+    showToast(message);
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || "Unable to restart the Raspberry Pi.", "error");
+    rebootButton.disabled = false;
+    rebootButton.textContent = rebootButtonDefaultLabel;
+    isSendingReboot = false;
   }
 }
 
@@ -596,6 +634,12 @@ if (snowMachineButton && isAdmin) {
   snowMachineButton.addEventListener("click", toggleSnowMachine);
 } else if (snowMachineButton) {
   snowMachineButton.hidden = true;
+}
+
+if (rebootButton && isAdmin) {
+  rebootButton.addEventListener("click", requestSystemReboot);
+} else if (rebootButton) {
+  rebootButton.hidden = true;
 }
 
 async function initializeController() {
