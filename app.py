@@ -34,6 +34,7 @@ DMX_BUILDER_DIR = BASE_DIR / "DMX Template Builder"
 CHANNEL_PRESETS_FILE = BASE_DIR / "channel_presets.json"
 LIGHT_TEMPLATES_FILE = BASE_DIR / "light_templates.json"
 COLOR_PRESETS_FILE = BASE_DIR / "color_presets.json"
+WARNING_VIDEO_PATH = MEDIA_DIR / "warning.mp4"
 
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 (MEDIA_DIR / "videos").mkdir(parents=True, exist_ok=True)
@@ -910,6 +911,7 @@ class PlaybackController:
         player_command: Optional[List[str]] = None,
         on_video_start: Optional[Callable[[Path], None]] = None,
         on_default_start: Optional[Callable[[Path], None]] = None,
+        warning_video: Optional[Path] = None,
     ) -> None:
         self.default_video = default_video
         self._lock = threading.Lock()
@@ -920,6 +922,7 @@ class PlaybackController:
         self._idle_monitor_stop: Optional[threading.Event] = None
         self._on_video_start = on_video_start
         self._on_default_start = on_default_start
+        self._warning_video = warning_video
         self._default_missing_message = (
             f"Default loop video not found: {self.default_video}. "
             "Update videos.json or copy the file into the media directory."
@@ -957,13 +960,19 @@ class PlaybackController:
     def play(self, video_path: Path) -> None:
         LOGGER.info("Starting playback: %s", video_path)
         with self._lock:
-            self._play_video_locked(video_path, loop=False)
+            warning_video = self._warning_video
+            if warning_video and not warning_video.exists():
+                LOGGER.warning("Warning video not found: %s", warning_video)
+                warning_video = None
+            self._play_video_locked(video_path, loop=False, pre_roll_path=warning_video)
 
     def stop(self) -> None:
         with self._lock:
             self._start_default_locked()
 
-    def _play_video_locked(self, video_path: Path, loop: bool) -> None:
+    def _play_video_locked(
+        self, video_path: Path, loop: bool, *, pre_roll_path: Optional[Path] = None
+    ) -> None:
         if not self._player_available:
             raise FileNotFoundError(
                 "Video player command not found. Install mpv or configure VIDEO_PLAYER_CMD."
@@ -976,7 +985,12 @@ class PlaybackController:
 
         self._ensure_player_running()
         try:
-            self._send_ipc_command("loadfile", str(video_path), "replace")
+            if pre_roll_path:
+                self._send_ipc_command("loadfile", str(pre_roll_path), "replace")
+                self._send_ipc_command("set_property", "loop-file", "no")
+                self._send_ipc_command("loadfile", str(video_path), "append-play")
+            else:
+                self._send_ipc_command("loadfile", str(video_path), "replace")
             loop_value = "inf" if loop else "no"
             self._send_ipc_command("set_property", "loop-file", loop_value)
             # Ensure playback resumes even if mpv left the file paused at EOF.
@@ -1261,6 +1275,7 @@ def _handle_default_start(_: Path) -> None:
 controller = PlaybackController(
     DEFAULT_VIDEO_PATH,
     on_default_start=_handle_default_start,
+    warning_video=WARNING_VIDEO_PATH,
 )
 
 
