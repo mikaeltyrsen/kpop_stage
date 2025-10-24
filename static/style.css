@@ -239,9 +239,9 @@ p {
 }
 
 .reboot-button {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.75rem;
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
   background: rgba(255, 90, 90, 0.12);
   border: 1px solid rgba(255, 90, 90, 0.35);
   color: #ffbcbc;
@@ -250,6 +250,7 @@ p {
   padding: 0.45rem 1.2rem;
   cursor: pointer;
   box-shadow: 0 12px 28px rgba(255, 90, 90, 0.25);
+  z-index: 20;
   transition: transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease,
     opacity 120ms ease;
 }
