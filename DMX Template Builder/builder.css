@@ -165,17 +165,6 @@ input::-webkit-inner-spin-button {
   z-index: 200;
 }
 
-.system-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-left: auto;
-}
-
-.system-actions button {
-  white-space: nowrap;
-}
-
 .control-group {
   display: flex;
   flex-direction: column;

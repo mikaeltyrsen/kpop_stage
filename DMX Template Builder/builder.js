@@ -58,9 +58,6 @@ const duplicateDialogError = duplicateDialogEl
 const duplicateDialogCloseElements = Array.from(
   document.querySelectorAll("[data-duplicate-dialog-close]"),
 );
-const systemUpdateButton = document.getElementById("system-update");
-const systemRestartButton = document.getElementById("system-restart");
-const systemShutdownButton = document.getElementById("system-shutdown");
 const channelFilterContainer = document.getElementById("channel-filter");
 const channelFilterButton = document.getElementById("channel-filter-button");
 const channelFilterDropdown = document.getElementById("channel-filter-dropdown");
@@ -1368,7 +1365,6 @@ init();
 
 async function init() {
   initTabs();
-  initSystemControls();
   initChannelFilterUI();
   initDuplicateDialog();
   try {
@@ -1439,91 +1435,6 @@ function updateTabSelection() {
     panel.hidden = !isActive;
     panel.setAttribute("aria-hidden", isActive ? "false" : "true");
   });
-}
-
-function initSystemControls() {
-  const configs = [
-    {
-      button: systemUpdateButton,
-      endpoint: "/system/update",
-      confirmMessage: "Pull the latest updates and restart now?",
-      pendingMessage: "Updating application…",
-      successMessage: "Update applied. The app will restart shortly.",
-      errorMessage: "Unable to update the application.",
-      disableOnSuccess: true,
-    },
-    {
-      button: systemRestartButton,
-      endpoint: "/system/restart",
-      confirmMessage: "Restart the Raspberry Pi now?",
-      pendingMessage: "Sending restart command…",
-      successMessage: "Restart scheduled. The Raspberry Pi will reboot shortly.",
-      errorMessage: "Unable to restart the Raspberry Pi.",
-      disableOnSuccess: true,
-    },
-    {
-      button: systemShutdownButton,
-      endpoint: "/system/shutdown",
-      confirmMessage: "Shut down the Raspberry Pi now?",
-      pendingMessage: "Sending shutdown command…",
-      successMessage: "Shutdown scheduled. The Raspberry Pi will power off shortly.",
-      errorMessage: "Unable to shut down the Raspberry Pi.",
-      disableOnSuccess: true,
-    },
-  ];
-
-  configs.forEach((config) => {
-    const { button } = config;
-    if (!(button instanceof HTMLButtonElement)) {
-      return;
-    }
-    button.addEventListener("click", () => {
-      requestSystemAction(button, config);
-    });
-  });
-}
-
-async function requestSystemAction(button, options = {}) {
-  if (!options.endpoint) {
-    return;
-  }
-  if (options.confirmMessage && !window.confirm(options.confirmMessage)) {
-    return;
-  }
-
-  if (button instanceof HTMLButtonElement) {
-    button.disabled = true;
-  }
-
-  if (options.pendingMessage) {
-    showStatus(options.pendingMessage, "info");
-  }
-
-  try {
-    const response = await fetchApi(options.endpoint, { method: "POST" });
-    let payload = {};
-    try {
-      payload = await response.json();
-    } catch (error) {
-      payload = {};
-    }
-    if (!response.ok) {
-      const message = payload.error || options.errorMessage || "Unable to perform action.";
-      throw new Error(message);
-    }
-    const message = payload.message || options.successMessage || "Action scheduled.";
-    showStatus(message, "success");
-    if (button instanceof HTMLButtonElement && !options.disableOnSuccess) {
-      button.disabled = false;
-    }
-  } catch (error) {
-    console.error(error);
-    const fallback = error?.message || options.errorMessage || "Unable to perform action.";
-    showStatus(fallback, "error");
-    if (button instanceof HTMLButtonElement) {
-      button.disabled = false;
-    }
-  }
 }
 
 function setActiveTab(tab) {
