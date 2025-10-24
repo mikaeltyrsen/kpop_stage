@@ -40,7 +40,7 @@ DMX_FPS = 30.0
 DMX_BREAK_DURATION = float(os.environ.get("DMX_BREAK_DURATION", "0.00012"))
 DMX_MARK_AFTER_BREAK = float(os.environ.get("DMX_MARK_AFTER_BREAK", "0.000012"))
 DEFAULT_STARTUP_LEVELS = ""
-DEFAULT_SMOKE_CHANNEL = 60
+DEFAULT_SMOKE_CHANNEL = 128
 
 
 def _parse_env_float(name: str, default: float, *, minimum: float = 0.0) -> float:

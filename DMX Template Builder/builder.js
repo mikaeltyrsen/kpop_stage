@@ -2029,12 +2029,43 @@ function prepareTemplatePreviewActions(templateId) {
       const value = clamp(Number.isFinite(valueValue) ? valueValue : 0, 0, 255);
       const normalizedFade = Number.isFinite(fadeValue) ? Math.max(0, fadeValue) : 0;
       const seconds = Number(((baseOffset + offset) || 0).toFixed(6));
-      previewActions.push({
+      const masterId =
+        typeof row.channelMasterId === "string" && row.channelMasterId ? row.channelMasterId : null;
+      const action = {
         time: secondsToTimecode(seconds),
         channel,
         value,
         fade: Number(normalizedFade.toFixed(3)),
-      });
+        channelPresetId:
+          masterId || typeof row.channelPresetId !== "string" || !row.channelPresetId
+            ? null
+            : row.channelPresetId,
+        valuePresetId:
+          masterId || typeof row.valuePresetId !== "string" || !row.valuePresetId
+            ? null
+            : row.valuePresetId,
+        channelMasterId: masterId,
+        master: null,
+        templateId: typeof template.id === "string" ? template.id : null,
+        templateRowId: typeof row.id === "string" ? row.id : null,
+      };
+
+      if (typeof row.stepTitle === "string" && row.stepTitle) {
+        action.stepTitle = row.stepTitle;
+      }
+
+      if (masterId) {
+        action.master = sanitizeTemplateMasterState(row.master, masterId);
+        const master = getChannelMaster(masterId);
+        if (master) {
+          const masterState = ensureMasterState(action, master);
+          if (masterState) {
+            action.master = masterState;
+          }
+        }
+      }
+
+      previewActions.push(action);
     });
   }
 
@@ -3862,9 +3893,17 @@ function buildTimelineEntriesWithLoops(actionList, targetSeconds, epsilon = 0.00
 }
 
 function computeChannelStatesAtTime(targetSeconds) {
-  if (!actions.length) return [];
+  let sourceActions = actions;
+  if (shouldPreviewActiveTemplateOnly() && activeLightTemplateId) {
+    const templatePreview = prepareTemplatePreviewActions(activeLightTemplateId);
+    sourceActions = templatePreview.length ? templatePreview : [];
+  }
+
+  if (!Array.isArray(sourceActions) || !sourceActions.length) {
+    return [];
+  }
   const epsilon = 0.001;
-  const timeline = buildTimelineEntriesWithLoops(actions, targetSeconds, epsilon);
+  const timeline = buildTimelineEntriesWithLoops(sourceActions, targetSeconds, epsilon);
 
   const channelStates = new Map();
   timeline.forEach(({ action, seconds }) => {
