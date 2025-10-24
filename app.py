@@ -234,13 +234,17 @@ def build_power_command(mode: str) -> Optional[List[str]]:
     command: Optional[List[str]] = None
 
     if mode == "restart":
-        reboot_binary = shutil.which("reboot")
-        if reboot_binary:
-            command = [reboot_binary]
+        systemctl_binary = shutil.which("systemctl")
+        if systemctl_binary:
+            command = [systemctl_binary, "reboot"]
         else:
-            shutdown_binary = shutil.which("shutdown")
-            if shutdown_binary:
-                command = [shutdown_binary, "-r", "now"]
+            reboot_binary = shutil.which("reboot")
+            if reboot_binary:
+                command = [reboot_binary]
+            else:
+                shutdown_binary = shutil.which("shutdown")
+                if shutdown_binary:
+                    command = [shutdown_binary, "-r", "now"]
     else:
         shutdown_binary = shutil.which("shutdown")
         if shutdown_binary:
@@ -2114,12 +2118,22 @@ def api_dmx_preview() -> Any:
 
 
 def main() -> None:
+    default_loop_started = False
+
     try:
         controller.start_default_loop()
-    except FileNotFoundError:
-        LOGGER.error(
-            "Video player command not found. Install mpv or set VIDEO_PLAYER_CMD to a valid player."
-        )
+        default_loop_started = True
+    except FileNotFoundError as exc:
+        LOGGER.error("%s", exc)
+    except Exception:
+        LOGGER.exception("Unable to start default video loop")
+
+    if not default_loop_started:
+        try:
+            dmx_manager.start_default_show(DEFAULT_LOOP_TEMPLATE_PATH)
+        except Exception:
+            LOGGER.exception("Unable to start default DMX template")
+
     app.run(host="0.0.0.0", port=5000)
 
 
