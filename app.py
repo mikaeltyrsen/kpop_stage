@@ -2117,42 +2117,6 @@ def api_dmx_preview() -> Any:
     return jsonify({"status": "previewing"})
 
 
-def _ssl_env_flag(name: str) -> bool:
-    value = os.environ.get(name, "")
-    return value.strip().lower() in {"1", "true", "yes", "on"}
-
-
-def _get_ssl_context() -> Optional[Union[str, Tuple[str, str]]]:
-    """Determine the SSL context configuration for Flask."""
-
-    cert_path = os.environ.get("FLASK_SSL_CERT")
-    key_path = os.environ.get("FLASK_SSL_KEY")
-
-    if cert_path and key_path:
-        cert_file = Path(cert_path)
-        key_file = Path(key_path)
-
-        if cert_file.is_file() and key_file.is_file():
-            LOGGER.info(
-                "Starting HTTPS server with certificate '%s' and key '%s'.",
-                cert_file,
-                key_file,
-            )
-            return cert_path, key_path
-
-        LOGGER.warning(
-            "Unable to start HTTPS because certificate '%s' or key '%s' could not be found.",
-            cert_file,
-            key_file,
-        )
-
-    if _ssl_env_flag("FLASK_SSL_ADHOC"):
-        LOGGER.info("Starting HTTPS server with ad-hoc certificate.")
-        return "adhoc"
-
-    return None
-
-
 def main() -> None:
     default_loop_started = False
 
@@ -2170,13 +2134,9 @@ def main() -> None:
         except Exception:
             LOGGER.exception("Unable to start default DMX template")
 
-    ssl_context = _get_ssl_context()
-    if ssl_context:
-        LOGGER.info("HTTPS is enabled. Clients must connect using https://")
-    else:
-        LOGGER.info("Starting HTTP server. Set SSL environment variables to enable HTTPS.")
+    LOGGER.info("Starting HTTP server. HTTPS support is disabled.")
 
-    app.run(host="0.0.0.0", port=5000, ssl_context=ssl_context)
+    app.run(host="0.0.0.0", port=5000)
 
 
 if __name__ == "__main__":
