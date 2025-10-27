@@ -16,6 +16,17 @@
       Restart Pi
     </button>
     <main id="controller-app">
+      <section
+        id="expired-notice"
+        class="card expired-notice"
+        hidden
+        aria-live="assertive"
+      >
+        <h2>Time ran out</h2>
+        <p id="expired-notice-message">
+          Your spot expired. Enter the new code to rejoin.
+        </p>
+      </section>
       <section id="access-section" class="card gate-card" aria-live="polite">
         <h1>Join the stage queue</h1>
         <p>Enter the 5-digit code shown on the stage screen to reserve your spot.</p>

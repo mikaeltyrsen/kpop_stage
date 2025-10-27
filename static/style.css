@@ -30,6 +30,24 @@ body {
   backdrop-filter: blur(12px);
 }
 
+.expired-notice {
+  background: #ff4d4d;
+  color: #000000;
+  border: 2px solid rgba(0, 0, 0, 0.65);
+  box-shadow: 0 18px 42px rgba(255, 77, 77, 0.35);
+}
+
+.expired-notice h2 {
+  margin: 0;
+  font-size: clamp(1.6rem, 5vw, 2.1rem);
+  color: #000000;
+}
+
+.expired-notice p {
+  margin: 0.5rem 0 0;
+  color: rgba(0, 0, 0, 0.82);
+}
+
 .card header {
   text-align: center;
   margin-bottom: 1.25rem;

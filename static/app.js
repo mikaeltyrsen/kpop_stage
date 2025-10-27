@@ -28,6 +28,8 @@ const queueEtaEl = document.getElementById("queue-eta");
 const queueMessageEl = document.getElementById("queue-message");
 const queueCountdownEl = document.getElementById("queue-countdown");
 const queueLeaveButton = document.getElementById("queue-leave-button");
+const expiredNotice = document.getElementById("expired-notice");
+const expiredNoticeMessage = document.getElementById("expired-notice-message");
 const playerSection = document.getElementById("player-section");
 const playerOverlay = document.getElementById("player-playing-overlay");
 const searchParams = new URLSearchParams(window.location.search);
@@ -60,6 +62,21 @@ function showToast(message, type = "info") {
   setTimeout(() => {
     toastEl.classList.remove("visible", "error");
   }, 2400);
+}
+
+function showExpiredNotice(message) {
+  if (expiredNotice) {
+    expiredNotice.hidden = false;
+  }
+  if (expiredNoticeMessage && typeof message === "string") {
+    expiredNoticeMessage.textContent = message;
+  }
+}
+
+function hideExpiredNotice() {
+  if (expiredNotice) {
+    expiredNotice.hidden = true;
+  }
 }
 
 function setPlayerSectionLocked(locked) {
@@ -192,6 +209,7 @@ function resetQueueUiForIdle() {
   setBodyQueueState(null);
   clearQueueCountdown();
   queueReadyToastShown = false;
+  hideExpiredNotice();
   if (queueSection) {
     queueSection.hidden = true;
   }
@@ -244,6 +262,10 @@ function updateQueueUI(payload) {
   const state = entry.state;
   const previousState = lastQueueState;
   lastQueueState = state;
+
+  if (state !== "expired") {
+    hideExpiredNotice();
+  }
 
   if (accessSection) {
     accessSection.hidden = true;
@@ -364,21 +386,7 @@ function updateQueueUI(payload) {
     }
     case "expired": {
       resetQueueUiForIdle();
-      if (queueSection) {
-        queueSection.hidden = false;
-      }
-      if (queuePositionEl) {
-        queuePositionEl.textContent = "";
-      }
-      if (queueLeaveButton) {
-        queueLeaveButton.hidden = true;
-      }
-      if (queueHeading) {
-        queueHeading.textContent = "Time ran out";
-      }
-      if (queueMessageEl) {
-        queueMessageEl.textContent = "Your spot expired. Enter the new code to rejoin.";
-      }
+      showExpiredNotice("Your spot expired. Enter the new code to rejoin.");
       break;
     }
     case "cancelled": {
