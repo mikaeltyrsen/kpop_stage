@@ -459,13 +459,22 @@ function updateQueueUI(payload) {
     case "waiting": {
       setBodyQueueState("queue-waiting");
       clearQueueCountdown();
-      const position = Number.isFinite(entry.position) ? entry.position : null;
-      const ahead = position && position > 1 ? position - 1 : 0;
-      const isNext = ahead === 1;
+      const rawPosition = Number.isFinite(entry.position)
+        ? Math.floor(entry.position)
+        : null;
+      const rawWaitingPosition = Number.isFinite(entry.waiting_position)
+        ? Math.floor(entry.waiting_position)
+        : null;
+      const position = rawPosition !== null ? Math.max(rawPosition, 0) : null;
+      const waitingPosition = rawWaitingPosition !== null ? Math.max(rawWaitingPosition, 1) : null;
+      const displayPosition = waitingPosition || (position && position > 0 ? position : null);
+      const aheadTotal = position && position > 0 ? position - 1 : 0;
+      const aheadWaiting = waitingPosition ? waitingPosition - 1 : aheadTotal;
+      const isNext = waitingPosition ? aheadWaiting === 0 : aheadTotal === 0 && Boolean(position);
       if (queueHeading) {
         if (isNext) {
           queueHeading.textContent = "You're NEXT in line";
-        } else if (position && position <= 1) {
+        } else if (displayPosition === 1) {
           queueHeading.textContent = "You're almost up";
         } else {
           queueHeading.textContent = "You're in line";
@@ -474,8 +483,8 @@ function updateQueueUI(payload) {
       if (queuePositionEl) {
         if (isNext) {
           queuePositionEl.textContent = "";
-        } else if (position && position > 0) {
-          queuePositionEl.textContent = `You are #${position} in line.`;
+        } else if (displayPosition) {
+          queuePositionEl.textContent = `You are #${displayPosition} in line.`;
         } else {
           queuePositionEl.textContent = "You have a spot in line.";
         }
@@ -499,9 +508,9 @@ function updateQueueUI(payload) {
         }
       }
       if (queueMessageEl) {
-        if (ahead > 1) {
-          queueMessageEl.textContent = `${ahead} people are ahead of you.`;
-        } else if (ahead === 1) {
+        if (aheadWaiting > 1) {
+          queueMessageEl.textContent = `${aheadWaiting} people are ahead of you.`;
+        } else if (aheadWaiting === 1) {
           queueMessageEl.textContent =
             "Get ready. You'll have 30s to select your song when the stage opens.";
         } else {

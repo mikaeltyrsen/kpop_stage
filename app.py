@@ -340,12 +340,16 @@ class QueueManager:
                 info["user_key"] = entry.user_key
         elif entry.status == "waiting":
             ahead = 1 if self._admin_playing else 0
+            waiting_ahead = 0
             for candidate in self._entries:
                 if candidate.id == entry.id:
                     break
                 if candidate.status in self.ACTIVE_STATES:
                     ahead += 1
+                if candidate.status == "waiting":
+                    waiting_ahead += 1
             info["position"] = ahead + 1
+            info["waiting_position"] = waiting_ahead + 1
             estimated_wait = ahead * self.ESTIMATED_SECONDS_PER_USER
             if (
                 ahead > 0
