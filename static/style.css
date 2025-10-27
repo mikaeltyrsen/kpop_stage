@@ -15,6 +15,10 @@ body {
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 #controller-app {
   width: min(680px, 100%);
   display: flex;

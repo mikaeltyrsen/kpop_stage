@@ -468,10 +468,10 @@ function updateQueueUI(payload) {
         queueLeaveButton.hidden = true;
       }
       if (queueHeading) {
-        queueHeading.textContent = "Thanks for playing";
+        queueHeading.textContent = "Hope you enjoyed the show!";
       }
       if (queueMessageEl) {
-        queueMessageEl.textContent = "Ask the host if you'd like another turn later.";
+        queueMessageEl.textContent = "Please make sure to share and tag (@tyrsen) in any videos.";
       }
       break;
     }
