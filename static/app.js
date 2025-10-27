@@ -183,7 +183,7 @@ function resetQueueUiForIdle() {
     queueSection.hidden = true;
   }
   if (queueHeading) {
-    queueHeading.textContent = "You're in line";
+    queueHeading.textContent = "";
   }
   if (queuePositionEl) {
     queuePositionEl.textContent = "";

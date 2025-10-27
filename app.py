@@ -152,6 +152,7 @@ class QueueManager:
         self._registry = registry
         self._active_entry_id: Optional[str] = None
         self._access_code = self._generate_code()
+        self._admin_playing = False
         LOGGER.info("Access code set to %s", self._access_code)
 
     def _generate_code(self) -> str:
@@ -217,6 +218,14 @@ class QueueManager:
                 self._active_entry_id = entry.id
                 return entry
         return None
+
+    def register_admin_play_start(self) -> None:
+        with self._lock:
+            self._admin_playing = True
+
+    def clear_admin_play(self) -> None:
+        with self._lock:
+            self._admin_playing = False
 
     def _expire_ready_locked(self, now: float, *, is_playing: bool) -> None:
         if not self._active_entry_id:
@@ -286,19 +295,23 @@ class QueueManager:
             entry.expires_at = None
             entry.activated_at = time.time()
             self._active_entry_id = entry.id
+            self._admin_playing = False
             return True
 
     def finish_active(self) -> None:
         with self._lock:
+            now = time.time()
+            self._admin_playing = False
             if not self._active_entry_id:
                 self._rotate_code_locked()
+                self._ensure_active_entry_locked(now, is_playing=False)
                 return
             entry = self._entries_by_id.get(self._active_entry_id)
             if entry and entry.status == "playing":
                 self._remove_entry_locked(entry, "finished")
             self._active_entry_id = None
             self._rotate_code_locked()
-            self._ensure_active_entry_locked(time.time(), is_playing=False)
+            self._ensure_active_entry_locked(now, is_playing=False)
 
     def expire_ready_if_needed(self, *, is_playing: bool) -> None:
         now = time.time()
@@ -319,7 +332,7 @@ class QueueManager:
             if entry.user_key:
                 info["user_key"] = entry.user_key
         elif entry.status == "waiting":
-            ahead = 0
+            ahead = 1 if self._admin_playing else 0
             for candidate in self._entries:
                 if candidate.id == entry.id:
                     break
@@ -342,7 +355,10 @@ class QueueManager:
             self._expire_ready_locked(now, is_playing=is_playing)
             entry = self._entries_by_id.get(entry_id) if entry_id else None
             payload: Dict[str, Any] = {
-                "queue_size": sum(1 for e in self._entries if e.status in self.ACTIVE_STATES),
+                "queue_size": (
+                    (1 if self._admin_playing else 0)
+                    + sum(1 for e in self._entries if e.status in self.ACTIVE_STATES)
+                ),
                 "selection_timeout": self.SELECTION_TIMEOUT,
             }
             if entry:
@@ -2212,6 +2228,8 @@ def api_play() -> Any:
             except Exception:
                 LOGGER.exception("Unable to stop playback after queue session expired")
             return jsonify({"error": "Queue session expired"}), 403
+    else:
+        queue_manager.register_admin_play_start()
 
     playback_session.start(key, video_id)
 
@@ -2260,6 +2278,7 @@ def api_stop() -> Any:
 
     dmx_manager.stop_show()
     playback_session.clear()
+    queue_manager.clear_admin_play()
 
     return jsonify({"status": "default_loop"})
 
