@@ -250,7 +250,7 @@ body.is-playing #player-section .video-grid {
 }
 
 body.is-playing #player-playing-overlay {
-  display: flex !important;
+  display: flex;
 }
 
 @media (min-width: 900px) {
