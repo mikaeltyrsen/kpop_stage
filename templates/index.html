@@ -15,12 +15,56 @@
     >
       Restart Pi
     </button>
-    <main>
-      <header>
-        <h1>Music Video Selector</h1>
-        <p>Choose a video to play on the stage screen.</p>
-      </header>
-      <section id="video-list" class="video-grid" aria-live="polite"></section>
+    <main id="controller-app">
+      <section id="access-section" class="card gate-card" aria-live="polite">
+        <h1>Join the stage queue</h1>
+        <p>Enter the 5-digit code shown on the stage screen to reserve your spot.</p>
+        <form id="code-form" class="code-form" autocomplete="off">
+          <label class="code-label" for="code-input">Stage code</label>
+          <div class="code-input-row">
+            <input
+              id="code-input"
+              class="code-input"
+              type="tel"
+              inputmode="numeric"
+              pattern="[0-9]{5}"
+              maxlength="5"
+              placeholder="00000"
+              aria-describedby="code-error"
+              required
+            />
+            <button type="submit" class="primary-button">Join line</button>
+          </div>
+        </form>
+        <p id="code-error" class="form-error" hidden></p>
+        <p class="gate-footnote">The code changes whenever the default loop restarts.</p>
+      </section>
+
+      <section id="queue-section" class="card queue-card" hidden aria-live="polite">
+        <div class="queue-status">
+          <h2 id="queue-heading">You're in line</h2>
+          <p id="queue-position" class="queue-position"></p>
+          <p id="queue-eta" class="queue-eta"></p>
+          <p id="queue-message" class="queue-message"></p>
+          <p id="queue-countdown" class="queue-countdown" hidden></p>
+        </div>
+        <div class="queue-actions">
+          <button type="button" id="queue-leave-button" class="secondary-button">
+            Leave line
+          </button>
+        </div>
+      </section>
+
+      <section id="player-section" class="card player-card" hidden>
+        <header>
+          <h1>Music Video Selector</h1>
+          <p>Choose a video to play on the stage screen.</p>
+        </header>
+        <div id="player-playing-overlay" class="player-playing-overlay" hidden>
+          <p>Your song is playing on the stage.</p>
+        </div>
+        <section id="video-list" class="video-grid" aria-live="polite"></section>
+      </section>
     </main>
     <template id="video-card-template">
       <article class="video-card">
@@ -83,6 +127,10 @@
           </button>
         </div>
       </div>
+    </div>
+    <div id="access-code-badge" class="access-code-badge" hidden>
+      <span class="badge-label">Stage code</span>
+      <span id="access-code-value" class="badge-value">00000</span>
     </div>
     <script src="/static/app.js" defer></script>
   </body>

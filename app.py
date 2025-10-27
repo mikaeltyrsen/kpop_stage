@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import random
 import shlex
 import shutil
 import signal
@@ -11,6 +12,7 @@ import threading
 import time
 import uuid
 import re
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 
@@ -124,6 +126,240 @@ class PlaybackSession:
         with self._lock:
             return self._owner_key is not None
 
+
+@dataclass
+class QueueEntry:
+    id: str
+    joined_at: float
+    status: str = "waiting"
+    activated_at: Optional[float] = None
+    expires_at: Optional[float] = None
+    user_key: Optional[str] = None
+    removed_at: Optional[float] = None
+
+
+class QueueManager:
+    ACTIVE_STATES: Set[str] = {"waiting", "ready", "playing"}
+    REMOVED_STATES: Set[str] = {"expired", "finished", "cancelled"}
+    ESTIMATED_SECONDS_PER_USER = 180
+    SELECTION_TIMEOUT = 30.0
+
+    def __init__(self, registry: UserRegistry) -> None:
+        self._lock = threading.Lock()
+        self._entries: List[QueueEntry] = []
+        self._entries_by_id: Dict[str, QueueEntry] = {}
+        self._entry_by_user_key: Dict[str, str] = {}
+        self._registry = registry
+        self._active_entry_id: Optional[str] = None
+        self._access_code = self._generate_code()
+        LOGGER.info("Access code set to %s", self._access_code)
+
+    def _generate_code(self) -> str:
+        return f"{random.randint(0, 99999):05d}"
+
+    def current_code(self) -> str:
+        with self._lock:
+            return self._access_code
+
+    def rotate_code(self) -> str:
+        with self._lock:
+            return self._rotate_code_locked()
+
+    def _rotate_code_locked(self) -> str:
+        self._access_code = self._generate_code()
+        LOGGER.info("Access code set to %s", self._access_code)
+        return self._access_code
+
+    def _remove_entry_locked(self, entry: QueueEntry, status: str) -> None:
+        if entry in self._entries:
+            self._entries.remove(entry)
+        entry.status = status
+        entry.removed_at = time.time()
+        if entry.user_key:
+            self._entry_by_user_key.pop(entry.user_key, None)
+        if self._active_entry_id == entry.id:
+            self._active_entry_id = None
+
+    def _cleanup_locked(self) -> None:
+        for entry in list(self._entries):
+            if entry.status in self.REMOVED_STATES:
+                self._remove_entry_locked(entry, entry.status)
+
+    def _ensure_active_entry_locked(self, now: float, *, is_playing: bool) -> Optional[QueueEntry]:
+        self._cleanup_locked()
+
+        if self._active_entry_id:
+            active_entry = self._entries_by_id.get(self._active_entry_id)
+            if active_entry and active_entry.status in {"ready", "playing"}:
+                if (
+                    active_entry.status == "ready"
+                    and active_entry.expires_at is not None
+                    and now >= active_entry.expires_at
+                ):
+                    self._remove_entry_locked(active_entry, "expired")
+                else:
+                    return active_entry
+            else:
+                self._active_entry_id = None
+
+        if is_playing:
+            return None
+
+        for entry in self._entries:
+            if entry.status == "waiting":
+                entry.status = "ready"
+                entry.activated_at = now
+                entry.expires_at = now + self.SELECTION_TIMEOUT
+                if not entry.user_key:
+                    record = self._registry.register(is_admin=False)
+                    entry.user_key = record["key"]
+                    self._entry_by_user_key[entry.user_key] = entry.id
+                self._active_entry_id = entry.id
+                return entry
+        return None
+
+    def _expire_ready_locked(self, now: float, *, is_playing: bool) -> None:
+        if not self._active_entry_id:
+            return
+        active_entry = self._entries_by_id.get(self._active_entry_id)
+        if not active_entry or active_entry.status != "ready":
+            return
+        if active_entry.expires_at is None:
+            return
+        if now < active_entry.expires_at:
+            return
+        self._remove_entry_locked(active_entry, "expired")
+        self._ensure_active_entry_locked(now, is_playing=is_playing)
+
+    def join(
+        self,
+        provided_code: str,
+        *,
+        existing_id: Optional[str],
+        is_playing: bool,
+    ) -> Tuple[QueueEntry, bool]:
+        now = time.time()
+        with self._lock:
+            self._expire_ready_locked(now, is_playing=is_playing)
+            entry: Optional[QueueEntry] = None
+            if existing_id:
+                entry = self._entries_by_id.get(existing_id)
+                if entry and entry.status in self.ACTIVE_STATES:
+                    self._ensure_active_entry_locked(now, is_playing=is_playing)
+                    return entry, False
+
+            if not provided_code or provided_code != self._access_code:
+                raise ValueError("invalid_code")
+
+            entry_id = uuid.uuid4().hex
+            entry = QueueEntry(id=entry_id, joined_at=now)
+            self._entries.append(entry)
+            self._entries_by_id[entry_id] = entry
+            created = True
+            self._ensure_active_entry_locked(now, is_playing=is_playing)
+            return entry, created
+
+    def leave(self, entry_id: Optional[str]) -> bool:
+        if not entry_id:
+            return False
+        with self._lock:
+            entry = self._entries_by_id.get(entry_id)
+            if not entry or entry.status not in self.ACTIVE_STATES:
+                return False
+            self._remove_entry_locked(entry, "cancelled")
+            self._ensure_active_entry_locked(time.time(), is_playing=False)
+            return True
+
+    def mark_playing(self, user_key: str) -> bool:
+        with self._lock:
+            entry_id = self._entry_by_user_key.get(user_key)
+            if not entry_id:
+                return False
+            entry = self._entries_by_id.get(entry_id)
+            if not entry:
+                return False
+            if entry.status == "playing":
+                return True
+            if entry.status != "ready":
+                return False
+            entry.status = "playing"
+            entry.expires_at = None
+            entry.activated_at = time.time()
+            self._active_entry_id = entry.id
+            return True
+
+    def finish_active(self) -> None:
+        with self._lock:
+            if not self._active_entry_id:
+                self._rotate_code_locked()
+                return
+            entry = self._entries_by_id.get(self._active_entry_id)
+            if entry and entry.status == "playing":
+                self._remove_entry_locked(entry, "finished")
+            self._active_entry_id = None
+            self._rotate_code_locked()
+            self._ensure_active_entry_locked(time.time(), is_playing=False)
+
+    def expire_ready_if_needed(self, *, is_playing: bool) -> None:
+        now = time.time()
+        with self._lock:
+            self._expire_ready_locked(now, is_playing=is_playing)
+
+    def _serialize_entry_locked(self, entry: QueueEntry, now: float) -> Dict[str, Any]:
+        info: Dict[str, Any] = {
+            "id": entry.id,
+            "state": entry.status,
+            "joined_at": entry.joined_at,
+            "activated_at": entry.activated_at,
+        }
+        if entry.status in {"ready", "playing"}:
+            info["position"] = 0
+            if entry.status == "ready" and entry.expires_at is not None:
+                info["ready_expires_in"] = max(0.0, entry.expires_at - now)
+            if entry.user_key:
+                info["user_key"] = entry.user_key
+        elif entry.status == "waiting":
+            ahead = 0
+            for candidate in self._entries:
+                if candidate.id == entry.id:
+                    break
+                if candidate.status in self.ACTIVE_STATES:
+                    ahead += 1
+            info["position"] = ahead + 1
+            info["estimated_wait_seconds"] = ahead * self.ESTIMATED_SECONDS_PER_USER
+        else:
+            info["position"] = None
+        return info
+
+    def get_status(
+        self,
+        entry_id: Optional[str],
+        *,
+        is_playing: bool,
+    ) -> Dict[str, Any]:
+        now = time.time()
+        with self._lock:
+            self._expire_ready_locked(now, is_playing=is_playing)
+            entry = self._entries_by_id.get(entry_id) if entry_id else None
+            payload: Dict[str, Any] = {
+                "current_key": self._access_code,
+                "queue_size": sum(1 for e in self._entries if e.status in self.ACTIVE_STATES),
+                "selection_timeout": self.SELECTION_TIMEOUT,
+            }
+            if entry:
+                payload["entry"] = self._serialize_entry_locked(entry, now)
+            else:
+                payload["entry"] = None
+            return payload
+
+    def entry_for_user_key(self, user_key: Optional[str]) -> Optional[QueueEntry]:
+        if not user_key:
+            return None
+        with self._lock:
+            entry_id = self._entry_by_user_key.get(user_key)
+            if not entry_id:
+                return None
+            return self._entries_by_id.get(entry_id)
 
 def _parse_int_env(name: str, default: int, *, minimum: int, maximum: int) -> int:
     raw = os.environ.get(name)
@@ -1457,6 +1693,7 @@ DMX_UNIVERSE = int(os.environ.get("DMX_UNIVERSE", "0"))
 dmx_manager: DMXShowManager = create_manager(DMX_TEMPLATE_DIR, universe=DMX_UNIVERSE)
 user_registry = UserRegistry()
 playback_session = PlaybackSession()
+queue_manager = QueueManager(user_registry)
 
 snow_machine_controller = SnowMachineController(
     load_relay_presets_from_disk,
@@ -1468,6 +1705,7 @@ dmx_manager.set_relay_action_callback(snow_machine_controller.handle_relay_actio
 
 def _handle_default_start(_: Path) -> None:
     playback_session.clear()
+    queue_manager.finish_active()
     default_entry = get_video_entry_by_path(DEFAULT_VIDEO_PATH)
     if default_entry:
         try:
@@ -1565,11 +1803,79 @@ def _parse_admin_flag(value: Any) -> bool:
     return bool(value)
 
 
+def _request_queue_id(data: Optional[Dict[str, Any]] = None) -> Optional[str]:
+    if data:
+        entry_value = data.get("entry_id")
+        if isinstance(entry_value, str) and entry_value.strip():
+            return entry_value.strip()
+    cookie_value = request.cookies.get("queue_id")
+    if cookie_value:
+        return cookie_value
+    arg_value = request.args.get("entry_id")
+    if arg_value:
+        return arg_value
+    return None
+
+
 @app.route("/api/register", methods=["POST"])
 def api_register() -> Any:
     data = request.get_json(force=True, silent=True) or {}
     record = user_registry.register(is_admin=_parse_admin_flag(data.get("admin")))
     return jsonify({"status": "ok", "key": record["key"], "admin": record["admin"]})
+
+
+@app.route("/api/queue/join", methods=["POST"])
+def api_queue_join() -> Any:
+    data = request.get_json(force=True, silent=True) or {}
+    provided_code = str(data.get("code") or "").strip()
+    entry_id = _request_queue_id(data)
+    is_playing = playback_session.has_active()
+
+    try:
+        entry, created = queue_manager.join(
+            provided_code,
+            existing_id=entry_id,
+            is_playing=is_playing,
+        )
+    except ValueError:
+        return jsonify({"error": "Invalid access code"}), 403
+
+    status_payload = queue_manager.get_status(entry.id, is_playing=is_playing)
+    response_payload = {"status": "joined", "created": created, **status_payload}
+    response = jsonify(response_payload)
+    response.set_cookie(
+        "queue_id",
+        entry.id,
+        max_age=6 * 60 * 60,
+        samesite="Strict",
+        httponly=True,
+        secure=False,
+        path="/",
+    )
+    return response
+
+
+@app.route("/api/queue/status")
+def api_queue_status() -> Any:
+    entry_id = _request_queue_id()
+    status_payload = queue_manager.get_status(
+        entry_id,
+        is_playing=playback_session.has_active(),
+    )
+    response = jsonify(status_payload)
+    if entry_id and not status_payload.get("entry"):
+        response.delete_cookie("queue_id")
+    return response
+
+
+@app.route("/api/queue/leave", methods=["POST"])
+def api_queue_leave() -> Any:
+    data = request.get_json(force=True, silent=True) or {}
+    entry_id = _request_queue_id(data)
+    removed = queue_manager.leave(entry_id)
+    response = jsonify({"status": "left" if removed else "not_found"})
+    response.delete_cookie("queue_id")
+    return response
 
 
 @app.route("/api/channel-presets", methods=["GET"])
@@ -1764,7 +2070,21 @@ def api_play() -> Any:
 
     is_admin = bool(user.get("admin"))
 
+    queue_manager.expire_ready_if_needed(
+        is_playing=playback_session.has_active()
+    )
+
+    queue_entry = None
+
     if not is_admin:
+        queue_entry = queue_manager.entry_for_user_key(key)
+        if not queue_entry or queue_entry.status != "ready":
+            return jsonify({"error": "It's not your turn yet"}), 403
+
+        owner_key = playback_session.owner_key()
+        if owner_key and owner_key != key:
+            return jsonify({"error": "Playback already in progress"}), 409
+
         is_default = True
         try:
             state = controller.query_state()
@@ -1799,6 +2119,15 @@ def api_play() -> Any:
     except Exception:
         LOGGER.exception('Unable to start playback')
         return jsonify({"error": "Unable to start playback"}), 500
+
+    if not is_admin:
+        if not queue_manager.mark_playing(key):
+            LOGGER.warning("Queue session for key %s expired before playback started", key)
+            try:
+                controller.stop()
+            except Exception:
+                LOGGER.exception("Unable to stop playback after queue session expired")
+            return jsonify({"error": "Queue session expired"}), 403
 
     playback_session.start(key, video_id)
 
@@ -1862,6 +2191,8 @@ def api_status() -> Any:
         state = {}
     mode = "default_loop" if state.get("is_default") else "video"
 
+    queue_manager.expire_ready_if_needed(is_playing=(mode == "video"))
+
     video_info: Optional[Dict[str, Any]] = None
     current_value = state.get("current")
     if mode == "video" and isinstance(current_value, str):
@@ -1885,6 +2216,7 @@ def api_status() -> Any:
         "duration": state.get("duration"),
         "paused": state.get("paused"),
         "video": video_info,
+        "access_code": queue_manager.current_code(),
     }
 
     payload["smoke_active"] = dmx_manager.is_smoke_active()

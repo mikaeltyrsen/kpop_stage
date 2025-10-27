@@ -14,6 +14,21 @@ const playerStopButton = document.getElementById("player-stop-button");
 const smokeButton = document.getElementById("smoke-button");
 const snowMachineButton = document.getElementById("snow-machine-button");
 const rebootButton = document.getElementById("player-reboot-button");
+const accessSection = document.getElementById("access-section");
+const codeForm = document.getElementById("code-form");
+const codeInput = document.getElementById("code-input");
+const codeErrorEl = document.getElementById("code-error");
+const queueSection = document.getElementById("queue-section");
+const queueHeading = document.getElementById("queue-heading");
+const queuePositionEl = document.getElementById("queue-position");
+const queueEtaEl = document.getElementById("queue-eta");
+const queueMessageEl = document.getElementById("queue-message");
+const queueCountdownEl = document.getElementById("queue-countdown");
+const queueLeaveButton = document.getElementById("queue-leave-button");
+const playerSection = document.getElementById("player-section");
+const playerOverlay = document.getElementById("player-playing-overlay");
+const accessCodeBadge = document.getElementById("access-code-badge");
+const accessCodeValue = document.getElementById("access-code-value");
 const searchParams = new URLSearchParams(window.location.search);
 const adminParam = (searchParams.get("admin") || "").toLowerCase();
 const isAdmin = ["1", "true", "yes", "on"].includes(adminParam);
@@ -31,6 +46,11 @@ let latestStatus = null;
 let isTriggeringSmoke = false;
 let isTogglingSnowMachine = false;
 let isSendingReboot = false;
+let queuePollTimer = null;
+let queueCountdownTimer = null;
+let queueReadyExpiresAt = null;
+let lastQueueState = null;
+let queueReadyToastShown = false;
 
 function showToast(message, type = "info") {
   toastEl.textContent = message;
@@ -38,6 +58,71 @@ function showToast(message, type = "info") {
   setTimeout(() => {
     toastEl.classList.remove("visible", "error");
   }, 2400);
+}
+
+function updateAccessCodeDisplay(code) {
+  if (!accessCodeBadge || !accessCodeValue) {
+    return;
+  }
+  if (typeof code === "string" && code.trim()) {
+    accessCodeValue.textContent = code.trim();
+    accessCodeBadge.hidden = false;
+  } else {
+    accessCodeBadge.hidden = true;
+  }
+}
+
+function setPlayerSectionLocked(locked) {
+  if (!playerSection) {
+    return;
+  }
+  playerSection.classList.toggle("is-locked", Boolean(locked));
+}
+
+function setBodyQueueState(state) {
+  const states = ["queue-waiting", "queue-ready", "queue-playing"];
+  document.body.classList.remove(...states);
+  if (state) {
+    document.body.classList.add(state);
+  }
+}
+
+function clearQueueCountdown() {
+  if (queueCountdownTimer) {
+    clearInterval(queueCountdownTimer);
+    queueCountdownTimer = null;
+  }
+  queueReadyExpiresAt = null;
+  if (queueCountdownEl) {
+    queueCountdownEl.hidden = true;
+    queueCountdownEl.textContent = "";
+  }
+}
+
+function updateQueueCountdown() {
+  if (!queueCountdownEl || queueReadyExpiresAt === null) {
+    return;
+  }
+  const remainingMs = queueReadyExpiresAt - Date.now();
+  const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+  queueCountdownEl.textContent = formatTime(remainingSeconds);
+  if (remainingSeconds <= 0) {
+    clearQueueCountdown();
+  }
+}
+
+function startQueueCountdown(seconds) {
+  if (!queueCountdownEl) {
+    return;
+  }
+  const safeSeconds = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+  queueReadyExpiresAt = Date.now() + safeSeconds * 1000;
+  queueCountdownEl.hidden = false;
+  updateQueueCountdown();
+  if (queueCountdownTimer) {
+    clearInterval(queueCountdownTimer);
+  }
+  queueCountdownTimer = setInterval(updateQueueCountdown, 500);
 }
 
 async function registerUser() {
@@ -75,6 +160,360 @@ function applyAdminVisibility() {
   }
   if (rebootButton) {
     rebootButton.hidden = !isAdmin;
+  }
+  if (isAdmin) {
+    if (accessSection) {
+      accessSection.hidden = true;
+    }
+    if (queueSection) {
+      queueSection.hidden = true;
+    }
+    if (playerSection) {
+      playerSection.hidden = false;
+    }
+  }
+}
+
+function describeEstimatedWait(seconds) {
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return "Estimated wait: about 3 minutes.";
+  }
+  const minutes = Math.max(1, Math.ceil(seconds / 60));
+  if (minutes === 1) {
+    return "Estimated wait: about 1 minute.";
+  }
+  return `Estimated wait: about ${minutes} minutes.`;
+}
+
+function normalizeCodeInput(value) {
+  return String(value || "").replace(/\D/g, "").slice(0, 5);
+}
+
+function resetQueueUiForIdle() {
+  setBodyQueueState(null);
+  clearQueueCountdown();
+  queueReadyToastShown = false;
+  if (queueSection) {
+    queueSection.hidden = true;
+  }
+  if (queueHeading) {
+    queueHeading.textContent = "You're in line";
+  }
+  if (queuePositionEl) {
+    queuePositionEl.textContent = "";
+  }
+  if (queueEtaEl) {
+    queueEtaEl.textContent = "";
+  }
+  if (queueMessageEl) {
+    queueMessageEl.textContent = "";
+  }
+  if (queueLeaveButton) {
+    queueLeaveButton.hidden = true;
+    queueLeaveButton.disabled = false;
+  }
+  if (!isAdmin) {
+    if (accessSection) {
+      accessSection.hidden = false;
+    }
+    if (playerSection) {
+      playerSection.hidden = true;
+    }
+    setPlayerSectionLocked(true);
+    userKey = null;
+  }
+  lastQueueState = null;
+}
+
+function updateQueueUI(payload) {
+  if (!payload || typeof payload !== "object") {
+    return;
+  }
+
+  updateAccessCodeDisplay(payload.current_key);
+
+  const entry = payload.entry && typeof payload.entry === "object" ? payload.entry : null;
+  if (!entry) {
+    if (!isAdmin) {
+      resetQueueUiForIdle();
+    }
+    return;
+  }
+
+  const state = entry.state;
+  const previousState = lastQueueState;
+  lastQueueState = state;
+
+  if (accessSection) {
+    accessSection.hidden = true;
+  }
+  if (queueSection) {
+    queueSection.hidden = false;
+  }
+
+  if (queueLeaveButton) {
+    queueLeaveButton.hidden = false;
+    queueLeaveButton.disabled = false;
+  }
+
+  if (queuePositionEl) {
+    queuePositionEl.textContent = "";
+  }
+  if (queueEtaEl) {
+    queueEtaEl.textContent = "";
+  }
+  if (queueMessageEl) {
+    queueMessageEl.textContent = "";
+  }
+
+  switch (state) {
+    case "waiting": {
+      setBodyQueueState("queue-waiting");
+      clearQueueCountdown();
+      queueReadyToastShown = false;
+      const position = Number.isFinite(entry.position) ? entry.position : null;
+      if (queueHeading) {
+        queueHeading.textContent = position && position <= 1 ? "You're almost up" : "You're in line";
+      }
+      if (queuePositionEl) {
+        if (position && position > 0) {
+          queuePositionEl.textContent = `You are #${position} in line.`;
+        } else {
+          queuePositionEl.textContent = "You have a spot in line.";
+        }
+      }
+      if (queueEtaEl) {
+        queueEtaEl.textContent = describeEstimatedWait(entry.estimated_wait_seconds);
+      }
+      if (queueMessageEl) {
+        const ahead = position && position > 1 ? position - 1 : 0;
+        if (ahead > 1) {
+          queueMessageEl.textContent = `${ahead} people are ahead of you.`;
+        } else if (ahead === 1) {
+          queueMessageEl.textContent = "One person is ahead of you.";
+        } else {
+          queueMessageEl.textContent = "You'll be invited to pick a song soon.";
+        }
+      }
+      if (!isAdmin && playerSection) {
+        playerSection.hidden = true;
+        setPlayerSectionLocked(true);
+        userKey = null;
+      }
+      break;
+    }
+    case "ready": {
+      setBodyQueueState("queue-ready");
+      const expiresIn = Number.isFinite(entry.ready_expires_in)
+        ? entry.ready_expires_in
+        : payload.selection_timeout;
+      startQueueCountdown(expiresIn || 30);
+      if (queueHeading) {
+        queueHeading.textContent = "It's your turn!";
+      }
+      if (queuePositionEl) {
+        queuePositionEl.textContent = "Head to the player below.";
+      }
+      if (queueEtaEl) {
+        queueEtaEl.textContent = "Select a song within 30 seconds.";
+      }
+      if (queueMessageEl) {
+        queueMessageEl.textContent = "Pick one song to play on the stage.";
+      }
+      if (!isAdmin && playerSection) {
+        playerSection.hidden = false;
+        setPlayerSectionLocked(false);
+      }
+      if (entry.user_key) {
+        userKey = entry.user_key;
+      }
+      if (!queueReadyToastShown) {
+        showToast("It's your turn! Pick a song.");
+        queueReadyToastShown = true;
+      }
+      if (!isAdmin && playerSection && previousState !== "ready") {
+        playerSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      break;
+    }
+    case "playing": {
+      setBodyQueueState("queue-playing");
+      clearQueueCountdown();
+      if (queueHeading) {
+        queueHeading.textContent = "Enjoy the show!";
+      }
+      if (queuePositionEl) {
+        queuePositionEl.textContent = "Your song is live on the stage.";
+      }
+      if (queueMessageEl) {
+        queueMessageEl.textContent = "We'll invite the next person once the loop returns.";
+      }
+      if (queueLeaveButton) {
+        queueLeaveButton.hidden = true;
+      }
+      if (!isAdmin && playerSection) {
+        playerSection.hidden = false;
+        setPlayerSectionLocked(true);
+      }
+      if (entry.user_key) {
+        userKey = entry.user_key;
+      }
+      break;
+    }
+    case "expired": {
+      resetQueueUiForIdle();
+      if (queueSection) {
+        queueSection.hidden = false;
+      }
+      if (queuePositionEl) {
+        queuePositionEl.textContent = "";
+      }
+      if (queueLeaveButton) {
+        queueLeaveButton.hidden = true;
+      }
+      if (queueHeading) {
+        queueHeading.textContent = "Time ran out";
+      }
+      if (queueMessageEl) {
+        queueMessageEl.textContent = "Your spot expired. Enter the new code to rejoin.";
+      }
+      break;
+    }
+    case "cancelled": {
+      resetQueueUiForIdle();
+      if (queueSection) {
+        queueSection.hidden = false;
+      }
+      if (queuePositionEl) {
+        queuePositionEl.textContent = "";
+      }
+      if (queueLeaveButton) {
+        queueLeaveButton.hidden = true;
+      }
+      if (queueHeading) {
+        queueHeading.textContent = "You left the line";
+      }
+      if (queueMessageEl) {
+        queueMessageEl.textContent = "Re-enter the current code any time to join again.";
+      }
+      break;
+    }
+    case "finished": {
+      resetQueueUiForIdle();
+      if (queueSection) {
+        queueSection.hidden = false;
+      }
+      if (queuePositionEl) {
+        queuePositionEl.textContent = "";
+      }
+      if (queueLeaveButton) {
+        queueLeaveButton.hidden = true;
+      }
+      if (queueHeading) {
+        queueHeading.textContent = "Thanks for playing";
+      }
+      if (queueMessageEl) {
+        queueMessageEl.textContent = "Ask the host if you'd like another turn later.";
+      }
+      break;
+    }
+    default: {
+      resetQueueUiForIdle();
+      break;
+    }
+  }
+}
+
+async function fetchQueueStatus(showErrors = false) {
+  try {
+    const response = await fetch("/api/queue/status", { credentials: "include" });
+    if (!response.ok) {
+      throw new Error(`Queue status failed (${response.status})`);
+    }
+    const payload = await response.json();
+    updateQueueUI(payload);
+  } catch (err) {
+    console.error(err);
+    if (showErrors) {
+      showToast("Unable to sync the queue", "error");
+    }
+  }
+}
+
+async function joinQueue(code) {
+  if (!code) {
+    return;
+  }
+  if (codeErrorEl) {
+    codeErrorEl.hidden = true;
+    codeErrorEl.textContent = "";
+  }
+  try {
+    const response = await fetch("/api/queue/join", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = payload.error || "Invalid access code.";
+      if (codeErrorEl) {
+        codeErrorEl.hidden = false;
+        codeErrorEl.textContent = message;
+      }
+      throw new Error(message);
+    }
+    if (codeInput) {
+      codeInput.value = "";
+    }
+    updateQueueUI(payload);
+  } catch (err) {
+    console.error(err);
+    if (!codeErrorEl || codeErrorEl.hidden) {
+      showToast(err.message || "Unable to join the queue", "error");
+    }
+  }
+}
+
+async function leaveQueue() {
+  try {
+    if (queueLeaveButton) {
+      queueLeaveButton.disabled = true;
+    }
+    const response = await fetch("/api/queue/leave", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.error || `Unable to leave queue (${response.status})`);
+    }
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || "Unable to leave the line", "error");
+  } finally {
+    if (queueLeaveButton) {
+      queueLeaveButton.disabled = false;
+    }
+    fetchQueueStatus();
+  }
+}
+
+function startQueuePolling() {
+  if (queuePollTimer) {
+    clearInterval(queuePollTimer);
+  }
+  queuePollTimer = setInterval(() => {
+    fetchQueueStatus();
+  }, 5000);
+}
+
+function stopQueuePolling() {
+  if (queuePollTimer) {
+    clearInterval(queuePollTimer);
+    queuePollTimer = null;
   }
 }
 
@@ -337,6 +776,9 @@ function updatePlayerUI(status) {
   if (status && typeof status === "object") {
     latestStatus = status;
   }
+  if (status && typeof status === "object" && Object.prototype.hasOwnProperty.call(status, "access_code")) {
+    updateAccessCodeDisplay(status.access_code);
+  }
   updateSmokeButton(status);
   updateSnowMachineButton(status);
   updatePlayButtons(status);
@@ -357,6 +799,11 @@ function updatePlayerUI(status) {
   }
 
   const isVideo = status.mode === "video" && status.video;
+  const shouldHideSelection = Boolean(isVideo) && !isAdmin;
+  document.body.classList.toggle("is-playing", shouldHideSelection);
+  if (playerOverlay) {
+    playerOverlay.hidden = !shouldHideSelection;
+  }
   playerBar.classList.toggle("is-default", !isVideo);
 
   if (playerStatusEl) {
@@ -642,15 +1089,49 @@ if (rebootButton && isAdmin) {
   rebootButton.hidden = true;
 }
 
-async function initializeController() {
-  await registerUser();
+if (codeInput && !isAdmin) {
+  codeInput.addEventListener("input", () => {
+    const normalized = normalizeCodeInput(codeInput.value);
+    if (codeInput.value !== normalized) {
+      codeInput.value = normalized;
+    }
+  });
+}
+
+if (codeForm && !isAdmin) {
+  codeForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const code = normalizeCodeInput(codeInput ? codeInput.value : "");
+    if (!code || code.length < 5) {
+      if (codeErrorEl) {
+        codeErrorEl.hidden = false;
+        codeErrorEl.textContent = "Enter the 5-digit code shown on the stage.";
+      }
+      return;
+    }
+    joinQueue(code);
+  });
+}
+
+if (queueLeaveButton && !isAdmin) {
+  queueLeaveButton.addEventListener("click", leaveQueue);
+}
+
+async function initializeApp() {
   applyAdminVisibility();
+  if (isAdmin) {
+    await registerUser();
+  }
   await fetchVideos();
   await fetchStatus();
   scheduleStatusPolling();
+  if (!isAdmin) {
+    await fetchQueueStatus(true);
+    startQueuePolling();
+  }
 }
 
-initializeController().catch((err) => {
+initializeApp().catch((err) => {
   console.error(err);
   showToast("Unable to initialize controller", "error");
 });
