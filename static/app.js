@@ -361,7 +361,7 @@ function updateCodeSubmitState() {
 }
 
 function resetQueueUiForIdle(options = {}) {
-  const { preserveCodeInput = false } = options;
+  const { preserveCodeInput = false, clearCodeInput = false } = options;
   setBodyQueueState(null);
   clearQueueCountdown();
   hideExpiredNotice();
@@ -397,12 +397,21 @@ function resetQueueUiForIdle(options = {}) {
     }
     setPlayerSectionLocked(true);
     if (codeInput) {
-      if (preserveCodeInput) {
-        codeInput.value = codeDraftValue;
-      } else {
+      if (clearCodeInput) {
         codeDraftValue = "";
         codeInput.value = "";
         clearStoredCodeDraft();
+      } else if (preserveCodeInput) {
+        codeInput.value = codeDraftValue;
+      } else {
+        const normalizedCurrent = normalizeCodeInput(codeInput.value);
+        if (codeInput.value !== normalizedCurrent) {
+          codeInput.value = normalizedCurrent;
+        }
+        if (codeDraftValue !== normalizedCurrent) {
+          codeDraftValue = normalizedCurrent;
+          storeCodeDraft(normalizedCurrent);
+        }
       }
     }
     updateCodeSubmitState();
