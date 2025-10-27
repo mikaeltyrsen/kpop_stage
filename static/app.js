@@ -321,7 +321,7 @@ function updateQueueUI(payload) {
       }
       if (queuePositionEl) {
         if (isNext) {
-          queuePositionEl.textContent = "You are NEXT in line.";
+          queuePositionEl.textContent = "Hang tight while we open the stage for you.";
         } else if (position && position > 0) {
           queuePositionEl.textContent = `You are #${position} in line.`;
         } else {
@@ -351,7 +351,7 @@ function updateQueueUI(payload) {
           queueMessageEl.textContent = `${ahead} people are ahead of you.`;
         } else if (ahead === 1) {
           queueMessageEl.textContent =
-            "You are NEXT in line, get ready. You will have 30s to select your song.";
+            "Get ready. You'll have 30s to select your song when the stage opens.";
         } else {
           queueMessageEl.textContent = "You'll be invited to pick a song soon.";
         }
