@@ -181,15 +181,20 @@ function applyAdminVisibility() {
   }
 }
 
-function describeEstimatedWait(seconds) {
+function formatEstimatedWaitDuration(seconds, fallbackMinutes = 3) {
   if (!Number.isFinite(seconds) || seconds <= 0) {
-    return "Estimated wait: about 3 minutes.";
+    return `${fallbackMinutes}min remaining.`;
+  }
+  if (seconds < 60) {
+    const secs = Math.max(1, Math.ceil(seconds));
+    return `${secs}sec remaining.`;
   }
   const minutes = Math.max(1, Math.ceil(seconds / 60));
-  if (minutes === 1) {
-    return "Estimated wait: about 1 minute.";
-  }
-  return `Estimated wait: about ${minutes} minutes.`;
+  return `${minutes}min remaining.`;
+}
+
+function describeEstimatedWait(seconds) {
+  return `Estimated wait: ${formatEstimatedWaitDuration(seconds)}`;
 }
 
 function normalizeCodeInput(value) {
@@ -324,7 +329,10 @@ function updateQueueUI(payload) {
           if (remainingSeconds <= 0) {
             queueEtaEl.textContent = "Estimated wait: Any moment now.";
           } else {
-            queueEtaEl.textContent = `Estimated wait: ${formatTime(remainingSeconds)} remaining.`;
+            queueEtaEl.textContent = `Estimated wait: ${formatEstimatedWaitDuration(
+              remainingSeconds,
+              0
+            )}`;
           }
         } else {
           queueEtaEl.textContent = describeEstimatedWait(entry.estimated_wait_seconds);
