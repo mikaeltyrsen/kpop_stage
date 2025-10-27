@@ -237,6 +237,10 @@ p {
   z-index: 5;
 }
 
+#player-playing-overlay[hidden] {
+  display: none !important;
+}
+
 .player-playing-overlay p {
   margin: 0;
   font-size: clamp(1.4rem, 4vw, 1.8rem);

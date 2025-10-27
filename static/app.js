@@ -219,6 +219,10 @@ function resetQueueUiForIdle() {
   clearQueueCountdown();
   queueReadyToastShown = false;
   hideExpiredNotice();
+  document.body.classList.remove("is-playing");
+  if (playerOverlay) {
+    playerOverlay.hidden = true;
+  }
   if (queueSection) {
     queueSection.hidden = true;
   }
@@ -356,6 +360,10 @@ function updateQueueUI(payload) {
         playerSection.hidden = true;
         setPlayerSectionLocked(true);
         userKey = null;
+        if (playerOverlay) {
+          playerOverlay.hidden = true;
+        }
+        document.body.classList.remove("is-playing");
       }
       break;
     }
@@ -381,6 +389,10 @@ function updateQueueUI(payload) {
         playerSection.hidden = false;
         setPlayerSectionLocked(false);
       }
+      if (playerOverlay) {
+        playerOverlay.hidden = true;
+      }
+      document.body.classList.remove("is-playing");
       if (entry.user_key) {
         userKey = entry.user_key;
       }
@@ -847,33 +859,37 @@ function updatePlayerUI(status) {
     return;
   }
 
-  const isVideo = status.mode === "video" && status.video;
-  const isVideoActive = Boolean(isVideo) && hasActiveOwner;
+  const isVideoMode = status.mode === "video";
+  const videoInfo = isVideoMode && status.video ? status.video : null;
+  const isVideoActive = isVideoMode && hasActiveOwner;
   const shouldHideSelection =
-    !isAdmin && !isQueueReady && ((isQueuePlaying && Boolean(isVideo)) || isVideoActive);
+    !isAdmin && !isQueueReady && ((isQueuePlaying && isVideoMode) || isVideoActive);
   document.body.classList.toggle("is-playing", shouldHideSelection);
   if (playerOverlay) {
     playerOverlay.hidden = !shouldHideSelection;
   }
-  playerBar.classList.toggle("is-default", !isVideo);
+  playerBar.hidden = !isVideoMode;
+  playerBar.classList.toggle("is-default", !isVideoMode);
 
   if (playerStatusEl) {
-    playerStatusEl.textContent = isVideo ? "Now playing" : "Default loop active";
+    playerStatusEl.textContent = isVideoMode ? "Now playing" : "Default loop active";
   }
 
   if (playerTitleEl) {
-    if (isVideo) {
-      playerTitleEl.textContent = status.video.name || "Playing";
+    if (videoInfo && videoInfo.name) {
+      playerTitleEl.textContent = videoInfo.name;
+    } else if (isVideoMode) {
+      playerTitleEl.textContent = "Playing";
     } else {
       playerTitleEl.textContent = "Stage screen is showing the loop.";
     }
   }
 
   if (playerArtworkEl) {
-    if (isVideo && status.video.poster) {
-      playerArtworkEl.style.backgroundImage = `url(${status.video.poster})`;
+    if (videoInfo && videoInfo.poster) {
+      playerArtworkEl.style.backgroundImage = `url(${videoInfo.poster})`;
       playerArtworkEl.classList.remove("is-placeholder");
-    } else if (isVideo) {
+    } else if (isVideoMode) {
       playerArtworkEl.style.backgroundImage = "";
       playerArtworkEl.classList.add("is-placeholder");
     } else {
@@ -907,7 +923,7 @@ function updatePlayerUI(status) {
 
   if (volumeSlider && isAdmin) {
     const volume = Number.isFinite(status.volume) ? Math.max(0, Math.min(100, status.volume)) : null;
-    volumeSlider.disabled = !isVideo;
+    volumeSlider.disabled = !isVideoMode;
     if (volume !== null && !isVolumeInteracting) {
       volumeSlider.value = String(Math.round(volume));
     }
