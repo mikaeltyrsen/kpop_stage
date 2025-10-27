@@ -327,12 +327,26 @@ body.is-playing #player-playing-overlay {
   flex-direction: column;
   transition: transform 120ms ease, box-shadow 120ms ease;
   position: relative;
+  cursor: pointer;
+  border: none;
 }
 
 .video-card:hover,
-.video-card:focus-within {
+.video-card:focus-visible {
   transform: translateY(-4px);
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+
+.video-card:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 4px;
+}
+
+.video-card.is-disabled {
+  opacity: 0.55;
+  pointer-events: none;
+  transform: none;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
 }
 
 .video-poster {
@@ -383,38 +397,6 @@ body.is-playing #player-playing-overlay {
   font-family: "Avenir-Black";
   font-style: italic;
   width: calc(100% - 2rem);
-}
-
-.play-button {
-  align-self: flex-start;
-  background: linear-gradient(135deg, #ff3cac, #784ba0, #2b86c5);
-  border: none;
-  color: white;
-  font-weight: 600;
-  border-radius: 999px;
-  padding: 0.6rem 1.4rem;
-  cursor: pointer;
-  box-shadow: 0 10px 25px rgba(255, 63, 172, 0.35);
-  transition: transform 120ms ease, box-shadow 120ms ease;
-}
-
-.play-button:focus,
-.play-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(120, 75, 160, 0.5);
-}
-
-.play-button[disabled] {
-  cursor: not-allowed;
-  opacity: 0.55;
-  box-shadow: none;
-  transform: none;
-}
-
-.play-button[disabled]:hover,
-.play-button[disabled]:focus {
-  transform: none;
-  box-shadow: none;
 }
 
 .stop-button {

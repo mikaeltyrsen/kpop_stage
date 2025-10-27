@@ -39,7 +39,7 @@ const rebootButtonDefaultLabel = rebootButton ? rebootButton.textContent.trim() 
 
 let userKey = null;
 let codeDraftValue = "";
-const videoButtons = new Map();
+const videoCards = new Map();
 
 let isFetchingStatus = false;
 let statusPollTimer = null;
@@ -669,18 +669,20 @@ function stopQueuePolling() {
   }
 }
 
-function updatePlayButtons(status) {
+function updateVideoCards(status) {
   const isVideoActive = Boolean(status && status.mode === "video");
   const disable = !isAdmin && isVideoActive;
-  for (const button of videoButtons.values()) {
-    if (!button) {
+  for (const card of videoCards.values()) {
+    if (!card) {
       continue;
     }
-    button.disabled = disable;
+    card.classList.toggle("is-disabled", disable);
     if (disable) {
-      button.setAttribute("aria-disabled", "true");
+      card.setAttribute("aria-disabled", "true");
+      card.tabIndex = -1;
     } else {
-      button.removeAttribute("aria-disabled");
+      card.removeAttribute("aria-disabled");
+      card.tabIndex = 0;
     }
   }
 }
@@ -709,13 +711,12 @@ function renderVideos(videos) {
   }
 
   const fragment = document.createDocumentFragment();
-  videoButtons.clear();
+  videoCards.clear();
   for (const video of videos) {
     const node = template.content.cloneNode(true);
     const card = node.querySelector(".video-card");
     const poster = node.querySelector(".video-poster");
     const title = node.querySelector(".video-title");
-    const button = node.querySelector(".play-button");
 
     if (video.poster) {
       poster.src = video.poster;
@@ -731,22 +732,35 @@ function renderVideos(videos) {
     }
     title.textContent = video.name;
     const videoKey = video.id || title.textContent || "";
-    button.dataset.videoId = videoKey;
-    videoButtons.set(videoKey, button);
-    const shouldDisable = !isAdmin && latestStatus && latestStatus.mode === "video";
-    button.disabled = shouldDisable;
-    if (shouldDisable) {
-      button.setAttribute("aria-disabled", "true");
-    } else {
-      button.removeAttribute("aria-disabled");
+    if (card) {
+      const hasName = typeof video.name === "string" && video.name.trim().length > 0;
+      card.dataset.videoId = videoKey;
+      if (hasName) {
+        card.setAttribute("aria-label", `Play ${video.name}`);
+      } else {
+        card.setAttribute("aria-label", "Play video");
+      }
+      const handleSelect = () => {
+        if (card.classList.contains("is-disabled")) {
+          return;
+        }
+        playVideo(video.id, video.name);
+      };
+      card.addEventListener("click", handleSelect);
+      card.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+          event.preventDefault();
+          handleSelect();
+        }
+      });
+      videoCards.set(videoKey, card);
     }
-    button.addEventListener("click", () => playVideo(video.id, video.name));
 
     fragment.appendChild(node);
   }
 
   listEl.appendChild(fragment);
-  updatePlayButtons(latestStatus);
+  updateVideoCards(latestStatus);
 }
 
 async function playVideo(id, name) {
@@ -930,7 +944,7 @@ function updatePlayerUI(status) {
   }
   updateSmokeButton(status);
   updateSnowMachineButton(status);
-  updatePlayButtons(status);
+  updateVideoCards(status);
 
   const controls =
     status && typeof status === "object" && status.controls && typeof status.controls === "object"
