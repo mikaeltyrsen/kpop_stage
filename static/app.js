@@ -415,14 +415,17 @@ function updateQueueUI(payload) {
         queuePositionEl.textContent = "Your song is live on the stage.";
       }
       if (queueMessageEl) {
-        queueMessageEl.textContent = "We'll invite the next person once the loop returns.";
+        queueMessageEl.textContent = "";
       }
       if (queueLeaveButton) {
         queueLeaveButton.hidden = true;
       }
       if (!isAdmin && playerSection) {
-        playerSection.hidden = false;
+        playerSection.hidden = true;
         setPlayerSectionLocked(true);
+      }
+      if (playerOverlay) {
+        playerOverlay.hidden = true;
       }
       if (entry.user_key) {
         userKey = entry.user_key;
