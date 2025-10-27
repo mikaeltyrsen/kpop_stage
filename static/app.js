@@ -36,6 +36,7 @@ const searchParams = new URLSearchParams(window.location.search);
 const adminParam = (searchParams.get("admin") || "").toLowerCase();
 const isAdmin = ["1", "true", "yes", "on"].includes(adminParam);
 const rebootButtonDefaultLabel = rebootButton ? rebootButton.textContent.trim() : "Restart Pi";
+const CODE_DRAFT_STORAGE_KEY = "kpop_stage_code_draft";
 
 let userKey = null;
 let codeDraftValue = "";
@@ -279,8 +280,19 @@ function formatEstimatedWaitDuration(seconds, fallbackMinutes = 3) {
     const secs = Math.max(1, Math.ceil(seconds));
     return `${secs}sec remaining.`;
   }
-  const minutes = Math.max(1, Math.ceil(seconds / 60));
-  return `${minutes}min remaining.`;
+  const exactMinutes = seconds / 60;
+  const floorMinutes = Math.floor(exactMinutes);
+  const ceilMinutes = Math.ceil(exactMinutes);
+  if (!Number.isFinite(exactMinutes) || ceilMinutes <= 0) {
+    return `${fallbackMinutes}min remaining.`;
+  }
+  if (Number.isInteger(exactMinutes)) {
+    return `${exactMinutes}min remaining.`;
+  }
+  if (ceilMinutes - exactMinutes <= 0.5) {
+    return `less than ${ceilMinutes}min remaining.`;
+  }
+  return `${Math.max(1, floorMinutes)}min remaining.`;
 }
 
 function describeEstimatedWait(seconds) {
@@ -289,6 +301,54 @@ function describeEstimatedWait(seconds) {
 
 function normalizeCodeInput(value) {
   return String(value || "").replace(/\D/g, "").slice(0, 5);
+}
+
+function loadStoredCodeDraft() {
+  if (typeof localStorage === "undefined") {
+    return "";
+  }
+  try {
+    const raw = localStorage.getItem(CODE_DRAFT_STORAGE_KEY) || "";
+    return normalizeCodeInput(raw);
+  } catch (err) {
+    console.warn("Unable to load stored code draft", err);
+    return "";
+  }
+}
+
+function storeCodeDraft(value) {
+  if (typeof localStorage === "undefined") {
+    return;
+  }
+  try {
+    const normalized = normalizeCodeInput(value);
+    if (normalized) {
+      localStorage.setItem(CODE_DRAFT_STORAGE_KEY, normalized);
+    } else {
+      localStorage.removeItem(CODE_DRAFT_STORAGE_KEY);
+    }
+  } catch (err) {
+    console.warn("Unable to store code draft", err);
+  }
+}
+
+function clearStoredCodeDraft() {
+  if (typeof localStorage === "undefined") {
+    return;
+  }
+  try {
+    localStorage.removeItem(CODE_DRAFT_STORAGE_KEY);
+  } catch (err) {
+    console.warn("Unable to clear stored code draft", err);
+  }
+}
+
+if (codeInput && !isAdmin) {
+  const storedDraft = loadStoredCodeDraft();
+  if (storedDraft) {
+    codeDraftValue = storedDraft;
+    codeInput.value = storedDraft;
+  }
 }
 
 function updateCodeSubmitState() {
@@ -342,6 +402,7 @@ function resetQueueUiForIdle(options = {}) {
       } else {
         codeDraftValue = "";
         codeInput.value = "";
+        clearStoredCodeDraft();
       }
     }
     updateCodeSubmitState();
@@ -606,6 +667,12 @@ async function joinQueue(code) {
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
       const message = payload.error || "Invalid access code.";
+      clearStoredCodeDraft();
+      codeDraftValue = "";
+      if (codeInput) {
+        codeInput.value = "";
+      }
+      updateCodeSubmitState();
       if (codeErrorEl) {
         codeErrorEl.hidden = false;
         codeErrorEl.textContent = message;
@@ -616,6 +683,7 @@ async function joinQueue(code) {
       codeInput.value = "";
     }
     codeDraftValue = "";
+    clearStoredCodeDraft();
     updateQueueUI(payload);
   } catch (err) {
     console.error(err);
@@ -1269,6 +1337,7 @@ if (codeInput && !isAdmin) {
       codeInput.value = normalized;
     }
     codeDraftValue = normalized;
+    storeCodeDraft(normalized);
     if (codeErrorEl && !codeErrorEl.hidden) {
       codeErrorEl.hidden = true;
       codeErrorEl.textContent = "";
