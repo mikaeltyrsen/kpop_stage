@@ -284,7 +284,7 @@ function formatEstimatedWaitDuration(seconds, fallbackMinutes = 3) {
 }
 
 function describeEstimatedWait(seconds) {
-  return `Estimated wait: ${formatEstimatedWaitDuration(seconds)}`;
+  return `<b>Estimated wait:</b> ${formatEstimatedWaitDuration(seconds)}`;
 }
 
 function normalizeCodeInput(value) {
@@ -412,7 +412,7 @@ function updateQueueUI(payload) {
       }
       if (queuePositionEl) {
         if (isNext) {
-          queuePositionEl.textContent = "Hang tight while we open the stage for you.";
+          queuePositionEl.textContent = "";
         } else if (position && position > 0) {
           queuePositionEl.textContent = `You are #${position} in line.`;
         } else {
@@ -426,15 +426,15 @@ function updateQueueUI(payload) {
             Math.ceil(Number(entry.estimated_wait_seconds))
           );
           if (remainingSeconds <= 0) {
-            queueEtaEl.textContent = "Estimated wait: Any moment now.";
+            queueEtaEl.innerHTML = "<b>Estimated wait:</b> Any moment now.";
           } else {
-            queueEtaEl.textContent = `Estimated wait: ${formatEstimatedWaitDuration(
+            queueEtaEl.innerHTML = `<b>Estimated wait:</b> ${formatEstimatedWaitDuration(
               remainingSeconds,
               0
             )}`;
           }
         } else {
-          queueEtaEl.textContent = describeEstimatedWait(entry.estimated_wait_seconds);
+          queueEtaEl.innerHTML = describeEstimatedWait(entry.estimated_wait_seconds);
         }
       }
       if (queueMessageEl) {
@@ -474,7 +474,7 @@ function updateQueueUI(payload) {
         queueEtaEl.textContent = "Select a song within 30 seconds.";
       }
       if (queueMessageEl) {
-        queueMessageEl.textContent = "Pick one song to play on the stage.";
+        queueMessageEl.textContent = "";
       }
       if (!isAdmin && playerSection) {
         playerSection.hidden = false;
@@ -500,7 +500,7 @@ function updateQueueUI(payload) {
         queueHeading.textContent = "Enjoy the show!";
       }
       if (queuePositionEl) {
-        queuePositionEl.textContent = "Your song is live on the stage.";
+        queuePositionEl.innerHTML = `Your song is live on the stage. Don't forget to capture this moment and share it. <a class="ig-link" href="instagram-stories://share"><img class="icon" src="/static/ig_logo.png" /> Open Instagram</a>`;
       }
       if (queueMessageEl) {
         queueMessageEl.textContent = "";
@@ -559,7 +559,7 @@ function updateQueueUI(payload) {
         queueHeading.textContent = "Hope you enjoyed the show!";
       }
       if (queueMessageEl) {
-        queueMessageEl.innerHTML = 'Please make sure to share and tag @tyrsen in any posts or videos. <a href="https://instagram.com/tyrsen" class="ig-link"><img class="icon" src="/static/ig_logo.webp" /> @tyrsen</a>';
+        queueMessageEl.innerHTML = 'Please make sure to share and tag @tyrsen in any posts or videos. <a href="https://instagram.com/tyrsen" class="ig-link"><img class="icon" src="/static/ig_logo.png" /> @tyrsen</a>';
       }
       break;
     }
@@ -934,8 +934,8 @@ function updateSnowMachineButton(status) {
   const busy = isTogglingSnowMachine;
   snowMachineButton.disabled = busy;
   snowMachineButton.textContent = busy
-    ? "Snow Machine…"
-    : `Snow Machine: ${active ? "On" : "Off"}`;
+    ? "Snowing…"
+    : `Snow ${active ? "ON" : "OFF"}`;
 }
 
 function updatePlayerUI(status) {
