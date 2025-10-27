@@ -27,8 +27,6 @@ const queueCountdownEl = document.getElementById("queue-countdown");
 const queueLeaveButton = document.getElementById("queue-leave-button");
 const playerSection = document.getElementById("player-section");
 const playerOverlay = document.getElementById("player-playing-overlay");
-const accessCodeBadge = document.getElementById("access-code-badge");
-const accessCodeValue = document.getElementById("access-code-value");
 const searchParams = new URLSearchParams(window.location.search);
 const adminParam = (searchParams.get("admin") || "").toLowerCase();
 const isAdmin = ["1", "true", "yes", "on"].includes(adminParam);
@@ -58,18 +56,6 @@ function showToast(message, type = "info") {
   setTimeout(() => {
     toastEl.classList.remove("visible", "error");
   }, 2400);
-}
-
-function updateAccessCodeDisplay(code) {
-  if (!accessCodeBadge || !accessCodeValue) {
-    return;
-  }
-  if (typeof code === "string" && code.trim()) {
-    accessCodeValue.textContent = code.trim();
-    accessCodeBadge.hidden = false;
-  } else {
-    accessCodeBadge.hidden = true;
-  }
 }
 
 function setPlayerSectionLocked(locked) {
@@ -229,8 +215,6 @@ function updateQueueUI(payload) {
   if (!payload || typeof payload !== "object") {
     return;
   }
-
-  updateAccessCodeDisplay(payload.current_key);
 
   const entry = payload.entry && typeof payload.entry === "object" ? payload.entry : null;
   if (!entry) {
@@ -775,9 +759,6 @@ function updateSnowMachineButton(status) {
 function updatePlayerUI(status) {
   if (status && typeof status === "object") {
     latestStatus = status;
-  }
-  if (status && typeof status === "object" && Object.prototype.hasOwnProperty.call(status, "access_code")) {
-    updateAccessCodeDisplay(status.access_code);
   }
   updateSmokeButton(status);
   updateSnowMachineButton(status);

@@ -342,7 +342,6 @@ class QueueManager:
             self._expire_ready_locked(now, is_playing=is_playing)
             entry = self._entries_by_id.get(entry_id) if entry_id else None
             payload: Dict[str, Any] = {
-                "current_key": self._access_code,
                 "queue_size": sum(1 for e in self._entries if e.status in self.ACTIVE_STATES),
                 "selection_timeout": self.SELECTION_TIMEOUT,
             }
@@ -1286,7 +1285,7 @@ class PlaybackController:
         warning_video: Optional[Path] = None,
     ) -> None:
         self.default_video = default_video
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._process: Optional[subprocess.Popen[bytes]] = None
         self._current: Optional[Path] = None
         self._ipc_path = str(BASE_DIR / "mpv-ipc.sock")
@@ -1298,6 +1297,8 @@ class PlaybackController:
         self._pending_video_start: Optional[Path] = None
         self._pending_requires_playlist_advance = False
         self._start_callback_fired = False
+        self._stage_overlay_active = False
+        self._stage_overlay_text: Optional[str] = None
         self._default_missing_message = (
             f"Default loop video not found: {self.default_video}. "
             "Update videos.json or copy the file into the media directory."
@@ -1411,6 +1412,81 @@ class PlaybackController:
         self._pending_video_start = None
         self._pending_requires_playlist_advance = False
         self._start_callback_fired = False
+
+    @staticmethod
+    def _format_stage_overlay_filter(text: str) -> str:
+        escaped_text = text.replace("\\", "\\\\").replace("'", "\\'")
+        display_text = f"Stage code: {escaped_text}" if escaped_text else ""
+        drawtext = (
+            "lavfi=[drawtext=font='DejaVu Sans':fontsize=72:fontcolor=white"
+            ":box=1:boxcolor=0x64000000:boxborderw=24:shadowcolor=0xC0000000:shadowx=2:shadowy=2"
+            ":x=72:y=h-text_h-120:text='{}']"
+        ).format(display_text)
+        return f"@stagecode:{drawtext}"
+
+    def set_stage_code_overlay(self, code: Optional[str]) -> None:
+        text = (code or "").strip()
+        with self._lock:
+            if not (self._process and self._process.poll() is None):
+                if not text:
+                    self._stage_overlay_active = False
+                    self._stage_overlay_text = None
+                    return
+                try:
+                    self._ensure_player_running()
+                except FileNotFoundError:
+                    LOGGER.warning("Unable to enable stage code overlay because the video player is unavailable.")
+                    self._stage_overlay_active = False
+                    self._stage_overlay_text = None
+                    return
+                except Exception:
+                    LOGGER.exception("Unable to ensure video player is running for stage code overlay")
+                    self._stage_overlay_active = False
+                    self._stage_overlay_text = None
+                    return
+
+            if self._stage_overlay_active or not text:
+                try:
+                    response = self._send_ipc_command("vf", "del", "@stagecode")
+                    if response.get("error") not in {"success", "property unavailable", "no such filter"}:
+                        LOGGER.debug("Stage code overlay removal returned %s", response.get("error"))
+                except OSError:
+                    LOGGER.exception("Unable to communicate with mpv while removing stage code overlay")
+                    self._reset_player_state()
+                    if not text:
+                        return
+                except Exception:
+                    LOGGER.exception("Unexpected error removing stage code overlay")
+                    if not text:
+                        return
+                finally:
+                    self._stage_overlay_active = False
+                    self._stage_overlay_text = None
+
+            if not text:
+                self._stage_overlay_active = False
+                self._stage_overlay_text = None
+                return
+
+            try:
+                filter_arg = self._format_stage_overlay_filter(text)
+                response = self._send_ipc_command("vf", "add", filter_arg)
+                if response.get("error") == "success":
+                    self._stage_overlay_active = True
+                    self._stage_overlay_text = text
+                else:
+                    LOGGER.warning("Unable to enable stage code overlay: %s", response.get("error"))
+                    self._stage_overlay_active = False
+                    self._stage_overlay_text = None
+            except OSError:
+                LOGGER.exception("Unable to communicate with mpv while enabling stage code overlay")
+                self._reset_player_state()
+                self._stage_overlay_active = False
+                self._stage_overlay_text = None
+            except Exception:
+                LOGGER.exception("Unexpected error enabling stage code overlay")
+                self._stage_overlay_active = False
+                self._stage_overlay_text = None
 
     def _maybe_fire_video_start(self, idle: bool) -> None:
         if idle:
@@ -1706,6 +1782,10 @@ dmx_manager.set_relay_action_callback(snow_machine_controller.handle_relay_actio
 def _handle_default_start(_: Path) -> None:
     playback_session.clear()
     queue_manager.finish_active()
+    try:
+        controller.set_stage_code_overlay(queue_manager.current_code())
+    except Exception:
+        LOGGER.exception("Unable to update stage code overlay for default loop")
     default_entry = get_video_entry_by_path(DEFAULT_VIDEO_PATH)
     if default_entry:
         try:
@@ -1721,6 +1801,10 @@ def _handle_default_start(_: Path) -> None:
 
 
 def _handle_video_start(video_path: Path) -> None:
+    try:
+        controller.set_stage_code_overlay(None)
+    except Exception:
+        LOGGER.exception("Unable to clear stage code overlay for video playback")
     video_entry = get_video_entry_by_path(video_path)
     if not video_entry:
         LOGGER.warning("Unable to locate video entry for %s", video_path)
@@ -2216,7 +2300,6 @@ def api_status() -> Any:
         "duration": state.get("duration"),
         "paused": state.get("paused"),
         "video": video_info,
-        "access_code": queue_manager.current_code(),
     }
 
     payload["smoke_active"] = dmx_manager.is_smoke_active()
