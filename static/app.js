@@ -53,6 +53,7 @@ let queuePollTimer = null;
 let queueCountdownTimer = null;
 let queueReadyExpiresAt = null;
 let lastQueueState = null;
+let currentQueueState = null;
 let queueReadyToastShown = false;
 let isJoiningQueue = false;
 
@@ -89,8 +90,11 @@ function setPlayerSectionLocked(locked) {
 function setBodyQueueState(state) {
   const states = ["queue-waiting", "queue-ready", "queue-playing"];
   document.body.classList.remove(...states);
+  currentQueueState = state;
   if (state) {
     document.body.classList.add(state);
+  } else {
+    currentQueueState = null;
   }
 }
 
@@ -829,6 +833,10 @@ function updatePlayerUI(status) {
       ? status.controls
       : {};
   const canStop = Boolean(controls.can_stop);
+  const hasActiveOwner = Boolean(controls.has_active_owner);
+  const queueState = currentQueueState;
+  const isQueueReady = queueState === "queue-ready";
+  const isQueuePlaying = queueState === "queue-playing";
 
   if (playerStopButton) {
     playerStopButton.hidden = !canStop;
@@ -840,8 +848,8 @@ function updatePlayerUI(status) {
   }
 
   const isVideo = status.mode === "video" && status.video;
-  const isQueueReady = document.body.classList.contains("queue-ready");
-  const shouldHideSelection = Boolean(isVideo) && !isAdmin && !isQueueReady;
+  const shouldHideSelection =
+    !isAdmin && !isQueueReady && (isQueuePlaying || (Boolean(isVideo) && hasActiveOwner));
   document.body.classList.toggle("is-playing", shouldHideSelection);
   if (playerOverlay) {
     playerOverlay.hidden = !shouldHideSelection;
