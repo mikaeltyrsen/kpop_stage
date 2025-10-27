@@ -38,6 +38,7 @@ const isAdmin = ["1", "true", "yes", "on"].includes(adminParam);
 const rebootButtonDefaultLabel = rebootButton ? rebootButton.textContent.trim() : "Restart Pi";
 
 let userKey = null;
+let codeDraftValue = "";
 const videoButtons = new Map();
 
 let isFetchingStatus = false;
@@ -335,8 +336,13 @@ function resetQueueUiForIdle(options = {}) {
       playerSection.hidden = true;
     }
     setPlayerSectionLocked(true);
-    if (codeInput && !preserveCodeInput) {
-      codeInput.value = "";
+    if (codeInput) {
+      if (preserveCodeInput) {
+        codeInput.value = codeDraftValue;
+      } else {
+        codeDraftValue = "";
+        codeInput.value = "";
+      }
     }
     updateCodeSubmitState();
     userKey = null;
@@ -352,7 +358,7 @@ function updateQueueUI(payload) {
   const entry = payload.entry && typeof payload.entry === "object" ? payload.entry : null;
   if (!entry) {
     if (!isAdmin) {
-      const shouldPreserveCode = Boolean(codeInput && codeInput.value);
+      const shouldPreserveCode = Boolean(codeDraftValue);
       resetQueueUiForIdle({ preserveCodeInput: shouldPreserveCode });
     }
     return;
@@ -609,6 +615,7 @@ async function joinQueue(code) {
     if (codeInput) {
       codeInput.value = "";
     }
+    codeDraftValue = "";
     updateQueueUI(payload);
   } catch (err) {
     console.error(err);
@@ -1247,6 +1254,7 @@ if (codeInput && !isAdmin) {
     if (codeInput.value !== normalized) {
       codeInput.value = normalized;
     }
+    codeDraftValue = normalized;
     if (codeErrorEl && !codeErrorEl.hidden) {
       codeErrorEl.hidden = true;
       codeErrorEl.textContent = "";
