@@ -214,7 +214,8 @@ function updateCodeSubmitState() {
   codeSubmitButton.disabled = !canSubmit;
 }
 
-function resetQueueUiForIdle() {
+function resetQueueUiForIdle(options = {}) {
+  const { preserveCodeInput = false } = options;
   setBodyQueueState(null);
   clearQueueCountdown();
   queueReadyToastShown = false;
@@ -250,7 +251,7 @@ function resetQueueUiForIdle() {
       playerSection.hidden = true;
     }
     setPlayerSectionLocked(true);
-    if (codeInput) {
+    if (codeInput && !preserveCodeInput) {
       codeInput.value = "";
     }
     updateCodeSubmitState();
@@ -267,7 +268,8 @@ function updateQueueUI(payload) {
   const entry = payload.entry && typeof payload.entry === "object" ? payload.entry : null;
   if (!entry) {
     if (!isAdmin) {
-      resetQueueUiForIdle();
+      const shouldPreserveCode = Boolean(codeInput && codeInput.value);
+      resetQueueUiForIdle({ preserveCodeInput: shouldPreserveCode });
     }
     return;
   }
