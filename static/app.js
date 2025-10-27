@@ -832,7 +832,8 @@ function updatePlayerUI(status) {
   }
 
   const isVideo = status.mode === "video" && status.video;
-  const shouldHideSelection = Boolean(isVideo) && !isAdmin;
+  const isQueueReady = document.body.classList.contains("queue-ready");
+  const shouldHideSelection = Boolean(isVideo) && !isAdmin && !isQueueReady;
   document.body.classList.toggle("is-playing", shouldHideSelection);
   if (playerOverlay) {
     playerOverlay.hidden = !shouldHideSelection;
