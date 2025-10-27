@@ -54,15 +54,72 @@ let queueCountdownTimer = null;
 let queueReadyExpiresAt = null;
 let lastQueueState = null;
 let currentQueueState = null;
-let queueReadyToastShown = false;
 let isJoiningQueue = false;
+let toastHideTimer = null;
+let toastHideTimerContext = null;
+let activeToastContext = null;
 
-function showToast(message, type = "info") {
+function hideToast(context = null) {
+  if (!toastEl) {
+    return;
+  }
+  if (context && activeToastContext && activeToastContext !== context) {
+    return;
+  }
+  toastEl.classList.remove("visible", "error");
+  if (!context || activeToastContext === context) {
+    activeToastContext = null;
+  }
+  if (!context || !toastHideTimerContext || toastHideTimerContext === context) {
+    if (toastHideTimer) {
+      clearTimeout(toastHideTimer);
+      toastHideTimer = null;
+      toastHideTimerContext = null;
+    }
+  }
+}
+
+function showToast(message, options = {}) {
+  if (!toastEl) {
+    return;
+  }
+
+  let type = "info";
+  let duration = 2400;
+  let persist = false;
+  let context = null;
+
+  if (typeof options === "string") {
+    type = options;
+  } else if (options && typeof options === "object") {
+    ({ type = "info", duration = 2400, persist = false, context = null } = options);
+  }
+
+  if (toastHideTimer) {
+    clearTimeout(toastHideTimer);
+    toastHideTimer = null;
+    toastHideTimerContext = null;
+  }
+
   toastEl.textContent = message;
-  toastEl.className = type === "error" ? "visible error" : "visible";
-  setTimeout(() => {
-    toastEl.classList.remove("visible", "error");
-  }, 2400);
+  toastEl.classList.toggle("error", type === "error");
+  toastEl.classList.add("visible");
+  activeToastContext = context;
+
+  if (persist) {
+    return;
+  }
+
+  const timeout = Number.isFinite(duration) ? Math.max(0, duration) : 2400;
+  if (timeout <= 0) {
+    hideToast(context);
+    return;
+  }
+
+  toastHideTimerContext = context;
+  toastHideTimer = setTimeout(() => {
+    hideToast(context);
+  }, timeout);
 }
 
 function showExpiredNotice(message) {
@@ -98,6 +155,29 @@ function setBodyQueueState(state) {
   }
 }
 
+function showReadyToast(remainingSeconds = null) {
+  if (!toastEl) {
+    return;
+  }
+  let seconds = Number.isFinite(remainingSeconds) ? remainingSeconds : null;
+  if (!Number.isFinite(seconds) && queueReadyExpiresAt !== null) {
+    const diff = queueReadyExpiresAt - Date.now();
+    seconds = Math.max(0, Math.ceil(diff / 1000));
+  }
+  let message = "It's your turn! Pick a song.";
+  if (Number.isFinite(seconds)) {
+    if (seconds > 0) {
+      message = `${message} ${seconds}s left.`;
+    } else {
+      message = `${message} Time's up!`;
+    }
+  }
+  if (activeToastContext === "queue-ready" && toastEl.textContent === message) {
+    return;
+  }
+  showToast(message, { persist: true, context: "queue-ready" });
+}
+
 function clearQueueCountdown() {
   if (queueCountdownTimer) {
     clearInterval(queueCountdownTimer);
@@ -108,6 +188,7 @@ function clearQueueCountdown() {
     queueCountdownEl.hidden = true;
     queueCountdownEl.textContent = "";
   }
+  hideToast("queue-ready");
 }
 
 function updateQueueCountdown() {
@@ -117,8 +198,12 @@ function updateQueueCountdown() {
   const remainingMs = queueReadyExpiresAt - Date.now();
   const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
   queueCountdownEl.textContent = formatTime(remainingSeconds);
-  if (remainingSeconds <= 0) {
-    clearQueueCountdown();
+  if (currentQueueState === "queue-ready") {
+    showReadyToast(remainingSeconds);
+  }
+  if (remainingSeconds <= 0 && queueCountdownTimer) {
+    clearInterval(queueCountdownTimer);
+    queueCountdownTimer = null;
   }
 }
 
@@ -218,7 +303,6 @@ function resetQueueUiForIdle(options = {}) {
   const { preserveCodeInput = false } = options;
   setBodyQueueState(null);
   clearQueueCountdown();
-  queueReadyToastShown = false;
   hideExpiredNotice();
   document.body.classList.remove("is-playing");
   if (playerOverlay) {
@@ -308,7 +392,6 @@ function updateQueueUI(payload) {
     case "waiting": {
       setBodyQueueState("queue-waiting");
       clearQueueCountdown();
-      queueReadyToastShown = false;
       const position = Number.isFinite(entry.position) ? entry.position : null;
       const ahead = position && position > 1 ? position - 1 : 0;
       const isNext = ahead === 1;
@@ -398,10 +481,7 @@ function updateQueueUI(payload) {
       if (entry.user_key) {
         userKey = entry.user_key;
       }
-      if (!queueReadyToastShown) {
-        showToast("It's your turn! Pick a song.");
-        queueReadyToastShown = true;
-      }
+      showReadyToast();
       if (!isAdmin && playerSection && previousState !== "ready") {
         playerSection.scrollIntoView({ behavior: "smooth", block: "start" });
       }
