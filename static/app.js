@@ -165,15 +165,15 @@ function showReadyToast(remainingSeconds = null) {
     const diff = queueReadyExpiresAt - Date.now();
     seconds = Math.max(0, Math.ceil(diff / 1000));
   }
-  let message = "It's your turn! Pick a song.";
+  let message = "You're up!";
   if (Number.isFinite(seconds)) {
     if (seconds > 0) {
-      message = `${message} ${seconds}s left.`;
+      message = `${message} You have ${seconds}s to pick a song.`;
     } else {
       message = `${message} Time's up!`;
     }
   }
-  if (activeToastContext === "queue-ready" && toastEl.textContent === message) {
+  if (activeToastContext === "queue-ready" && toastEl.innerHTML === message) {
     return;
   }
   showToast(message, { persist: true, context: "queue-ready" });
@@ -559,7 +559,7 @@ function updateQueueUI(payload) {
         queueHeading.textContent = "Hope you enjoyed the show!";
       }
       if (queueMessageEl) {
-        queueMessageEl.textContent = "Please make sure to share and tag (@tyrsen) in any videos.";
+        queueMessageEl.innerHTML = 'Please make sure to share and tag @tyrsen in any posts or videos. <a href="https://instagram.com/tyrsen" class="ig-link"><img class="icon" src="/static/ig_logo.webp" /> @tyrsen</a>';
       }
       break;
     }
