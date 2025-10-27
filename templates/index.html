@@ -21,23 +21,22 @@
         <p>Enter the 5-digit code shown on the stage screen to reserve your spot.</p>
         <form id="code-form" class="code-form" autocomplete="off">
           <label class="code-label" for="code-input">Stage code</label>
-          <div class="code-input-row">
-            <input
-              id="code-input"
-              class="code-input"
-              type="tel"
-              inputmode="numeric"
-              pattern="[0-9]{5}"
-              maxlength="5"
-              placeholder="00000"
-              aria-describedby="code-error"
-              required
-            />
-            <button type="submit" class="primary-button">Join line</button>
-          </div>
+          <input
+            id="code-input"
+            class="code-input"
+            type="tel"
+            inputmode="numeric"
+            pattern="[0-9]{5}"
+            maxlength="5"
+            placeholder="00000"
+            aria-describedby="code-error"
+            required
+          />
+          <button type="submit" class="primary-button" disabled>
+            Join line
+          </button>
         </form>
         <p id="code-error" class="form-error" hidden></p>
-        <p class="gate-footnote">The code changes whenever the default loop restarts.</p>
       </section>
 
       <section id="queue-section" class="card queue-card" hidden aria-live="polite">

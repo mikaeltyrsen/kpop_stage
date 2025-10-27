@@ -17,6 +17,9 @@ const rebootButton = document.getElementById("player-reboot-button");
 const accessSection = document.getElementById("access-section");
 const codeForm = document.getElementById("code-form");
 const codeInput = document.getElementById("code-input");
+const codeSubmitButton = codeForm
+  ? codeForm.querySelector('button[type="submit"]')
+  : null;
 const codeErrorEl = document.getElementById("code-error");
 const queueSection = document.getElementById("queue-section");
 const queueHeading = document.getElementById("queue-heading");
@@ -49,6 +52,7 @@ let queueCountdownTimer = null;
 let queueReadyExpiresAt = null;
 let lastQueueState = null;
 let queueReadyToastShown = false;
+let isJoiningQueue = false;
 
 function showToast(message, type = "info") {
   toastEl.textContent = message;
@@ -175,6 +179,15 @@ function normalizeCodeInput(value) {
   return String(value || "").replace(/\D/g, "").slice(0, 5);
 }
 
+function updateCodeSubmitState() {
+  if (!codeSubmitButton) {
+    return;
+  }
+  const code = normalizeCodeInput(codeInput ? codeInput.value : "");
+  const canSubmit = code.length === 5 && !isJoiningQueue;
+  codeSubmitButton.disabled = !canSubmit;
+}
+
 function resetQueueUiForIdle() {
   setBodyQueueState(null);
   clearQueueCountdown();
@@ -206,6 +219,10 @@ function resetQueueUiForIdle() {
       playerSection.hidden = true;
     }
     setPlayerSectionLocked(true);
+    if (codeInput) {
+      codeInput.value = "";
+    }
+    updateCodeSubmitState();
     userKey = null;
   }
   lastQueueState = null;
@@ -274,7 +291,8 @@ function updateQueueUI(payload) {
         if (ahead > 1) {
           queueMessageEl.textContent = `${ahead} people are ahead of you.`;
         } else if (ahead === 1) {
-          queueMessageEl.textContent = "One person is ahead of you.";
+          queueMessageEl.textContent =
+            "You are NEXT in line, get ready. You will have 30s to select your song.";
         } else {
           queueMessageEl.textContent = "You'll be invited to pick a song soon.";
         }
@@ -425,13 +443,15 @@ async function fetchQueueStatus(showErrors = false) {
 }
 
 async function joinQueue(code) {
-  if (!code) {
+  if (!code || isJoiningQueue) {
     return;
   }
   if (codeErrorEl) {
     codeErrorEl.hidden = true;
     codeErrorEl.textContent = "";
   }
+  isJoiningQueue = true;
+  updateCodeSubmitState();
   try {
     const response = await fetch("/api/queue/join", {
       method: "POST",
@@ -457,6 +477,9 @@ async function joinQueue(code) {
     if (!codeErrorEl || codeErrorEl.hidden) {
       showToast(err.message || "Unable to join the queue", "error");
     }
+  } finally {
+    isJoiningQueue = false;
+    updateCodeSubmitState();
   }
 }
 
@@ -1076,6 +1099,14 @@ if (codeInput && !isAdmin) {
     if (codeInput.value !== normalized) {
       codeInput.value = normalized;
     }
+    if (codeErrorEl && !codeErrorEl.hidden) {
+      codeErrorEl.hidden = true;
+      codeErrorEl.textContent = "";
+    }
+    updateCodeSubmitState();
+    if (normalized.length === 5 && !isJoiningQueue && codeForm) {
+      codeForm.requestSubmit();
+    }
   });
 }
 
@@ -1092,6 +1123,7 @@ if (codeForm && !isAdmin) {
     }
     joinQueue(code);
   });
+  updateCodeSubmitState();
 }
 
 if (queueLeaveButton && !isAdmin) {

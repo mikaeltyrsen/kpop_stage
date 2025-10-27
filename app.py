@@ -2570,7 +2570,7 @@ def main() -> None:
 
     LOGGER.info("Starting HTTP server. HTTPS support is disabled.")
 
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=8050)
 
 
 if __name__ == "__main__":
