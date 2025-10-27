@@ -295,21 +295,42 @@ function updateQueueUI(payload) {
       clearQueueCountdown();
       queueReadyToastShown = false;
       const position = Number.isFinite(entry.position) ? entry.position : null;
+      const ahead = position && position > 1 ? position - 1 : 0;
+      const isNext = ahead === 1;
       if (queueHeading) {
-        queueHeading.textContent = position && position <= 1 ? "You're almost up" : "You're in line";
+        if (isNext) {
+          queueHeading.textContent = "You're NEXT in line";
+        } else if (position && position <= 1) {
+          queueHeading.textContent = "You're almost up";
+        } else {
+          queueHeading.textContent = "You're in line";
+        }
       }
       if (queuePositionEl) {
-        if (position && position > 0) {
+        if (isNext) {
+          queuePositionEl.textContent = "You are NEXT in line.";
+        } else if (position && position > 0) {
           queuePositionEl.textContent = `You are #${position} in line.`;
         } else {
           queuePositionEl.textContent = "You have a spot in line.";
         }
       }
       if (queueEtaEl) {
-        queueEtaEl.textContent = describeEstimatedWait(entry.estimated_wait_seconds);
+        if (isNext && Number.isFinite(entry.estimated_wait_seconds)) {
+          const remainingSeconds = Math.max(
+            0,
+            Math.ceil(Number(entry.estimated_wait_seconds))
+          );
+          if (remainingSeconds <= 0) {
+            queueEtaEl.textContent = "Estimated wait: Any moment now.";
+          } else {
+            queueEtaEl.textContent = `Estimated wait: ${formatTime(remainingSeconds)} remaining.`;
+          }
+        } else {
+          queueEtaEl.textContent = describeEstimatedWait(entry.estimated_wait_seconds);
+        }
       }
       if (queueMessageEl) {
-        const ahead = position && position > 1 ? position - 1 : 0;
         if (ahead > 1) {
           queueMessageEl.textContent = `${ahead} people are ahead of you.`;
         } else if (ahead === 1) {

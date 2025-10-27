@@ -1,5 +1,6 @@
 import json
 import logging
+import math
 import os
 import random
 import shlex
@@ -318,7 +319,13 @@ class QueueManager:
         with self._lock:
             self._expire_ready_locked(now, is_playing=is_playing)
 
-    def _serialize_entry_locked(self, entry: QueueEntry, now: float) -> Dict[str, Any]:
+    def _serialize_entry_locked(
+        self,
+        entry: QueueEntry,
+        now: float,
+        *,
+        active_remaining: Optional[float] = None,
+    ) -> Dict[str, Any]:
         info: Dict[str, Any] = {
             "id": entry.id,
             "state": entry.status,
@@ -339,7 +346,15 @@ class QueueManager:
                 if candidate.status in self.ACTIVE_STATES:
                     ahead += 1
             info["position"] = ahead + 1
-            info["estimated_wait_seconds"] = ahead * self.ESTIMATED_SECONDS_PER_USER
+            estimated_wait = ahead * self.ESTIMATED_SECONDS_PER_USER
+            if (
+                ahead == 1
+                and not self._admin_playing
+                and active_remaining is not None
+                and math.isfinite(active_remaining)
+            ):
+                estimated_wait = max(0.0, float(active_remaining))
+            info["estimated_wait_seconds"] = estimated_wait
         else:
             info["position"] = None
         return info
@@ -349,6 +364,7 @@ class QueueManager:
         entry_id: Optional[str],
         *,
         is_playing: bool,
+        active_remaining: Optional[float] = None,
     ) -> Dict[str, Any]:
         now = time.time()
         with self._lock:
@@ -362,7 +378,11 @@ class QueueManager:
                 "selection_timeout": self.SELECTION_TIMEOUT,
             }
             if entry:
-                payload["entry"] = self._serialize_entry_locked(entry, now)
+                payload["entry"] = self._serialize_entry_locked(
+                    entry,
+                    now,
+                    active_remaining=active_remaining if is_playing else None,
+                )
             else:
                 payload["entry"] = None
             return payload
@@ -1903,6 +1923,48 @@ def _parse_admin_flag(value: Any) -> bool:
     return bool(value)
 
 
+def _calculate_remaining_playback_seconds(duration: Any, position: Any) -> Optional[float]:
+    try:
+        duration_value = float(duration)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(duration_value) or duration_value <= 0:
+        return None
+
+    try:
+        position_value = float(position)
+    except (TypeError, ValueError):
+        position_value = 0.0
+    if not math.isfinite(position_value):
+        position_value = 0.0
+
+    return max(0.0, duration_value - max(0.0, position_value))
+
+
+def _queue_playback_context() -> Tuple[bool, Optional[float]]:
+    try:
+        state = controller.query_state()
+    except Exception:
+        LOGGER.exception("Unable to query playback state for queue context")
+        state = None
+
+    is_playing = playback_session.has_active()
+    remaining: Optional[float] = None
+
+    if isinstance(state, dict):
+        default_flag = state.get("is_default")
+        if default_flag is not None:
+            is_playing = not bool(default_flag)
+
+        if is_playing:
+            remaining = _calculate_remaining_playback_seconds(
+                state.get("duration"),
+                state.get("position"),
+            )
+
+    return is_playing, remaining
+
+
 def _request_queue_id(data: Optional[Dict[str, Any]] = None) -> Optional[str]:
     if data:
         entry_value = data.get("entry_id")
@@ -1929,7 +1991,7 @@ def api_queue_join() -> Any:
     data = request.get_json(force=True, silent=True) or {}
     provided_code = str(data.get("code") or "").strip()
     entry_id = _request_queue_id(data)
-    is_playing = playback_session.has_active()
+    is_playing, remaining = _queue_playback_context()
 
     try:
         entry, created = queue_manager.join(
@@ -1940,7 +2002,11 @@ def api_queue_join() -> Any:
     except ValueError:
         return jsonify({"error": "Invalid access code"}), 403
 
-    status_payload = queue_manager.get_status(entry.id, is_playing=is_playing)
+    status_payload = queue_manager.get_status(
+        entry.id,
+        is_playing=is_playing,
+        active_remaining=remaining,
+    )
     response_payload = {"status": "joined", "created": created, **status_payload}
     response = jsonify(response_payload)
     response.set_cookie(
@@ -1958,9 +2024,11 @@ def api_queue_join() -> Any:
 @app.route("/api/queue/status")
 def api_queue_status() -> Any:
     entry_id = _request_queue_id()
+    is_playing, remaining = _queue_playback_context()
     status_payload = queue_manager.get_status(
         entry_id,
-        is_playing=playback_session.has_active(),
+        is_playing=is_playing,
+        active_remaining=remaining,
     )
     response = jsonify(status_payload)
     if entry_id and not status_payload.get("entry"):
