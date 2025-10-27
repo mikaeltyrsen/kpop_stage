@@ -348,12 +348,12 @@ class QueueManager:
             info["position"] = ahead + 1
             estimated_wait = ahead * self.ESTIMATED_SECONDS_PER_USER
             if (
-                ahead == 1
-                and not self._admin_playing
+                ahead > 0
                 and active_remaining is not None
                 and math.isfinite(active_remaining)
             ):
-                estimated_wait = max(0.0, float(active_remaining))
+                remaining = max(0.0, float(active_remaining))
+                estimated_wait = remaining + max(0, ahead - 1) * self.ESTIMATED_SECONDS_PER_USER
             info["estimated_wait_seconds"] = estimated_wait
         else:
             info["position"] = None
