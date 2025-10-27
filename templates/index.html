@@ -15,12 +15,69 @@
     >
       Restart Pi
     </button>
-    <main>
-      <header>
-        <h1>Music Video Selector</h1>
-        <p>Choose a video to play on the stage screen.</p>
-      </header>
-      <section id="video-list" class="video-grid" aria-live="polite"></section>
+    <main id="controller-app">
+      <div class="logo">
+        <img src="/static/demon_logo.png" />
+      </div>
+      <section
+        id="expired-notice"
+        class="card expired-notice"
+        hidden
+        aria-live="assertive"
+      >
+        <h2>Time ran out</h2>
+        <p id="expired-notice-message">
+          Your spot expired. Enter the new code to rejoin.
+        </p>
+      </section>
+      <section id="access-section" class="card gate-card" aria-live="polite">
+        <h1>Join the stage queue</h1>
+        <p>Enter the 5-digit code shown on the stage screen to reserve your spot.</p>
+        <form id="code-form" class="code-form" autocomplete="off">
+          <label class="code-label" for="code-input">Stage code</label>
+          <input
+            id="code-input"
+            class="code-input"
+            type="tel"
+            inputmode="numeric"
+            pattern="[0-9]{5}"
+            maxlength="5"
+            placeholder="00000"
+            aria-describedby="code-error"
+            required
+          />
+          <button type="submit" class="primary-button" disabled>
+            Join line
+          </button>
+        </form>
+        <p id="code-error" class="form-error" hidden></p>
+      </section>
+
+      <section id="queue-section" class="card queue-card" hidden aria-live="polite">
+        <div class="queue-status">
+          <h2 id="queue-heading"></h2>
+          <p id="queue-position" class="queue-position"></p>
+          <p id="queue-eta" class="queue-eta"></p>
+          <p id="queue-message" class="queue-message"></p>
+          <p id="queue-countdown" class="queue-countdown" hidden></p>
+        </div>
+        <div class="queue-actions">
+          <button type="button" id="queue-leave-button" class="secondary-button">
+            Leave line
+          </button>
+        </div>
+      </section>
+
+      <section id="player-section" class="card player-card" hidden>
+        <header>
+          <h1>Music Video Selector</h1>
+          <p>Choose a video to play on the stage screen.</p>
+        </header>
+        <div id="player-playing-overlay" class="player-playing-overlay" hidden>
+          <p>Your song is playing on the stage.</p>
+        </div>
+        <section id="video-list" class="video-grid" aria-live="polite"></section>
+      </section>
     </main>
     <template id="video-card-template">
       <article class="video-card">
@@ -32,7 +89,7 @@
       </article>
     </template>
     <div id="toast" role="status" aria-live="assertive"></div>
-    <div id="player-bar" class="player-bar is-default" aria-live="polite">
+    <div id="player-bar" class="player-bar is-default" aria-live="polite" hidden>
       <div class="player-info">
         <div class="player-artwork" aria-hidden="true"></div>
         <div class="player-text">

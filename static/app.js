@@ -14,12 +14,31 @@ const playerStopButton = document.getElementById("player-stop-button");
 const smokeButton = document.getElementById("smoke-button");
 const snowMachineButton = document.getElementById("snow-machine-button");
 const rebootButton = document.getElementById("player-reboot-button");
+const accessSection = document.getElementById("access-section");
+const codeForm = document.getElementById("code-form");
+const codeInput = document.getElementById("code-input");
+const codeSubmitButton = codeForm
+  ? codeForm.querySelector('button[type="submit"]')
+  : null;
+const codeErrorEl = document.getElementById("code-error");
+const queueSection = document.getElementById("queue-section");
+const queueHeading = document.getElementById("queue-heading");
+const queuePositionEl = document.getElementById("queue-position");
+const queueEtaEl = document.getElementById("queue-eta");
+const queueMessageEl = document.getElementById("queue-message");
+const queueCountdownEl = document.getElementById("queue-countdown");
+const queueLeaveButton = document.getElementById("queue-leave-button");
+const expiredNotice = document.getElementById("expired-notice");
+const expiredNoticeMessage = document.getElementById("expired-notice-message");
+const playerSection = document.getElementById("player-section");
+const playerOverlay = document.getElementById("player-playing-overlay");
 const searchParams = new URLSearchParams(window.location.search);
 const adminParam = (searchParams.get("admin") || "").toLowerCase();
 const isAdmin = ["1", "true", "yes", "on"].includes(adminParam);
 const rebootButtonDefaultLabel = rebootButton ? rebootButton.textContent.trim() : "Restart Pi";
 
 let userKey = null;
+let codeDraftValue = "";
 const videoButtons = new Map();
 
 let isFetchingStatus = false;
@@ -31,13 +50,176 @@ let latestStatus = null;
 let isTriggeringSmoke = false;
 let isTogglingSnowMachine = false;
 let isSendingReboot = false;
+let queuePollTimer = null;
+let queueCountdownTimer = null;
+let queueReadyExpiresAt = null;
+let lastQueueState = null;
+let currentQueueState = null;
+let isJoiningQueue = false;
+let toastHideTimer = null;
+let toastHideTimerContext = null;
+let activeToastContext = null;
 
-function showToast(message, type = "info") {
+function hideToast(context = null) {
+  if (!toastEl) {
+    return;
+  }
+  if (context && activeToastContext && activeToastContext !== context) {
+    return;
+  }
+  toastEl.classList.remove("visible", "error");
+  if (!context || activeToastContext === context) {
+    activeToastContext = null;
+  }
+  if (!context || !toastHideTimerContext || toastHideTimerContext === context) {
+    if (toastHideTimer) {
+      clearTimeout(toastHideTimer);
+      toastHideTimer = null;
+      toastHideTimerContext = null;
+    }
+  }
+}
+
+function showToast(message, options = {}) {
+  if (!toastEl) {
+    return;
+  }
+
+  let type = "info";
+  let duration = 2400;
+  let persist = false;
+  let context = null;
+
+  if (typeof options === "string") {
+    type = options;
+  } else if (options && typeof options === "object") {
+    ({ type = "info", duration = 2400, persist = false, context = null } = options);
+  }
+
+  if (toastHideTimer) {
+    clearTimeout(toastHideTimer);
+    toastHideTimer = null;
+    toastHideTimerContext = null;
+  }
+
   toastEl.textContent = message;
-  toastEl.className = type === "error" ? "visible error" : "visible";
-  setTimeout(() => {
-    toastEl.classList.remove("visible", "error");
-  }, 2400);
+  toastEl.classList.toggle("error", type === "error");
+  toastEl.classList.add("visible");
+  activeToastContext = context;
+
+  if (persist) {
+    return;
+  }
+
+  const timeout = Number.isFinite(duration) ? Math.max(0, duration) : 2400;
+  if (timeout <= 0) {
+    hideToast(context);
+    return;
+  }
+
+  toastHideTimerContext = context;
+  toastHideTimer = setTimeout(() => {
+    hideToast(context);
+  }, timeout);
+}
+
+function showExpiredNotice(message) {
+  if (expiredNotice) {
+    expiredNotice.hidden = false;
+  }
+  if (expiredNoticeMessage && typeof message === "string") {
+    expiredNoticeMessage.textContent = message;
+  }
+}
+
+function hideExpiredNotice() {
+  if (expiredNotice) {
+    expiredNotice.hidden = true;
+  }
+}
+
+function setPlayerSectionLocked(locked) {
+  if (!playerSection) {
+    return;
+  }
+  playerSection.classList.toggle("is-locked", Boolean(locked));
+}
+
+function setBodyQueueState(state) {
+  const states = ["queue-waiting", "queue-ready", "queue-playing"];
+  document.body.classList.remove(...states);
+  currentQueueState = state;
+  if (state) {
+    document.body.classList.add(state);
+  } else {
+    currentQueueState = null;
+  }
+}
+
+function showReadyToast(remainingSeconds = null) {
+  if (!toastEl) {
+    return;
+  }
+  let seconds = Number.isFinite(remainingSeconds) ? remainingSeconds : null;
+  if (!Number.isFinite(seconds) && queueReadyExpiresAt !== null) {
+    const diff = queueReadyExpiresAt - Date.now();
+    seconds = Math.max(0, Math.ceil(diff / 1000));
+  }
+  let message = "You're up!";
+  if (Number.isFinite(seconds)) {
+    if (seconds > 0) {
+      message = `${message} You have ${seconds}s to pick a song.`;
+    } else {
+      message = `${message} Time's up!`;
+    }
+  }
+  if (activeToastContext === "queue-ready" && toastEl.innerHTML === message) {
+    return;
+  }
+  showToast(message, { persist: true, context: "queue-ready" });
+}
+
+function clearQueueCountdown() {
+  if (queueCountdownTimer) {
+    clearInterval(queueCountdownTimer);
+    queueCountdownTimer = null;
+  }
+  queueReadyExpiresAt = null;
+  if (queueCountdownEl) {
+    queueCountdownEl.hidden = true;
+    queueCountdownEl.textContent = "";
+  }
+  hideToast("queue-ready");
+}
+
+function updateQueueCountdown() {
+  if (!queueCountdownEl || queueReadyExpiresAt === null) {
+    return;
+  }
+  const remainingMs = queueReadyExpiresAt - Date.now();
+  const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+  queueCountdownEl.textContent = formatTime(remainingSeconds);
+  if (currentQueueState === "queue-ready") {
+    showReadyToast(remainingSeconds);
+  }
+  if (remainingSeconds <= 0 && queueCountdownTimer) {
+    clearInterval(queueCountdownTimer);
+    queueCountdownTimer = null;
+  }
+}
+
+function startQueueCountdown(seconds) {
+  if (!queueCountdownEl) {
+    return;
+  }
+  const safeSeconds = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+  queueReadyExpiresAt = Date.now() + safeSeconds * 1000;
+  queueCountdownEl.hidden = false;
+  updateQueueCountdown();
+  if (queueCountdownTimer) {
+    clearInterval(queueCountdownTimer);
+  }
+  queueCountdownTimer = setInterval(updateQueueCountdown, 500);
 }
 
 async function registerUser() {
@@ -75,6 +257,415 @@ function applyAdminVisibility() {
   }
   if (rebootButton) {
     rebootButton.hidden = !isAdmin;
+  }
+  if (isAdmin) {
+    if (accessSection) {
+      accessSection.hidden = true;
+    }
+    if (queueSection) {
+      queueSection.hidden = true;
+    }
+    if (playerSection) {
+      playerSection.hidden = false;
+    }
+  }
+}
+
+function formatEstimatedWaitDuration(seconds, fallbackMinutes = 3) {
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return `${fallbackMinutes}min remaining.`;
+  }
+  if (seconds < 60) {
+    const secs = Math.max(1, Math.ceil(seconds));
+    return `${secs}sec remaining.`;
+  }
+  const minutes = Math.max(1, Math.ceil(seconds / 60));
+  return `${minutes}min remaining.`;
+}
+
+function describeEstimatedWait(seconds) {
+  return `Estimated wait: ${formatEstimatedWaitDuration(seconds)}`;
+}
+
+function normalizeCodeInput(value) {
+  return String(value || "").replace(/\D/g, "").slice(0, 5);
+}
+
+function updateCodeSubmitState() {
+  if (!codeSubmitButton) {
+    return;
+  }
+  const code = normalizeCodeInput(codeInput ? codeInput.value : "");
+  const canSubmit = code.length === 5 && !isJoiningQueue;
+  codeSubmitButton.disabled = !canSubmit;
+}
+
+function resetQueueUiForIdle(options = {}) {
+  const { preserveCodeInput = false } = options;
+  setBodyQueueState(null);
+  clearQueueCountdown();
+  hideExpiredNotice();
+  document.body.classList.remove("is-playing");
+  if (playerOverlay) {
+    playerOverlay.hidden = true;
+  }
+  if (queueSection) {
+    queueSection.hidden = true;
+  }
+  if (queueHeading) {
+    queueHeading.textContent = "";
+  }
+  if (queuePositionEl) {
+    queuePositionEl.textContent = "";
+  }
+  if (queueEtaEl) {
+    queueEtaEl.textContent = "";
+  }
+  if (queueMessageEl) {
+    queueMessageEl.textContent = "";
+  }
+  if (queueLeaveButton) {
+    queueLeaveButton.hidden = true;
+    queueLeaveButton.disabled = false;
+  }
+  if (!isAdmin) {
+    if (accessSection) {
+      accessSection.hidden = false;
+    }
+    if (playerSection) {
+      playerSection.hidden = true;
+    }
+    setPlayerSectionLocked(true);
+    if (codeInput) {
+      if (preserveCodeInput) {
+        codeInput.value = codeDraftValue;
+      } else {
+        codeDraftValue = "";
+        codeInput.value = "";
+      }
+    }
+    updateCodeSubmitState();
+    userKey = null;
+  }
+  lastQueueState = null;
+}
+
+function updateQueueUI(payload) {
+  if (!payload || typeof payload !== "object") {
+    return;
+  }
+
+  const entry = payload.entry && typeof payload.entry === "object" ? payload.entry : null;
+  if (!entry) {
+    if (!isAdmin) {
+      const shouldPreserveCode = Boolean(codeDraftValue);
+      resetQueueUiForIdle({ preserveCodeInput: shouldPreserveCode });
+    }
+    return;
+  }
+
+  const state = entry.state;
+  const previousState = lastQueueState;
+  lastQueueState = state;
+
+  if (state !== "expired") {
+    hideExpiredNotice();
+  }
+
+  if (accessSection) {
+    accessSection.hidden = true;
+  }
+  if (queueSection) {
+    queueSection.hidden = false;
+  }
+
+  if (queueLeaveButton) {
+    queueLeaveButton.hidden = false;
+    queueLeaveButton.disabled = false;
+  }
+
+  if (queuePositionEl) {
+    queuePositionEl.textContent = "";
+  }
+  if (queueEtaEl) {
+    queueEtaEl.textContent = "";
+  }
+  if (queueMessageEl) {
+    queueMessageEl.textContent = "";
+  }
+
+  switch (state) {
+    case "waiting": {
+      setBodyQueueState("queue-waiting");
+      clearQueueCountdown();
+      const position = Number.isFinite(entry.position) ? entry.position : null;
+      const ahead = position && position > 1 ? position - 1 : 0;
+      const isNext = ahead === 1;
+      if (queueHeading) {
+        if (isNext) {
+          queueHeading.textContent = "You're NEXT in line";
+        } else if (position && position <= 1) {
+          queueHeading.textContent = "You're almost up";
+        } else {
+          queueHeading.textContent = "You're in line";
+        }
+      }
+      if (queuePositionEl) {
+        if (isNext) {
+          queuePositionEl.textContent = "Hang tight while we open the stage for you.";
+        } else if (position && position > 0) {
+          queuePositionEl.textContent = `You are #${position} in line.`;
+        } else {
+          queuePositionEl.textContent = "You have a spot in line.";
+        }
+      }
+      if (queueEtaEl) {
+        if (isNext && Number.isFinite(entry.estimated_wait_seconds)) {
+          const remainingSeconds = Math.max(
+            0,
+            Math.ceil(Number(entry.estimated_wait_seconds))
+          );
+          if (remainingSeconds <= 0) {
+            queueEtaEl.textContent = "Estimated wait: Any moment now.";
+          } else {
+            queueEtaEl.textContent = `Estimated wait: ${formatEstimatedWaitDuration(
+              remainingSeconds,
+              0
+            )}`;
+          }
+        } else {
+          queueEtaEl.textContent = describeEstimatedWait(entry.estimated_wait_seconds);
+        }
+      }
+      if (queueMessageEl) {
+        if (ahead > 1) {
+          queueMessageEl.textContent = `${ahead} people are ahead of you.`;
+        } else if (ahead === 1) {
+          queueMessageEl.textContent =
+            "Get ready. You'll have 30s to select your song when the stage opens.";
+        } else {
+          queueMessageEl.textContent = "You'll be invited to pick a song soon.";
+        }
+      }
+      if (!isAdmin && playerSection) {
+        playerSection.hidden = true;
+        setPlayerSectionLocked(true);
+        userKey = null;
+        if (playerOverlay) {
+          playerOverlay.hidden = true;
+        }
+        document.body.classList.remove("is-playing");
+      }
+      break;
+    }
+    case "ready": {
+      setBodyQueueState("queue-ready");
+      const expiresIn = Number.isFinite(entry.ready_expires_in)
+        ? entry.ready_expires_in
+        : payload.selection_timeout;
+      startQueueCountdown(expiresIn || 30);
+      if (queueHeading) {
+        queueHeading.textContent = "It's your turn!";
+      }
+      if (queuePositionEl) {
+        queuePositionEl.textContent = "Head to the player below.";
+      }
+      if (queueEtaEl) {
+        queueEtaEl.textContent = "Select a song within 30 seconds.";
+      }
+      if (queueMessageEl) {
+        queueMessageEl.textContent = "Pick one song to play on the stage.";
+      }
+      if (!isAdmin && playerSection) {
+        playerSection.hidden = false;
+        setPlayerSectionLocked(false);
+      }
+      if (playerOverlay) {
+        playerOverlay.hidden = true;
+      }
+      document.body.classList.remove("is-playing");
+      if (entry.user_key) {
+        userKey = entry.user_key;
+      }
+      showReadyToast();
+      if (!isAdmin && playerSection && previousState !== "ready") {
+        playerSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      break;
+    }
+    case "playing": {
+      setBodyQueueState("queue-playing");
+      clearQueueCountdown();
+      if (queueHeading) {
+        queueHeading.textContent = "Enjoy the show!";
+      }
+      if (queuePositionEl) {
+        queuePositionEl.textContent = "Your song is live on the stage.";
+      }
+      if (queueMessageEl) {
+        queueMessageEl.textContent = "";
+      }
+      if (queueLeaveButton) {
+        queueLeaveButton.hidden = true;
+      }
+      if (!isAdmin && playerSection) {
+        playerSection.hidden = true;
+        setPlayerSectionLocked(true);
+      }
+      if (playerOverlay) {
+        playerOverlay.hidden = true;
+      }
+      if (entry.user_key) {
+        userKey = entry.user_key;
+      }
+      break;
+    }
+    case "expired": {
+      resetQueueUiForIdle();
+      showExpiredNotice("Your spot expired. Enter the new code to rejoin.");
+      break;
+    }
+    case "cancelled": {
+      resetQueueUiForIdle();
+      if (queueSection) {
+        queueSection.hidden = false;
+      }
+      if (queuePositionEl) {
+        queuePositionEl.textContent = "";
+      }
+      if (queueLeaveButton) {
+        queueLeaveButton.hidden = true;
+      }
+      if (queueHeading) {
+        queueHeading.textContent = "You left the line";
+      }
+      if (queueMessageEl) {
+        queueMessageEl.textContent = "Re-enter the current code any time to join again.";
+      }
+      break;
+    }
+    case "finished": {
+      resetQueueUiForIdle();
+      if (queueSection) {
+        queueSection.hidden = false;
+      }
+      if (queuePositionEl) {
+        queuePositionEl.textContent = "";
+      }
+      if (queueLeaveButton) {
+        queueLeaveButton.hidden = true;
+      }
+      if (queueHeading) {
+        queueHeading.textContent = "Hope you enjoyed the show!";
+      }
+      if (queueMessageEl) {
+        queueMessageEl.innerHTML = 'Please make sure to share and tag @tyrsen in any posts or videos. <a href="https://instagram.com/tyrsen" class="ig-link"><img class="icon" src="/static/ig_logo.webp" /> @tyrsen</a>';
+      }
+      break;
+    }
+    default: {
+      resetQueueUiForIdle();
+      break;
+    }
+  }
+}
+
+async function fetchQueueStatus(showErrors = false) {
+  try {
+    const response = await fetch("/api/queue/status", { credentials: "include" });
+    if (!response.ok) {
+      throw new Error(`Queue status failed (${response.status})`);
+    }
+    const payload = await response.json();
+    updateQueueUI(payload);
+  } catch (err) {
+    console.error(err);
+    if (showErrors) {
+      showToast("Unable to sync the queue", "error");
+    }
+  }
+}
+
+async function joinQueue(code) {
+  if (!code || isJoiningQueue) {
+    return;
+  }
+  if (codeErrorEl) {
+    codeErrorEl.hidden = true;
+    codeErrorEl.textContent = "";
+  }
+  isJoiningQueue = true;
+  updateCodeSubmitState();
+  try {
+    const response = await fetch("/api/queue/join", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = payload.error || "Invalid access code.";
+      if (codeErrorEl) {
+        codeErrorEl.hidden = false;
+        codeErrorEl.textContent = message;
+      }
+      throw new Error(message);
+    }
+    if (codeInput) {
+      codeInput.value = "";
+    }
+    codeDraftValue = "";
+    updateQueueUI(payload);
+  } catch (err) {
+    console.error(err);
+    if (!codeErrorEl || codeErrorEl.hidden) {
+      showToast(err.message || "Unable to join the queue", "error");
+    }
+  } finally {
+    isJoiningQueue = false;
+    updateCodeSubmitState();
+  }
+}
+
+async function leaveQueue() {
+  try {
+    if (queueLeaveButton) {
+      queueLeaveButton.disabled = true;
+    }
+    const response = await fetch("/api/queue/leave", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.error || `Unable to leave queue (${response.status})`);
+    }
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || "Unable to leave the line", "error");
+  } finally {
+    if (queueLeaveButton) {
+      queueLeaveButton.disabled = false;
+    }
+    fetchQueueStatus();
+  }
+}
+
+function startQueuePolling() {
+  if (queuePollTimer) {
+    clearInterval(queuePollTimer);
+  }
+  queuePollTimer = setInterval(() => {
+    fetchQueueStatus();
+  }, 5000);
+}
+
+function stopQueuePolling() {
+  if (queuePollTimer) {
+    clearInterval(queuePollTimer);
+    queuePollTimer = null;
   }
 }
 
@@ -346,6 +937,10 @@ function updatePlayerUI(status) {
       ? status.controls
       : {};
   const canStop = Boolean(controls.can_stop);
+  const hasActiveOwner = Boolean(controls.has_active_owner);
+  const queueState = currentQueueState;
+  const isQueueReady = queueState === "queue-ready";
+  const isQueuePlaying = queueState === "queue-playing";
 
   if (playerStopButton) {
     playerStopButton.hidden = !canStop;
@@ -356,26 +951,37 @@ function updatePlayerUI(status) {
     return;
   }
 
-  const isVideo = status.mode === "video" && status.video;
-  playerBar.classList.toggle("is-default", !isVideo);
+  const isVideoMode = status.mode === "video";
+  const videoInfo = isVideoMode && status.video ? status.video : null;
+  const isVideoActive = isVideoMode && hasActiveOwner;
+  const shouldHideSelection =
+    !isAdmin && !isQueueReady && ((isQueuePlaying && isVideoMode) || isVideoActive);
+  document.body.classList.toggle("is-playing", shouldHideSelection);
+  if (playerOverlay) {
+    playerOverlay.hidden = !shouldHideSelection;
+  }
+  playerBar.hidden = !isVideoMode;
+  playerBar.classList.toggle("is-default", !isVideoMode);
 
   if (playerStatusEl) {
-    playerStatusEl.textContent = isVideo ? "Now playing" : "Default loop active";
+    playerStatusEl.textContent = isVideoMode ? "Now playing" : "Default loop active";
   }
 
   if (playerTitleEl) {
-    if (isVideo) {
-      playerTitleEl.textContent = status.video.name || "Playing";
+    if (videoInfo && videoInfo.name) {
+      playerTitleEl.textContent = videoInfo.name;
+    } else if (isVideoMode) {
+      playerTitleEl.textContent = "Playing";
     } else {
       playerTitleEl.textContent = "Stage screen is showing the loop.";
     }
   }
 
   if (playerArtworkEl) {
-    if (isVideo && status.video.poster) {
-      playerArtworkEl.style.backgroundImage = `url(${status.video.poster})`;
+    if (videoInfo && videoInfo.poster) {
+      playerArtworkEl.style.backgroundImage = `url(${videoInfo.poster})`;
       playerArtworkEl.classList.remove("is-placeholder");
-    } else if (isVideo) {
+    } else if (isVideoMode) {
       playerArtworkEl.style.backgroundImage = "";
       playerArtworkEl.classList.add("is-placeholder");
     } else {
@@ -409,7 +1015,7 @@ function updatePlayerUI(status) {
 
   if (volumeSlider && isAdmin) {
     const volume = Number.isFinite(status.volume) ? Math.max(0, Math.min(100, status.volume)) : null;
-    volumeSlider.disabled = !isVideo;
+    volumeSlider.disabled = !isVideoMode;
     if (volume !== null && !isVolumeInteracting) {
       volumeSlider.value = String(Math.round(volume));
     }
@@ -642,15 +1248,59 @@ if (rebootButton && isAdmin) {
   rebootButton.hidden = true;
 }
 
-async function initializeController() {
-  await registerUser();
+if (codeInput && !isAdmin) {
+  codeInput.addEventListener("input", () => {
+    const normalized = normalizeCodeInput(codeInput.value);
+    if (codeInput.value !== normalized) {
+      codeInput.value = normalized;
+    }
+    codeDraftValue = normalized;
+    if (codeErrorEl && !codeErrorEl.hidden) {
+      codeErrorEl.hidden = true;
+      codeErrorEl.textContent = "";
+    }
+    updateCodeSubmitState();
+    if (normalized.length === 5 && !isJoiningQueue && codeForm) {
+      codeForm.requestSubmit();
+    }
+  });
+}
+
+if (codeForm && !isAdmin) {
+  codeForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const code = normalizeCodeInput(codeInput ? codeInput.value : "");
+    if (!code || code.length < 5) {
+      if (codeErrorEl) {
+        codeErrorEl.hidden = false;
+        codeErrorEl.textContent = "Enter the 5-digit code shown on the stage.";
+      }
+      return;
+    }
+    joinQueue(code);
+  });
+  updateCodeSubmitState();
+}
+
+if (queueLeaveButton && !isAdmin) {
+  queueLeaveButton.addEventListener("click", leaveQueue);
+}
+
+async function initializeApp() {
   applyAdminVisibility();
+  if (isAdmin) {
+    await registerUser();
+  }
   await fetchVideos();
   await fetchStatus();
   scheduleStatusPolling();
+  if (!isAdmin) {
+    await fetchQueueStatus(true);
+    startQueuePolling();
+  }
 }
 
-initializeController().catch((err) => {
+initializeApp().catch((err) => {
   console.error(err);
   showToast("Unable to initialize controller", "error");
 });
