@@ -60,7 +60,10 @@ def test_stage_overlay_retries_when_command_initially_fails(monkeypatch, tmp_pat
         {"error": "success", "data": "7"},
     ])
 
+    commands = []
+
     def fake_send_ipc_command(*command):
+        commands.append(command)
         if command[:1] == ("sub-add",):
             return sub_add_responses.popleft()
         if command[:2] == ("get_property", "sid"):
@@ -83,3 +86,4 @@ def test_stage_overlay_retries_when_command_initially_fails(monkeypatch, tmp_pat
     assert controller._stage_overlay_active is True
     assert controller._stage_overlay_text == "ABC"
     assert controller._stage_overlay_sid == 7
+    assert ("set_property", "sub-visibility", "yes") in commands

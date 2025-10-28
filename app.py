@@ -1483,7 +1483,7 @@ class PlaybackController:
         try:
             self._stage_overlay_subtitle_path.parent.mkdir(parents=True, exist_ok=True)
             escaped_text = self._escape_ass_text(text)
-            display_text = f"Stage code: {escaped_text}" if escaped_text else ""
+            display_text = escaped_text if escaped_text else ""
             contents = """[Script Info]
 ScriptType: v4.00+
 PlayResX: 1920
@@ -1493,7 +1493,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: StageCode,DejaVu Sans,72,&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,3,0,0,2,72,72,120,1
+Style: StageCode,DejaVu Sans,72,&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,3,3,4,1,72,72,120,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -1578,6 +1578,14 @@ Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{text}
         try:
             response = self._send_ipc_command("sub-add", str(subtitle_path), "auto", "select")
             if response.get("error") == "success":
+                visibility_response = self._send_ipc_command(
+                    "set_property", "sub-visibility", "yes"
+                )
+                if visibility_response.get("error") != "success":
+                    LOGGER.debug(
+                        "Unable to ensure stage code subtitle visibility: %s",
+                        visibility_response.get("error"),
+                    )
                 sid_value: Optional[int] = None
                 sid_response = self._send_ipc_command("get_property", "sid")
                 if sid_response.get("error") == "success":
