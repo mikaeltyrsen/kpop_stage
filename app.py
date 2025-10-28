@@ -1476,7 +1476,7 @@ class PlaybackController:
                 normalized = text.replace("\r\n", "\n").replace("\r", "\n").strip()
                 path.parent.mkdir(parents=True, exist_ok=True)
                 contents = (
-                    "1\n00:00:00,000 --> 09:59:59,999\n{\\an3\\pos(1820,980)}"
+                    "1\n00:00:00,000 --> 09:59:59,999\n{\\an3\\pos(1820,980)\\q2}"
                     + normalized
                     + "\n\n"
                 )

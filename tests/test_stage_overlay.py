@@ -67,7 +67,7 @@ def test_stage_overlay_updates_default_loop_subtitle_when_running(monkeypatch, t
     assert subtitle_path == controller.default_video.with_suffix(".srt")
     assert (
         subtitle_path.read_text(encoding="utf-8")
-        == "1\n00:00:00,000 --> 09:59:59,999\n{\\an3\\pos(1820,980)}ABC\n\n"
+        == "1\n00:00:00,000 --> 09:59:59,999\n{\\an3\\pos(1820,980)\\q2}ABC\n\n"
     )
     assert ("sub-reload",) in commands
 
@@ -123,7 +123,7 @@ def test_start_default_loop_writes_subtitle_before_playback(monkeypatch, tmp_pat
     assert captured["loop"] is True
     assert (
         captured["subtitle"]
-        == "1\n00:00:00,000 --> 09:59:59,999\n{\\an3\\pos(1820,980)}ABC\n\n"
+        == "1\n00:00:00,000 --> 09:59:59,999\n{\\an3\\pos(1820,980)\\q2}ABC\n\n"
     )
 
 
