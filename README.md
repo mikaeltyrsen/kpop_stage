@@ -1,6 +1,6 @@
 # K-pop Stage Controller
 
-A lightweight Flask application designed for a Raspberry Pi-powered music video “stage.” The Pi exposes a Wi-Fi network and serves a control panel on port `666`. Anyone connected can choose a music video to play on the HDMI-connected display. When idle, a default loop video keeps playing in full screen.
+A lightweight Flask application designed for a Raspberry Pi-powered music video “stage.” The Pi exposes a Wi-Fi network and serves a control panel over HTTPS on the standard web ports (`443` with automatic redirects from `80`). Anyone connected can choose a music video to play on the HDMI-connected display. When idle, a default loop video keeps playing in full screen.
 
 ## Features
 
@@ -85,7 +85,16 @@ A lightweight Flask application designed for a Raspberry Pi-powered music video 
    python app.py
    ```
 
-   The app launches the default loop and exposes the control page at `http://<pi-ip-address>:666/`.
+   The app launches the default loop and exposes the control page at `https://<pi-ip-address>/` (HTTP requests to port `80` are redirected automatically).
+
+### HTTPS configuration
+
+The application enables HTTPS by default using the Let's Encrypt certificate paths:
+
+- Certificate: `/etc/letsencrypt/live/player.demonhunters.show/fullchain.pem`
+- Private key: `/etc/letsencrypt/live/player.demonhunters.show/privkey.pem`
+
+Override the defaults by exporting `TLS_CERT_PATH` and/or `TLS_KEY_PATH` before launching the app. You can also customise the listening ports (`HTTP_PORT`, `HTTPS_PORT`) or disable automatic redirects by setting `FORCE_HTTPS=0`.
 
 ## DMX output
 

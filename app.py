@@ -3,6 +3,7 @@ import logging
 import math
 import os
 import random
+import re
 import shlex
 import shutil
 import signal
@@ -12,7 +13,7 @@ import sys
 import threading
 import time
 import uuid
-import re
+from urllib.parse import urlsplit, urlunsplit
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
@@ -43,6 +44,32 @@ WARNING_VIDEO_PATH = MEDIA_DIR / "warning.mp4"
 WELCOME_VIDEO_PATH = MEDIA_DIR / "welcome.mp4"
 DEFAULT_LOOP_TEMPLATE_PATH = DMX_TEMPLATE_DIR / "default_loop_dmx.json"
 SNOW_MACHINE_PRESET_ID = os.environ.get("SNOW_MACHINE_PRESET_ID", "relay_snow_machine")
+
+
+def _int_from_env(variable: str, default: int) -> int:
+    value = os.environ.get(variable)
+    if value is None or not value.strip():
+        return default
+    try:
+        parsed = int(value)
+    except ValueError:
+        return default
+    return parsed
+
+
+DEFAULT_TLS_CERT_PATH = Path(
+    "/etc/letsencrypt/live/player.demonhunters.show/fullchain.pem"
+)
+DEFAULT_TLS_KEY_PATH = Path(
+    "/etc/letsencrypt/live/player.demonhunters.show/privkey.pem"
+)
+TLS_CERT_PATH = Path(os.environ.get("TLS_CERT_PATH", str(DEFAULT_TLS_CERT_PATH)))
+TLS_KEY_PATH = Path(os.environ.get("TLS_KEY_PATH", str(DEFAULT_TLS_KEY_PATH)))
+HTTP_PORT = _int_from_env("HTTP_PORT", 80)
+HTTPS_PORT = _int_from_env("HTTPS_PORT", 443)
+FORCE_HTTPS = (
+    os.environ.get("FORCE_HTTPS", "1").strip().lower() not in {"0", "false", "no", "off"}
+)
 
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 (MEDIA_DIR / "videos").mkdir(parents=True, exist_ok=True)
@@ -1999,6 +2026,10 @@ class PlaybackController:
 
 
 app = Flask(__name__, static_folder="static", template_folder="templates")
+if hasattr(app, "config"):
+    app.config.setdefault("HTTP_PORT", HTTP_PORT)
+    app.config.setdefault("HTTPS_PORT", HTTPS_PORT)
+    app.config.setdefault("ENABLE_HTTPS_REDIRECT", False)
 video_config = load_video_config(DATA_FILE)
 DEFAULT_VIDEO_PATH = resolve_media_path(video_config["default_video"])
 DMX_UNIVERSE = int(os.environ.get("DMX_UNIVERSE", "0"))
@@ -2014,6 +2045,34 @@ snow_machine_controller = SnowMachineController(
     request_timeout=SNOW_MACHINE_TIMEOUT,
 )
 dmx_manager.set_relay_action_callback(snow_machine_controller.handle_relay_action)
+
+
+def _build_https_redirect_url() -> str:
+    raw_url = getattr(request, "url", "http://localhost/")
+    parts = urlsplit(raw_url)
+    host_header = getattr(request, "host", parts.netloc)
+    hostname = (host_header or "localhost").split(":", 1)[0]
+    config = getattr(app, "config", None)
+    https_port = 443
+    if config is not None and hasattr(config, "get"):
+        https_port = config.get("HTTPS_PORT", 443)
+    netloc = hostname if https_port in (443, None) else f"{hostname}:{https_port}"
+    return urlunsplit(("https", netloc, parts.path, parts.query, parts.fragment))
+
+
+def _redirect_http_to_https() -> Optional[Any]:
+    config = getattr(app, "config", None)
+    if config is None or not hasattr(config, "get"):
+        return None
+    if not config.get("ENABLE_HTTPS_REDIRECT"):
+        return None
+    if request.is_secure or request.headers.get("X-Forwarded-Proto", "").lower() == "https":
+        return None
+    return redirect(_build_https_redirect_url(), code=308)
+
+
+if hasattr(app, "before_request"):
+    app.before_request(_redirect_http_to_https)
 
 
 def _handle_default_start(_: Path) -> None:
@@ -2846,6 +2905,24 @@ def api_dmx_preview() -> Any:
     return jsonify({"status": "previewing"})
 
 
+def _serve_app(port: int, *, ssl_context: Optional[Tuple[str, str]] = None) -> None:
+    try:
+        from werkzeug.serving import make_server
+    except ModuleNotFoundError as exc:  # pragma: no cover - environment guard
+        raise RuntimeError("Werkzeug is required to run the HTTP server") from exc
+
+    protocol = "HTTPS" if ssl_context else "HTTP"
+    LOGGER.info("Listening for %s requests on port %s", protocol, port)
+    server = make_server(
+        "0.0.0.0",
+        port,
+        app,
+        threaded=True,
+        ssl_context=ssl_context,
+    )
+    server.serve_forever()
+
+
 def main() -> None:
     ensure_display_powered_on()
 
@@ -2865,9 +2942,46 @@ def main() -> None:
         except Exception:
             LOGGER.exception("Unable to start default DMX template")
 
-    LOGGER.info("Starting HTTP server. HTTPS support is disabled.")
+    app_config = getattr(app, "config", None)
+    if app_config is not None and hasattr(app_config, "__setitem__"):
+        app_config["HTTP_PORT"] = HTTP_PORT
+        app_config["HTTPS_PORT"] = HTTPS_PORT
 
-    app.run(host="0.0.0.0", port=8050)
+    ssl_context: Optional[Tuple[str, str]] = None
+    if TLS_CERT_PATH.is_file() and TLS_KEY_PATH.is_file():
+        ssl_context = (str(TLS_CERT_PATH), str(TLS_KEY_PATH))
+        LOGGER.info(
+            "HTTPS enabled using certificate %s and key %s",
+            TLS_CERT_PATH,
+            TLS_KEY_PATH,
+        )
+        if app_config is not None and hasattr(app_config, "__setitem__"):
+            app_config["ENABLE_HTTPS_REDIRECT"] = FORCE_HTTPS
+            if FORCE_HTTPS:
+                app_config["PREFERRED_URL_SCHEME"] = "https"
+    else:
+        LOGGER.warning(
+            "TLS certificate or key not found (cert=%s, key=%s). Serving HTTP only.",
+            TLS_CERT_PATH,
+            TLS_KEY_PATH,
+        )
+        if app_config is not None and hasattr(app_config, "__setitem__"):
+            app_config["ENABLE_HTTPS_REDIRECT"] = False
+
+    if ssl_context:
+        if HTTP_PORT and HTTP_PORT > 0:
+            http_thread = threading.Thread(
+                target=_serve_app,
+                args=(HTTP_PORT,),
+                kwargs={"ssl_context": None},
+                daemon=True,
+            )
+            http_thread.start()
+        _serve_app(HTTPS_PORT, ssl_context=ssl_context)
+        return
+
+    http_port = HTTP_PORT if HTTP_PORT and HTTP_PORT > 0 else 8050
+    _serve_app(http_port)
 
 
 if __name__ == "__main__":
