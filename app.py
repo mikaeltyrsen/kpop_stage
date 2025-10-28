@@ -1398,6 +1398,12 @@ class PlaybackController:
                 for arg in self._base_command[1:]
             ):
                 self._base_command.append("--sub-visibility=yes")
+            if not any(
+                arg == "--sub-ass-override"
+                or arg.startswith("--sub-ass-override=")
+                for arg in self._base_command[1:]
+            ):
+                self._base_command.append("--sub-ass-override=no")
 
     @property
     def default_missing_message(self) -> str:
