@@ -891,7 +891,7 @@ async function stopPlayback() {
       throw new Error(payload.error || `Unable to stop playback (${response.status})`);
     }
 
-    showToast("Returning to default loop");
+    showToast("Song Ended");
     fetchStatus();
   } catch (err) {
     console.error(err);

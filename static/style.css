@@ -520,6 +520,10 @@ body.is-playing #player-playing-overlay {
   z-index: 10;
 }
 
+.player-bar.is-default {
+  display: none;
+}
+
 .reboot-button {
   position: fixed;
   top: 1rem;

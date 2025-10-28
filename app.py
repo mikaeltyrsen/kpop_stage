@@ -1502,8 +1502,8 @@ class PlaybackController:
                             "Alignment, MarginL, MarginR, MarginV, Encoding"
                         ),
                         (
-                            "Style: StageCode,Arial,72,&H00FFFFFF,&H000000FF,&H64000000,&H64000000,"
-                            "0,0,0,0,100,100,0,0,1,3,0,3,0,100,100,1"
+                            "Style: StageCode,Arial,120,&H00FFFFFF,&H000000FF,&H64000000,&H64000000,"
+                            "0,0,0,0,100,100,0,0,1,3,0,3,0,520,520,1"
                         ),
                         "",
                         "[Events]",
@@ -1512,7 +1512,7 @@ class PlaybackController:
                             "Effect, Text"
                         ),
                         (
-                            "Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\\an3}" + escaped
+                            "Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\an6\pos(1680,870)\q2\bord4\shad2}" + escaped
                         ),
                         "",
                     ]
