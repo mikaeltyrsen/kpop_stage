@@ -80,8 +80,8 @@ def test_stage_overlay_updates_default_loop_subtitle_when_running(monkeypatch, t
                 "Alignment, MarginL, MarginR, MarginV, Encoding"
             ),
             (
-                "Style: StageCode,Arial,72,&H00FFFFFF,&H000000FF,&H64000000,&H64000000,"
-                "0,0,0,0,100,100,0,0,1,3,0,3,0,100,100,1"
+                "Style: StageCode,Arial,120,&H00FFFFFF,&H000000FF,&H64000000,&H64000000,"
+                "0,0,0,0,100,100,0,0,1,3,0,3,0,520,520,1"
             ),
             "",
             "[Events]",
@@ -89,7 +89,7 @@ def test_stage_overlay_updates_default_loop_subtitle_when_running(monkeypatch, t
                 "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, "
                 "Effect, Text"
             ),
-            "Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\\an3}ABC",
+            "Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\\an6\\pos(1680,870)\\q2\\bord4\\shad2}ABC",
             "",
         ]
     )
@@ -134,7 +134,7 @@ def test_start_default_loop_writes_subtitle_before_playback(monkeypatch, tmp_pat
 
     captured = {}
 
-    def fake_play(self, video_path, loop, *, pre_roll_path=None):
+    def fake_play(self, video_path, loop, *, pre_roll_paths=None):
         captured["path"] = video_path
         captured["loop"] = loop
         captured["subtitle"] = self._stage_overlay_subtitle_path.read_text(encoding="utf-8")
@@ -160,8 +160,8 @@ def test_start_default_loop_writes_subtitle_before_playback(monkeypatch, tmp_pat
                 "Alignment, MarginL, MarginR, MarginV, Encoding"
             ),
             (
-                "Style: StageCode,Arial,72,&H00FFFFFF,&H000000FF,&H64000000,&H64000000,"
-                "0,0,0,0,100,100,0,0,1,3,0,3,0,100,100,1"
+                "Style: StageCode,Arial,120,&H00FFFFFF,&H000000FF,&H64000000,&H64000000,"
+                "0,0,0,0,100,100,0,0,1,3,0,3,0,520,520,1"
             ),
             "",
             "[Events]",
@@ -169,7 +169,7 @@ def test_start_default_loop_writes_subtitle_before_playback(monkeypatch, tmp_pat
                 "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, "
                 "Effect, Text"
             ),
-            "Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\\an3}ABC",
+            "Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\\an6\\pos(1680,870)\\q2\\bord4\\shad2}ABC",
             "",
         ]
     )

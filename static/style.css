@@ -251,6 +251,59 @@ body {
   justify-content: flex-end;
 }
 
+.queue-performer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.queue-performer label {
+  margin: 0;
+  font-weight: 700;
+  color: black;
+}
+
+.queue-performer input {
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  border: none;
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 1rem;
+  font-weight: 600;
+  color: #101010;
+  box-shadow: 0 0.35rem 1.1rem rgba(0, 0, 0, 0.12);
+}
+
+.queue-performer input:disabled {
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+.queue-performer-helper {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.queue-performer-status {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.8);
+}
+
+.queue-performer-status.is-success {
+  color: #0c8c59;
+}
+
+.queue-performer-status.is-error {
+  color: #e32785;
+}
+
+.queue-performer-status.is-pending {
+  color: rgba(0, 0, 0, 0.7);
+}
+
 .player-card header {
   text-align: center;
   margin-bottom: 1.5rem;

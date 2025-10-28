@@ -66,6 +66,31 @@
             Leave line
           </button>
         </div>
+        <form
+          id="queue-performer-form"
+          class="queue-performer"
+          autocomplete="off"
+          hidden
+        >
+          <label for="queue-performer-input">
+            What's the name of your little star performing?
+          </label>
+          <input
+            id="queue-performer-input"
+            name="performer_name"
+            type="text"
+            maxlength="40"
+            placeholder="Enter a stage name"
+            autocomplete="off"
+            spellcheck="false"
+            aria-describedby="queue-performer-helper queue-performer-status"
+            disabled
+          />
+          <p id="queue-performer-helper" class="queue-performer-helper">
+            We'll flash this name on the welcome screen before you take the stage.
+          </p>
+          <p id="queue-performer-status" class="queue-performer-status" hidden></p>
+        </form>
       </section>
 
       <section id="player-section" class="card player-card" hidden>

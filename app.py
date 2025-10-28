@@ -40,6 +40,7 @@ LIGHT_TEMPLATES_FILE = BASE_DIR / "light_templates.json"
 COLOR_PRESETS_FILE = BASE_DIR / "color_presets.json"
 RELAY_PRESETS_FILE = BASE_DIR / "relay_presets.json"
 WARNING_VIDEO_PATH = MEDIA_DIR / "warning.mp4"
+WELCOME_VIDEO_PATH = MEDIA_DIR / "welcome.mp4"
 DEFAULT_LOOP_TEMPLATE_PATH = DMX_TEMPLATE_DIR / "default_loop_dmx.json"
 SNOW_MACHINE_PRESET_ID = os.environ.get("SNOW_MACHINE_PRESET_ID", "relay_snow_machine")
 
@@ -78,6 +79,9 @@ DISABLE_SELF_RESTART = os.environ.get("DISABLE_SELF_RESTART", "").strip().lower(
     "yes",
     "on",
 }
+
+PERFORMER_NAME_MAX_LENGTH = 40
+_MISSING = object()
 
 
 class UserRegistry:
@@ -154,6 +158,7 @@ class QueueEntry:
     expires_at: Optional[float] = None
     user_key: Optional[str] = None
     removed_at: Optional[float] = None
+    performer_name: Optional[str] = None
 
 
 class QueueManager:
@@ -264,14 +269,18 @@ class QueueManager:
         *,
         existing_id: Optional[str],
         is_playing: bool,
+        performer_name: Any = _MISSING,
     ) -> Tuple[QueueEntry, bool]:
         now = time.time()
+        normalized_name = None if performer_name is _MISSING else _normalize_performer_name(performer_name)
         with self._lock:
             self._expire_ready_locked(now, is_playing=is_playing)
             entry: Optional[QueueEntry] = None
             if existing_id:
                 entry = self._entries_by_id.get(existing_id)
                 if entry and entry.status in self.ACTIVE_STATES:
+                    if performer_name is not _MISSING:
+                        entry.performer_name = normalized_name
                     self._ensure_active_entry_locked(now, is_playing=is_playing)
                     return entry, False
 
@@ -279,7 +288,7 @@ class QueueManager:
                 raise ValueError("invalid_code")
 
             entry_id = uuid.uuid4().hex
-            entry = QueueEntry(id=entry_id, joined_at=now)
+            entry = QueueEntry(id=entry_id, joined_at=now, performer_name=normalized_name)
             self._entries.append(entry)
             self._entries_by_id[entry_id] = entry
             created = True
@@ -349,6 +358,8 @@ class QueueManager:
             "joined_at": entry.joined_at,
             "activated_at": entry.activated_at,
         }
+        if entry.performer_name is not None:
+            info["performer_name"] = entry.performer_name
         if entry.status in {"ready", "playing"}:
             info["position"] = 0
             if entry.status == "ready" and entry.expires_at is not None:
@@ -417,6 +428,19 @@ class QueueManager:
                 return None
             return self._entries_by_id.get(entry_id)
 
+    def set_performer_name(
+        self, entry_id: Optional[str], performer_name: Any
+    ) -> Optional[QueueEntry]:
+        if not entry_id:
+            return None
+        normalized = _normalize_performer_name(performer_name)
+        with self._lock:
+            entry = self._entries_by_id.get(entry_id)
+            if not entry or entry.status not in self.ACTIVE_STATES:
+                return None
+            entry.performer_name = normalized
+            return entry
+
 def _parse_int_env(name: str, default: int, *, minimum: int, maximum: int) -> int:
     raw = os.environ.get(name)
     if raw is None:
@@ -439,6 +463,23 @@ def _parse_float_env(name: str, default: float, *, minimum: float) -> float:
         LOGGER.warning("Invalid float value '%s' for %s; using %s.", raw, name, default)
         return default
     return max(minimum, value)
+
+
+def _normalize_performer_name(value: Any) -> Optional[str]:
+    if value is None or value is _MISSING:
+        return None
+    if isinstance(value, str):
+        text = value
+    else:
+        text = str(value)
+    text = text.replace("\r\n", " ").replace("\r", " ")
+    text = text.replace("\n", " ")
+    text = re.sub(r"\s+", " ", text).strip()
+    if not text:
+        return None
+    if len(text) > PERFORMER_NAME_MAX_LENGTH:
+        text = text[:PERFORMER_NAME_MAX_LENGTH].rstrip()
+    return text or None
 
 
 def _coerce_bool(value: object) -> Optional[bool]:
@@ -1340,6 +1381,7 @@ class PlaybackController:
         on_video_start: Optional[Callable[[Path], None]] = None,
         on_default_start: Optional[Callable[[Path], None]] = None,
         warning_video: Optional[Path] = None,
+        welcome_video: Optional[Path] = None,
     ) -> None:
         self.default_video = default_video
         self._lock = threading.RLock()
@@ -1351,6 +1393,7 @@ class PlaybackController:
         self._on_video_start = on_video_start
         self._on_default_start = on_default_start
         self._warning_video = warning_video
+        self._welcome_video = welcome_video
         self._pending_video_start: Optional[Path] = None
         self._pending_requires_playlist_advance = False
         self._start_callback_fired = False
@@ -1360,6 +1403,9 @@ class PlaybackController:
             "Update videos.json or copy the file into the media directory."
         )
         self._stage_overlay_subtitle_path = self.default_video.with_suffix(".ass")
+        self._welcome_subtitle_path = (
+            welcome_video.with_suffix(".ass") if welcome_video else None
+        )
 
         if player_command:
             self._base_command = list(player_command)
@@ -1409,21 +1455,35 @@ class PlaybackController:
         with self._lock:
             self._start_default_locked()
 
-    def play(self, video_path: Path) -> None:
+    def play(self, video_path: Path, *, welcome_text: Optional[str] = None) -> None:
         LOGGER.info("Starting playback: %s", video_path)
         with self._lock:
+            pre_rolls: List[Path] = []
+            normalized_name = _normalize_performer_name(welcome_text)
+
+            welcome_video = self._welcome_video
+            if normalized_name and welcome_video:
+                if welcome_video.exists():
+                    self._update_welcome_subtitle_locked(normalized_name)
+                    pre_rolls.append(welcome_video)
+                else:
+                    LOGGER.warning("Welcome video not found: %s", welcome_video)
+
             warning_video = self._warning_video
-            if warning_video and not warning_video.exists():
-                LOGGER.warning("Warning video not found: %s", warning_video)
-                warning_video = None
-            self._play_video_locked(video_path, loop=False, pre_roll_path=warning_video)
+            if warning_video:
+                if warning_video.exists():
+                    pre_rolls.append(warning_video)
+                else:
+                    LOGGER.warning("Warning video not found: %s", warning_video)
+
+            self._play_video_locked(video_path, loop=False, pre_roll_paths=pre_rolls)
 
     def stop(self) -> None:
         with self._lock:
             self._start_default_locked()
 
     def _play_video_locked(
-        self, video_path: Path, loop: bool, *, pre_roll_path: Optional[Path] = None
+        self, video_path: Path, loop: bool, *, pre_roll_paths: Optional[Iterable[Path]] = None
     ) -> None:
         if not self._player_available:
             raise FileNotFoundError(
@@ -1435,17 +1495,26 @@ class PlaybackController:
         if not video_path.exists():
             raise FileNotFoundError(f"Video not found: {video_path}")
 
+        sequence: List[Path] = []
+        if pre_roll_paths:
+            for candidate in pre_roll_paths:
+                if candidate.exists():
+                    sequence.append(candidate)
+
         self._ensure_player_running()
         if loop:
             self._clear_pending_video_start()
         else:
             self._pending_video_start = video_path
-            self._pending_requires_playlist_advance = bool(pre_roll_path)
+            self._pending_requires_playlist_advance = bool(sequence)
             self._start_callback_fired = False
         try:
-            if pre_roll_path:
-                self._send_ipc_command("loadfile", str(pre_roll_path), "replace")
+            if sequence:
+                first = sequence[0]
+                self._send_ipc_command("loadfile", str(first), "replace")
                 self._send_ipc_command("set_property", "loop-file", "no")
+                for extra in sequence[1:]:
+                    self._send_ipc_command("loadfile", str(extra), "append-play")
                 self._send_ipc_command("loadfile", str(video_path), "append-play")
             else:
                 self._send_ipc_command("loadfile", str(video_path), "replace")
@@ -1512,7 +1581,7 @@ class PlaybackController:
                             "Effect, Text"
                         ),
                         (
-                            "Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\an6\pos(1680,870)\q2\bord4\shad2}" + escaped
+                            r"Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\an6\pos(1680,870)\q2\bord4\shad2}" + escaped
                         ),
                         "",
                     ]
@@ -1526,6 +1595,50 @@ class PlaybackController:
             return
         except OSError:
             LOGGER.exception("Unable to update default loop subtitle file: %s", path)
+
+    def _update_welcome_subtitle_locked(self, text: str) -> None:
+        path = self._welcome_subtitle_path
+        if not path:
+            return
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            escaped = (
+                text.replace("\\", "\\\\")
+                .replace("{", "\\{")
+                .replace("}", "\\}")
+            )
+            contents = "\n".join(
+                [
+                    "[Script Info]",
+                    "ScriptType: v4.00+",
+                    "PlayResX: 1920",
+                    "PlayResY: 1080",
+                    "",
+                    "[V4+ Styles]",
+                    (
+                        "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
+                        "OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, "
+                        "ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, "
+                        "Alignment, MarginL, MarginR, MarginV, Encoding"
+                    ),
+                    (
+                        "Style: WelcomeName,Arial,120,&H00FFFFFF,&H000000FF,&H96000000,&H64000000,"\
+                        "0,0,0,0,100,100,0,0,1,6,0,5,0,0,80,1"
+                    ),
+                    "",
+                    "[Events]",
+                    (
+                        "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, "
+                        "Effect, Text"
+                    ),
+                    r"Dialogue: 0,0:00:00.00,0:00:07.00,WelcomeName,,0,0,0,,{\an5\bord6\shad0}" + escaped,
+                    "",
+                ]
+            )
+            with path.open("w", encoding="utf-8") as fh:
+                fh.write(contents)
+        except OSError:
+            LOGGER.exception("Unable to update welcome subtitle file: %s", path)
 
     def _start_default_locked(self) -> None:
         if not self.default_video.exists():
@@ -1907,6 +2020,7 @@ controller = PlaybackController(
     on_video_start=_handle_video_start,
     on_default_start=_handle_default_start,
     warning_video=WARNING_VIDEO_PATH,
+    welcome_video=WELCOME_VIDEO_PATH,
 )
 
 
@@ -2041,12 +2155,14 @@ def api_queue_join() -> Any:
     provided_code = str(data.get("code") or "").strip()
     entry_id = _request_queue_id(data)
     is_playing, remaining = _queue_playback_context()
+    performer_payload = data.get("performer_name", _MISSING)
 
     try:
         entry, created = queue_manager.join(
             provided_code,
             existing_id=entry_id,
             is_playing=is_playing,
+            performer_name=performer_payload,
         )
     except ValueError:
         return jsonify({"error": "Invalid access code"}), 403
@@ -2083,6 +2199,23 @@ def api_queue_status() -> Any:
     if entry_id and not status_payload.get("entry"):
         response.delete_cookie("queue_id")
     return response
+
+
+@app.route("/api/queue/performer", methods=["POST"])
+def api_queue_performer() -> Any:
+    data = request.get_json(force=True, silent=True) or {}
+    entry_id = _request_queue_id(data)
+    entry = queue_manager.set_performer_name(entry_id, data.get("name"))
+    if not entry:
+        return jsonify({"error": "Not in queue"}), 404
+
+    is_playing, remaining = _queue_playback_context()
+    status_payload = queue_manager.get_status(
+        entry.id,
+        is_playing=is_playing,
+        active_remaining=remaining,
+    )
+    return jsonify({"status": "ok", **status_payload})
 
 
 @app.route("/api/queue/leave", methods=["POST"])
@@ -2328,8 +2461,9 @@ def api_play() -> Any:
     except Exception:
         LOGGER.exception("Unable to fade lights before playback")
 
+    welcome_text = queue_entry.performer_name if queue_entry else None
     try:
-        controller.play(video_path)
+        controller.play(video_path, welcome_text=welcome_text)
     except FileNotFoundError:
         LOGGER.error('Video player command not found. Install mpv or set VIDEO_PLAYER_CMD.')
         return jsonify({"error": "Video player not available on server"}), 500
