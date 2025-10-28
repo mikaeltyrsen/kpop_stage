@@ -54,6 +54,23 @@ RELAY_PRESETS_FILE.parent.mkdir(parents=True, exist_ok=True)
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 LOGGER = logging.getLogger("kpop_stage")
 
+
+def ensure_display_powered_on() -> None:
+    """Attempt to power on the connected display via HDMI-CEC."""
+
+    try:
+        subprocess.run(
+            ["cec-client", "-s", "-d", "1"],
+            input=b"on 0\n",
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except FileNotFoundError:
+        LOGGER.warning("cec-client executable not found; unable to power on display")
+    except Exception:  # pragma: no cover - defensive logging
+        LOGGER.exception("Unable to power on display via HDMI-CEC")
+
 SYSTEM_ACTION_LOCK = threading.Lock()
 DISABLE_SELF_RESTART = os.environ.get("DISABLE_SELF_RESTART", "").strip().lower() in {
     "1",
@@ -2613,6 +2630,8 @@ def api_dmx_preview() -> Any:
 
 
 def main() -> None:
+    ensure_display_powered_on()
+
     default_loop_started = False
 
     try:
