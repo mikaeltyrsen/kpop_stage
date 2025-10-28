@@ -1531,15 +1531,9 @@ class PlaybackController:
         try:
             self._stage_overlay_subtitle_path.parent.mkdir(parents=True, exist_ok=True)
             escaped_text = self._escape_ass_text(text)
-            play_res_x = 1920
-            play_res_y = 1080
             margin_right = 120
             margin_bottom = 120
-            pos_x = play_res_x - margin_right
-            pos_y = play_res_y - margin_bottom
-            alignment_override = (
-                f"{{\\an3\\pos({pos_x},{pos_y})}}"
-            )  # Anchor overlay in the lower-right corner with padding
+            alignment_override = "{\\an3}"  # Anchor overlay in the lower-right corner
             display_text = f"{alignment_override}{escaped_text}" if escaped_text else alignment_override
             contents = """[Script Info]
 ScriptType: v4.00+
@@ -1550,12 +1544,12 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: StageCode,DejaVu Sans,172,&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,3,3,4,1,0,0,0,1
+Style: StageCode,DejaVu Sans,172,&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,3,3,4,3,0,{margin_right},{margin_bottom},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{text}
-""".format(text=display_text)
+""".format(margin_right=margin_right, margin_bottom=margin_bottom, text=display_text)
             with self._stage_overlay_subtitle_path.open("w", encoding="utf-8") as fh:
                 fh.write(contents)
         except OSError:
