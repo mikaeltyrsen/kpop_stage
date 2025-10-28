@@ -56,9 +56,13 @@ def test_stage_overlay_retries_when_command_initially_fails(monkeypatch, tmp_pat
         ]
     )
 
-    sid_responses = deque([
-        {"error": "success", "data": "7"},
-    ])
+    sid_responses = deque(
+        [
+            {"error": "success", "data": "4"},
+            {"error": "success", "data": "4"},
+            {"error": "success", "data": "7"},
+        ]
+    )
 
     commands = []
 
@@ -68,7 +72,13 @@ def test_stage_overlay_retries_when_command_initially_fails(monkeypatch, tmp_pat
             return sub_add_responses.popleft()
         if command[:2] == ("get_property", "sid"):
             return sid_responses.popleft()
+        if command[:2] == ("get_property", "track-list"):
+            return {"error": "success", "data": []}
         if command[:1] == ("sub-remove",):
+            return {"error": "success"}
+        if command[:3] == ("set_property", "secondary-sid"):
+            return {"error": "success"}
+        if command[:3] == ("set_property", "sid"):
             return {"error": "success"}
         return {"error": "success"}
 
@@ -87,6 +97,9 @@ def test_stage_overlay_retries_when_command_initially_fails(monkeypatch, tmp_pat
     assert controller._stage_overlay_text == "ABC"
     assert controller._stage_overlay_sid == 7
     assert ("set_property", "sub-visibility", "yes") in commands
+    assert ("set_property", "secondary-sid", "7") in commands
+    assert ("set_property", "sid", "4") in commands
+    assert len(sid_responses) == 0
 
 
 def test_stage_overlay_retry_scheduled_for_default_loop(monkeypatch, tmp_path):
@@ -103,9 +116,13 @@ def test_stage_overlay_retry_scheduled_for_default_loop(monkeypatch, tmp_path):
         ]
     )
 
-    sid_responses = deque([
-        {"error": "success", "data": "9"},
-    ])
+    sid_responses = deque(
+        [
+            {"error": "success", "data": "5"},
+            {"error": "success", "data": "5"},
+            {"error": "success", "data": "9"},
+        ]
+    )
 
     commands = []
 
@@ -115,7 +132,13 @@ def test_stage_overlay_retry_scheduled_for_default_loop(monkeypatch, tmp_path):
             return sub_add_responses.popleft()
         if command[:2] == ("get_property", "sid"):
             return sid_responses.popleft()
+        if command[:2] == ("get_property", "track-list"):
+            return {"error": "success", "data": []}
         if command[:1] == ("sub-remove",):
+            return {"error": "success"}
+        if command[:3] == ("set_property", "secondary-sid"):
+            return {"error": "success"}
+        if command[:3] == ("set_property", "sid"):
             return {"error": "success"}
         return {"error": "success"}
 
@@ -153,6 +176,9 @@ def test_stage_overlay_retry_scheduled_for_default_loop(monkeypatch, tmp_path):
     assert controller._stage_overlay_active is True
     assert controller._stage_overlay_sid == 9
     assert ("set_property", "sub-visibility", "yes") in commands
+    assert ("set_property", "secondary-sid", "9") in commands
+    assert ("set_property", "sid", "5") in commands
+    assert len(sid_responses) == 0
 
 
 def test_mpv_player_defaults_enable_subtitles(monkeypatch, tmp_path):
