@@ -1518,7 +1518,7 @@ Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{text}
         if not subtitle_path:
             return None
         escaped_path = str(subtitle_path).replace("\\", "\\\\").replace("'", "\\'")
-        return f"@stagecode:subtitles=filename='{escaped_path}'"
+        return f"@stagecode:subtitles=file='{escaped_path}'"
 
     def set_stage_code_overlay(self, code: Optional[str]) -> None:
         text = (code or "").strip()
@@ -1568,7 +1568,19 @@ Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{text}
                     self._stage_overlay_active = True
                     self._stage_overlay_text = text
                 else:
-                    LOGGER.warning("Unable to enable stage code overlay: %s", response.get("error"))
+                    error = response.get("error")
+                    details = response.get("data")
+                    if details:
+                        LOGGER.warning(
+                            "Unable to enable stage code overlay: %s (%s)",
+                            error,
+                            details,
+                        )
+                    else:
+                        LOGGER.warning(
+                            "Unable to enable stage code overlay: %s",
+                            error,
+                        )
                     self._stage_overlay_active = False
                     self._stage_overlay_text = None
                     self._cleanup_stage_overlay_subtitle()
