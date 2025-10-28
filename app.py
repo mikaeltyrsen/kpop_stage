@@ -65,8 +65,11 @@ DEFAULT_TLS_KEY_PATH = Path(
 )
 TLS_CERT_PATH = Path(os.environ.get("TLS_CERT_PATH", str(DEFAULT_TLS_CERT_PATH)))
 TLS_KEY_PATH = Path(os.environ.get("TLS_KEY_PATH", str(DEFAULT_TLS_KEY_PATH)))
-HTTP_PORT = _int_from_env("HTTP_PORT", 8050)
-HTTPS_PORT = _int_from_env("HTTPS_PORT", 8443)
+DEFAULT_HTTP_PORT = 8050
+DEFAULT_HTTPS_PORT = 8443
+
+HTTP_PORT = _int_from_env("HTTP_PORT", DEFAULT_HTTP_PORT)
+HTTPS_PORT = _int_from_env("HTTPS_PORT", DEFAULT_HTTPS_PORT)
 FORCE_HTTPS = (
     os.environ.get("FORCE_HTTPS", "1").strip().lower() not in {"0", "false", "no", "off"}
 )
@@ -85,6 +88,21 @@ LOGGER = logging.getLogger("kpop_stage")
 CEC_OSD_NAME_MAX_LENGTH = 14
 _cec_name = os.environ.get("CEC_OSD_NAME", "Demon Player").strip() or "Demon Player"
 CEC_OSD_NAME = _cec_name[:CEC_OSD_NAME_MAX_LENGTH]
+
+
+def _resolve_http_port(port: int) -> int:
+    """Return a non-privileged HTTP port when running without elevated rights."""
+
+    candidate = port if port and port > 0 else DEFAULT_HTTP_PORT
+    if candidate < 1024 and not _can_bind_privileged_ports():
+        if candidate != DEFAULT_HTTP_PORT:
+            LOGGER.warning(
+                "Requested HTTP port %s requires elevated privileges; falling back to %s",
+                candidate,
+                DEFAULT_HTTP_PORT,
+            )
+        return DEFAULT_HTTP_PORT
+    return candidate
 
 
 def _build_cec_power_on_payload(osd_name: str) -> bytes:
@@ -118,6 +136,18 @@ DISABLE_SELF_RESTART = os.environ.get("DISABLE_SELF_RESTART", "").strip().lower(
     "yes",
     "on",
 }
+
+
+def _can_bind_privileged_ports() -> bool:
+    """Return ``True`` if the current process can bind to privileged ports."""
+
+    geteuid = getattr(os, "geteuid", None)
+    if callable(geteuid):
+        try:
+            return geteuid() == 0
+        except OSError:
+            return False
+    return True
 
 PERFORMER_NAME_MAX_LENGTH = 40
 _MISSING = object()
@@ -2990,9 +3020,16 @@ def main() -> None:
 
     if ssl_context:
         if HTTP_PORT and HTTP_PORT > 0:
+            http_port = _resolve_http_port(HTTP_PORT)
+            if (
+                app_config is not None
+                and hasattr(app_config, "__setitem__")
+                and http_port != HTTP_PORT
+            ):
+                app_config["HTTP_PORT"] = http_port
             http_thread = threading.Thread(
                 target=_serve_app,
-                args=(HTTP_PORT,),
+                args=(http_port,),
                 kwargs={"ssl_context": None},
                 daemon=True,
             )
@@ -3000,7 +3037,17 @@ def main() -> None:
         _serve_app(HTTPS_PORT, ssl_context=ssl_context)
         return
 
-    http_port = HTTP_PORT if HTTP_PORT and HTTP_PORT > 0 else 8050
+    http_port = _resolve_http_port(
+        HTTP_PORT if HTTP_PORT and HTTP_PORT > 0 else DEFAULT_HTTP_PORT
+    )
+    if (
+        HTTP_PORT
+        and HTTP_PORT > 0
+        and http_port != HTTP_PORT
+        and app_config is not None
+        and hasattr(app_config, "__setitem__")
+    ):
+        app_config["HTTP_PORT"] = http_port
     _serve_app(http_port)
 
 
