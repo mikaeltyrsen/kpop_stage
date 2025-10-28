@@ -1,14 +1,38 @@
 import sys
 from pathlib import Path
+from types import ModuleType, SimpleNamespace
 from typing import Optional
-
-import pytest
-
-pytest.importorskip("flask")
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+
+try:  # pragma: no branch - deterministic fallback when Flask is absent
+    import flask  # type: ignore  # noqa: F401
+except ModuleNotFoundError:  # pragma: no cover - environment dependent
+    flask_stub = ModuleType("flask")
+
+    class _DummyFlask:
+        def __init__(self, *args, **kwargs) -> None:  # pragma: no cover - trivial
+            pass
+
+        def route(self, *args, **kwargs):  # pragma: no cover - trivial
+            def decorator(func):
+                return func
+
+            return decorator
+
+    def _unsupported(*args, **kwargs):  # pragma: no cover - trivial
+        raise RuntimeError("Flask is not available in the test environment")
+
+    flask_stub.Flask = _DummyFlask
+    flask_stub.abort = _unsupported
+    flask_stub.jsonify = _unsupported
+    flask_stub.redirect = _unsupported
+    flask_stub.render_template = _unsupported
+    flask_stub.request = SimpleNamespace()
+    flask_stub.send_from_directory = _unsupported
+    sys.modules.setdefault("flask", flask_stub)
 
 import app
 
@@ -67,3 +91,20 @@ def test_build_power_command_adds_sudo_when_needed(monkeypatch):
     command = app.build_power_command("restart")
 
     assert command == ["/usr/bin/sudo", "/bin/systemctl", "reboot"]
+
+
+def test_ensure_display_powered_on_quotes_osd_name(monkeypatch):
+    payload = {}
+
+    def fake_run(*args, **kwargs):
+        payload["input"] = kwargs.get("input")
+
+    monkeypatch.setattr(app, "CEC_OSD_NAME", 'Demon "Player" \\ Test')
+    monkeypatch.setattr(app.subprocess, "run", fake_run)
+
+    app.ensure_display_powered_on()
+
+    assert (
+        payload["input"]
+        == b'name 0 "Demon \\"Player\\" \\\\ Test"\non 0\n'
+    )
