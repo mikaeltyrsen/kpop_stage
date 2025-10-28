@@ -65,8 +65,8 @@ DEFAULT_TLS_KEY_PATH = Path(
 )
 TLS_CERT_PATH = Path(os.environ.get("TLS_CERT_PATH", str(DEFAULT_TLS_CERT_PATH)))
 TLS_KEY_PATH = Path(os.environ.get("TLS_KEY_PATH", str(DEFAULT_TLS_KEY_PATH)))
-HTTP_PORT = _int_from_env("HTTP_PORT", 80)
-HTTPS_PORT = _int_from_env("HTTPS_PORT", 443)
+HTTP_PORT = _int_from_env("HTTP_PORT", 8050)
+HTTPS_PORT = _int_from_env("HTTPS_PORT", 8443)
 FORCE_HTTPS = (
     os.environ.get("FORCE_HTTPS", "1").strip().lower() not in {"0", "false", "no", "off"}
 )
