@@ -1,4 +1,5 @@
 import sys
+from collections import deque
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
 
@@ -48,14 +49,24 @@ def test_stage_overlay_retries_when_command_initially_fails(monkeypatch, tmp_pat
     controller._process = _DummyProcess()
     controller._stage_overlay_subtitle_path = tmp_path / "stage_code.ass"
 
-    responses = [
-        {"error": "error running command"},
-        {"error": "success"},
-    ]
+    sub_add_responses = deque(
+        [
+            {"error": "error running command"},
+            {"error": "success"},
+        ]
+    )
+
+    sid_responses = deque([
+        {"error": "success", "data": "7"},
+    ])
 
     def fake_send_ipc_command(*command):
-        if command[:2] == ("vf", "add"):
-            return responses.pop(0)
+        if command[:1] == ("sub-add",):
+            return sub_add_responses.popleft()
+        if command[:2] == ("get_property", "sid"):
+            return sid_responses.popleft()
+        if command[:1] == ("sub-remove",):
+            return {"error": "success"}
         return {"error": "success"}
 
     monkeypatch.setattr(controller, "_send_ipc_command", fake_send_ipc_command)
@@ -64,10 +75,11 @@ def test_stage_overlay_retries_when_command_initially_fails(monkeypatch, tmp_pat
 
     assert controller._stage_overlay_text == "ABC"
     assert controller._stage_overlay_active is False
-    assert len(responses) == 1
+    # First attempt should fail to add the subtitle overlay.
+    assert len(sub_add_responses) == 1
 
     controller._maybe_fire_video_start(idle=False)
 
     assert controller._stage_overlay_active is True
     assert controller._stage_overlay_text == "ABC"
-    assert responses == []
+    assert controller._stage_overlay_sid == 7

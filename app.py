@@ -1355,6 +1355,7 @@ class PlaybackController:
         self._pending_requires_playlist_advance = False
         self._start_callback_fired = False
         self._stage_overlay_active = False
+        self._stage_overlay_sid: Optional[int] = None
         self._stage_overlay_text: Optional[str] = None
         self._default_missing_message = (
             f"Default loop video not found: {self.default_video}. "
@@ -1513,13 +1514,6 @@ Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{text}
         except OSError:
             LOGGER.warning("Unable to remove stage overlay subtitle file: %s", self._stage_overlay_subtitle_path)
 
-    def _format_stage_overlay_filter(self, text: str) -> Optional[str]:
-        subtitle_path = self._write_stage_overlay_subtitle(text)
-        if not subtitle_path:
-            return None
-        escaped_path = str(subtitle_path).replace("\\", "\\\\").replace("'", "\\'")
-        return f"@stagecode:subtitles=file='{escaped_path}'"
-
     def set_stage_code_overlay(self, code: Optional[str]) -> None:
         text = (code or "").strip()
         desired_text = text or None
@@ -1533,67 +1527,121 @@ Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{text}
         process_running = self._process and self._process.poll() is None
         if not process_running:
             self._stage_overlay_active = False
+            self._stage_overlay_sid = None
             if desired_text is None:
                 self._cleanup_stage_overlay_subtitle()
             return
 
-        if self._stage_overlay_active or desired_text is None:
-            try:
-                response = self._send_ipc_command("vf", "del", "@stagecode")
-                if response.get("error") not in {"success", "property unavailable", "no such filter"}:
-                    LOGGER.debug("Stage code overlay removal returned %s", response.get("error"))
-            except OSError:
-                LOGGER.exception("Unable to communicate with mpv while removing stage code overlay")
-                self._reset_player_state()
-                if desired_text is None:
-                    return
-            except Exception:
-                LOGGER.exception("Unexpected error removing stage code overlay")
-                if desired_text is None:
-                    return
-            finally:
-                self._stage_overlay_active = False
-                if desired_text is None:
-                    self._cleanup_stage_overlay_subtitle()
+        if self._stage_overlay_active or self._stage_overlay_sid is not None or desired_text is None:
+            if self._stage_overlay_sid is not None:
+                try:
+                    response = self._send_ipc_command("sub-remove", str(self._stage_overlay_sid))
+                    if response.get("error") not in {"success", "not found"}:
+                        LOGGER.debug(
+                            "Stage code subtitle removal returned %s",
+                            response.get("error"),
+                        )
+                except OSError:
+                    LOGGER.exception(
+                        "Unable to communicate with mpv while removing stage code subtitle"
+                    )
+                    self._reset_player_state()
+                    if desired_text is None:
+                        self._stage_overlay_sid = None
+                        self._stage_overlay_active = False
+                        self._cleanup_stage_overlay_subtitle()
+                        return
+                except Exception:
+                    LOGGER.exception("Unexpected error removing stage code subtitle")
+                    if desired_text is None:
+                        self._stage_overlay_sid = None
+                        self._stage_overlay_active = False
+                        self._cleanup_stage_overlay_subtitle()
+                        return
+
+            self._stage_overlay_active = False
+            self._stage_overlay_sid = None
+            if desired_text is None:
+                self._cleanup_stage_overlay_subtitle()
+                return
 
         if desired_text is None:
-            self._stage_overlay_active = False
             self._cleanup_stage_overlay_subtitle()
             return
 
-        filter_arg = self._format_stage_overlay_filter(text)
-        if not filter_arg:
+        subtitle_path = self._write_stage_overlay_subtitle(text)
+        if not subtitle_path:
             self._stage_overlay_active = False
+            self._stage_overlay_sid = None
             return
 
         try:
-            response = self._send_ipc_command("vf", "add", filter_arg)
+            response = self._send_ipc_command("sub-add", str(subtitle_path), "auto", "select")
             if response.get("error") == "success":
+                sid_value: Optional[int] = None
+                sid_response = self._send_ipc_command("get_property", "sid")
+                if sid_response.get("error") == "success":
+                    try:
+                        sid_value = int(str(sid_response.get("data")))
+                    except (TypeError, ValueError):
+                        sid_value = None
+                if sid_value is None:
+                    track_list_response = self._send_ipc_command("get_property", "track-list")
+                    if track_list_response.get("error") == "success":
+                        data = track_list_response.get("data")
+                        if isinstance(data, list):
+                            target_path = str(subtitle_path)
+                            for entry in data:
+                                if not isinstance(entry, dict):
+                                    continue
+                                if entry.get("type") != "sub":
+                                    continue
+                                external_path = entry.get("external_filename") or entry.get(
+                                    "external-filename"
+                                )
+                                if str(external_path) != target_path:
+                                    continue
+                                try:
+                                    sid_value = int(str(entry.get("id")))
+                                except (TypeError, ValueError):
+                                    sid_value = None
+                                if sid_value is not None:
+                                    break
+                if sid_value is None:
+                    LOGGER.warning(
+                        "Stage code subtitle enabled but unable to determine track id"
+                    )
+                self._stage_overlay_sid = sid_value
                 self._stage_overlay_active = True
+                if sid_value is None:
+                    LOGGER.debug("Stage code subtitle will require manual removal if needed")
             else:
                 error = response.get("error")
                 details = response.get("data")
                 if details:
                     LOGGER.warning(
-                        "Unable to enable stage code overlay: %s (%s)",
+                        "Unable to enable stage code subtitle: %s (%s)",
                         error,
                         details,
                     )
                 else:
                     LOGGER.warning(
-                        "Unable to enable stage code overlay: %s",
+                        "Unable to enable stage code subtitle: %s",
                         error,
                     )
                 self._stage_overlay_active = False
+                self._stage_overlay_sid = None
                 self._cleanup_stage_overlay_subtitle()
         except OSError:
-            LOGGER.exception("Unable to communicate with mpv while enabling stage code overlay")
+            LOGGER.exception("Unable to communicate with mpv while enabling stage code subtitle")
             self._reset_player_state()
             self._stage_overlay_active = False
+            self._stage_overlay_sid = None
             self._cleanup_stage_overlay_subtitle()
         except Exception:
-            LOGGER.exception("Unexpected error enabling stage code overlay")
+            LOGGER.exception("Unexpected error enabling stage code subtitle")
             self._stage_overlay_active = False
+            self._stage_overlay_sid = None
             self._cleanup_stage_overlay_subtitle()
 
     def _maybe_fire_video_start(self, idle: bool) -> None:
