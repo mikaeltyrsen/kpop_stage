@@ -1,7 +1,7 @@
 import sys
 from collections import deque
 from pathlib import Path
-from types import ModuleType, SimpleNamespace
+from types import MethodType, ModuleType, SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -86,6 +86,72 @@ def test_stage_overlay_retries_when_command_initially_fails(monkeypatch, tmp_pat
     assert controller._stage_overlay_active is True
     assert controller._stage_overlay_text == "ABC"
     assert controller._stage_overlay_sid == 7
+    assert ("set_property", "sub-visibility", "yes") in commands
+
+
+def test_stage_overlay_retry_scheduled_for_default_loop(monkeypatch, tmp_path):
+    monkeypatch.setattr(app.shutil, "which", lambda name: name)
+
+    controller = app.PlaybackController(default_video=tmp_path / "default.mp4")
+    controller._process = _DummyProcess()
+    controller._stage_overlay_subtitle_path = tmp_path / "stage_code.ass"
+
+    sub_add_responses = deque(
+        [
+            {"error": "error running command"},
+            {"error": "success"},
+        ]
+    )
+
+    sid_responses = deque([
+        {"error": "success", "data": "9"},
+    ])
+
+    commands = []
+
+    def fake_send_ipc_command(*command):
+        commands.append(command)
+        if command[:1] == ("sub-add",):
+            return sub_add_responses.popleft()
+        if command[:2] == ("get_property", "sid"):
+            return sid_responses.popleft()
+        if command[:1] == ("sub-remove",):
+            return {"error": "success"}
+        return {"error": "success"}
+
+    monkeypatch.setattr(controller, "_send_ipc_command", fake_send_ipc_command)
+
+    scheduled_delays = []
+
+    def fake_schedule(self, delay=0.5):
+        scheduled_delays.append(delay)
+
+    def fake_cancel(self):
+        scheduled_delays.append("cancel")
+
+    monkeypatch.setattr(
+        controller,
+        "_schedule_stage_overlay_retry_locked",
+        MethodType(fake_schedule, controller),
+    )
+    monkeypatch.setattr(
+        controller,
+        "_cancel_stage_overlay_retry_locked",
+        MethodType(fake_cancel, controller),
+    )
+
+    controller.set_stage_code_overlay("ABC")
+
+    assert controller._stage_overlay_text == "ABC"
+    assert controller._stage_overlay_active is False
+    assert controller._stage_overlay_sid is None
+    assert len(sub_add_responses) == 1
+    assert 0.5 in scheduled_delays
+
+    controller._handle_stage_overlay_retry()
+
+    assert controller._stage_overlay_active is True
+    assert controller._stage_overlay_sid == 9
     assert ("set_property", "sub-visibility", "yes") in commands
 
 

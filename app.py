@@ -1357,6 +1357,7 @@ class PlaybackController:
         self._stage_overlay_active = False
         self._stage_overlay_sid: Optional[int] = None
         self._stage_overlay_text: Optional[str] = None
+        self._stage_overlay_retry_timer: Optional[threading.Timer] = None
         self._default_missing_message = (
             f"Default loop video not found: {self.default_video}. "
             "Update videos.json or copy the file into the media directory."
@@ -1537,12 +1538,16 @@ Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{text}
     def _set_stage_code_overlay_locked(self, desired_text: Optional[str], text: str) -> None:
         self._stage_overlay_text = desired_text
 
+        self._cancel_stage_overlay_retry_locked()
+
         process_running = self._process and self._process.poll() is None
         if not process_running:
             self._stage_overlay_active = False
             self._stage_overlay_sid = None
             if desired_text is None:
                 self._cleanup_stage_overlay_subtitle()
+            else:
+                self._schedule_stage_overlay_retry_locked()
             return
 
         if self._stage_overlay_active or self._stage_overlay_sid is not None or desired_text is None:
@@ -1586,6 +1591,8 @@ Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{text}
         if not subtitle_path:
             self._stage_overlay_active = False
             self._stage_overlay_sid = None
+            if desired_text is not None:
+                self._schedule_stage_overlay_retry_locked()
             return
 
         try:
@@ -1664,6 +1671,29 @@ Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{text}
             self._stage_overlay_active = False
             self._stage_overlay_sid = None
             self._cleanup_stage_overlay_subtitle()
+
+        if desired_text is not None and not self._stage_overlay_active:
+            self._schedule_stage_overlay_retry_locked()
+
+    def _cancel_stage_overlay_retry_locked(self) -> None:
+        if self._stage_overlay_retry_timer:
+            self._stage_overlay_retry_timer.cancel()
+            self._stage_overlay_retry_timer = None
+
+    def _schedule_stage_overlay_retry_locked(self, delay: float = 0.5) -> None:
+        self._cancel_stage_overlay_retry_locked()
+        timer = threading.Timer(delay, self._handle_stage_overlay_retry)
+        timer.daemon = True
+        self._stage_overlay_retry_timer = timer
+        timer.start()
+
+    def _handle_stage_overlay_retry(self) -> None:
+        with self._lock:
+            self._stage_overlay_retry_timer = None
+            needs_retry = bool(self._stage_overlay_text) and not self._stage_overlay_active
+
+        if needs_retry:
+            self._ensure_stage_overlay_if_needed()
 
     def _maybe_fire_video_start(self, idle: bool) -> None:
         if idle:
