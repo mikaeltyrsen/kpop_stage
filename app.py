@@ -1531,7 +1531,8 @@ class PlaybackController:
         try:
             self._stage_overlay_subtitle_path.parent.mkdir(parents=True, exist_ok=True)
             escaped_text = self._escape_ass_text(text)
-            display_text = escaped_text if escaped_text else ""
+            alignment_override = "{\\an3}"  # Anchor overlay in the lower-right corner
+            display_text = f"{alignment_override}{escaped_text}" if escaped_text else alignment_override
             contents = """[Script Info]
 ScriptType: v4.00+
 PlayResX: 1920
@@ -1541,7 +1542,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: StageCode,DejaVu Sans,72,&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,3,3,4,9,72,96,96,1
+Style: StageCode,DejaVu Sans,72,&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,3,3,4,3,72,96,96,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
