@@ -64,10 +64,34 @@ def test_stage_overlay_updates_default_loop_subtitle_when_running(monkeypatch, t
     controller.set_stage_code_overlay("ABC")
 
     subtitle_path = controller._stage_overlay_subtitle_path
-    assert subtitle_path == controller.default_video.with_suffix(".srt")
-    assert (
-        subtitle_path.read_text(encoding="utf-8")
-        == "1\n00:00:00,000 --> 09:59:59,999\n{\\an3\\pos(1820,980)\\q2}ABC\n\n"
+    assert subtitle_path == controller.default_video.with_suffix(".ass")
+    assert subtitle_path.read_text(encoding="utf-8") == "\n".join(
+        [
+            "[Script Info]",
+            "ScriptType: v4.00+",
+            "PlayResX: 1920",
+            "PlayResY: 1080",
+            "",
+            "[V4+ Styles]",
+            (
+                "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
+                "OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, "
+                "ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, "
+                "Alignment, MarginL, MarginR, MarginV, Encoding"
+            ),
+            (
+                "Style: StageCode,Arial,72,&H00FFFFFF,&H000000FF,&H64000000,&H64000000,"
+                "0,0,0,0,100,100,0,0,1,3,0,3,0,100,100,1"
+            ),
+            "",
+            "[Events]",
+            (
+                "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, "
+                "Effect, Text"
+            ),
+            "Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\\an3}ABC",
+            "",
+        ]
     )
     assert ("sub-reload",) in commands
 
@@ -121,9 +145,33 @@ def test_start_default_loop_writes_subtitle_before_playback(monkeypatch, tmp_pat
 
     assert captured["path"] == controller.default_video
     assert captured["loop"] is True
-    assert (
-        captured["subtitle"]
-        == "1\n00:00:00,000 --> 09:59:59,999\n{\\an3\\pos(1820,980)\\q2}ABC\n\n"
+    assert captured["subtitle"] == "\n".join(
+        [
+            "[Script Info]",
+            "ScriptType: v4.00+",
+            "PlayResX: 1920",
+            "PlayResY: 1080",
+            "",
+            "[V4+ Styles]",
+            (
+                "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
+                "OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, "
+                "ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, "
+                "Alignment, MarginL, MarginR, MarginV, Encoding"
+            ),
+            (
+                "Style: StageCode,Arial,72,&H00FFFFFF,&H000000FF,&H64000000,&H64000000,"
+                "0,0,0,0,100,100,0,0,1,3,0,3,0,100,100,1"
+            ),
+            "",
+            "[Events]",
+            (
+                "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, "
+                "Effect, Text"
+            ),
+            "Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\\an3}ABC",
+            "",
+        ]
     )
 
 

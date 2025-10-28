@@ -1359,7 +1359,7 @@ class PlaybackController:
             f"Default loop video not found: {self.default_video}. "
             "Update videos.json or copy the file into the media directory."
         )
-        self._stage_overlay_subtitle_path = self.default_video.with_suffix(".srt")
+        self._stage_overlay_subtitle_path = self.default_video.with_suffix(".ass")
 
         if player_command:
             self._base_command = list(player_command)
@@ -1474,12 +1474,50 @@ class PlaybackController:
         try:
             if text:
                 normalized = text.replace("\r\n", "\n").replace("\r", "\n").strip()
+                if not normalized:
+                    path.unlink()
+                    return
+
                 path.parent.mkdir(parents=True, exist_ok=True)
-                contents = (
-                    "1\n00:00:00,000 --> 09:59:59,999\n{\\an3\\pos(1820,980)\\q2}"
-                    + normalized
-                    + "\n\n"
+
+                escaped = (
+                    normalized.replace("\\", "\\\\")
+                    .replace("{", "\\{")
+                    .replace("}", "\\}")
+                    .replace("\n", r"\N")
                 )
+
+                contents = "\n".join(
+                    [
+                        "[Script Info]",
+                        "ScriptType: v4.00+",
+                        "PlayResX: 1920",
+                        "PlayResY: 1080",
+                        "",
+                        "[V4+ Styles]",
+                        (
+                            "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
+                            "OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, "
+                            "ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, "
+                            "Alignment, MarginL, MarginR, MarginV, Encoding"
+                        ),
+                        (
+                            "Style: StageCode,Arial,72,&H00FFFFFF,&H000000FF,&H64000000,&H64000000,"
+                            "0,0,0,0,100,100,0,0,1,3,0,3,0,100,100,1"
+                        ),
+                        "",
+                        "[Events]",
+                        (
+                            "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, "
+                            "Effect, Text"
+                        ),
+                        (
+                            "Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\\an3}" + escaped
+                        ),
+                        "",
+                    ]
+                )
+
                 with path.open("w", encoding="utf-8") as fh:
                     fh.write(contents)
             else:
