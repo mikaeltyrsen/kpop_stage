@@ -34,7 +34,8 @@
       "name": "Intro",
       "file": "videos/intro.mp4",
       "poster": "/static/posters/intro.jpg",
-      "dmx_template": "intro_dmx.json"
+      "dmx_template": "intro_dmx.json",
+      "admin_only": true
     }
   ]
 }

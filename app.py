@@ -2434,9 +2434,14 @@ def api_system_shutdown() -> Any:
 
 @app.route("/api/videos")
 def api_videos() -> Any:
+    key_value = request.args.get("key")
+    user = user_registry.get(key_value) if key_value else None
+    is_admin = bool(user and user.get("admin"))
     display_keys = {"id", "name", "poster", "description", "dmx_template", "file"}
     videos = []
     for entry in video_config["videos"]:
+        if entry.get("admin_only") and not is_admin:
+            continue
         video = {key: entry[key] for key in display_keys if key in entry}
         file_value = entry.get("file")
         if file_value:

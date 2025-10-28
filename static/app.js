@@ -1020,7 +1020,13 @@ function updateVideoCards(status) {
 
 async function fetchVideos() {
   try {
-    const response = await fetch("/api/videos");
+    let url = "/api/videos";
+    if (userKey) {
+      const params = new URLSearchParams();
+      params.set("key", userKey);
+      url = `${url}?${params.toString()}`;
+    }
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`Request failed: ${response.status}`);
     }
