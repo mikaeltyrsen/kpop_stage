@@ -87,3 +87,24 @@ def test_stage_overlay_retries_when_command_initially_fails(monkeypatch, tmp_pat
     assert controller._stage_overlay_text == "ABC"
     assert controller._stage_overlay_sid == 7
     assert ("set_property", "sub-visibility", "yes") in commands
+
+
+def test_mpv_player_defaults_enable_subtitles(monkeypatch, tmp_path):
+    monkeypatch.setattr(app.shutil, "which", lambda name: name)
+
+    controller = app.PlaybackController(default_video=tmp_path / "default.mp4")
+
+    assert "--sid=auto" in controller._base_command
+    assert "--sub-visibility=yes" in controller._base_command
+
+
+def test_non_mpv_player_does_not_receive_subtitle_flags(monkeypatch, tmp_path):
+    monkeypatch.setattr(app.shutil, "which", lambda name: name)
+
+    controller = app.PlaybackController(
+        default_video=tmp_path / "default.mp4",
+        player_command=["vlc", "--fullscreen"],
+    )
+
+    assert "--sid=auto" not in controller._base_command
+    assert "--sub-visibility=yes" not in controller._base_command

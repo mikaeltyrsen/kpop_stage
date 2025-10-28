@@ -1384,6 +1384,19 @@ class PlaybackController:
             )
             self._player_available = False
 
+        player_name = Path(self._base_command[0]).name
+        if player_name == "mpv":
+            if not any(
+                arg == "--sid" or arg.startswith("--sid=")
+                for arg in self._base_command[1:]
+            ):
+                self._base_command.append("--sid=auto")
+            if not any(
+                arg == "--sub-visibility" or arg.startswith("--sub-visibility=")
+                for arg in self._base_command[1:]
+            ):
+                self._base_command.append("--sub-visibility=yes")
+
     @property
     def default_missing_message(self) -> str:
         return self._default_missing_message
