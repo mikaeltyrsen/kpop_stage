@@ -272,6 +272,7 @@ body {
   font-weight: 600;
   color: #101010;
   box-shadow: 0 0.35rem 1.1rem rgba(0, 0, 0, 0.12);
+  text-transform: uppercase;
 }
 
 .queue-performer input:disabled {

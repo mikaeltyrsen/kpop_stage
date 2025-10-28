@@ -1571,7 +1571,7 @@ class PlaybackController:
                             "Alignment, MarginL, MarginR, MarginV, Encoding"
                         ),
                         (
-                            "Style: StageCode,Arial,120,&H00FFFFFF,&H000000FF,&H64000000,&H64000000,"
+                            "Style: StageCode,Arial,200,&H00FFFFFF,&H000000FF,&H64000000,&H64000000,"
                             "0,0,0,0,100,100,0,0,1,3,0,3,0,520,520,1"
                         ),
                         "",
@@ -1581,7 +1581,7 @@ class PlaybackController:
                             "Effect, Text"
                         ),
                         (
-                            r"Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\an6\pos(1680,870)\q2\bord4\shad2}" + escaped
+                            r"Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\an6\pos(1790,870)\q2\bord4\shad2}" + escaped
                         ),
                         "",
                     ]
@@ -1597,16 +1597,41 @@ class PlaybackController:
             LOGGER.exception("Unable to update default loop subtitle file: %s", path)
 
     def _update_welcome_subtitle_locked(self, text: str) -> None:
+        def break_long_tokens_for_ass(s: str, width: int = 8) -> str:
+            """
+            Insert \\N inside tokens that have no spaces and exceed `width`.
+            Keeps spaces between normal words intact.
+            """
+            parts = []
+            for token in s.split(' '):  # preserve spacing between words
+                if len(token) <= width:
+                    parts.append(token)
+                else:
+                    chunks = [token[i:i+width] for i in range(0, len(token), width)]
+                    # Use a single backslash in the final file -> '\\N' in Python
+                    parts.append("\\N".join(chunks))
+            return ' '.join(parts)
+        
         path = self._welcome_subtitle_path
         if not path:
             return
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
+        
+            # 1) Uppercase user text
+            up = text.upper()
+        
+            # 2) Escape ASS-reserved characters inside user text
+            #    (we escape first, then insert \N so our backslash isn't doubled)
             escaped = (
-                text.replace("\\", "\\\\")
+                up.replace("\\", "\\\\")  # user-provided backslashes
                 .replace("{", "\\{")
                 .replace("}", "\\}")
             )
+        
+            # 3) Hard-wrap long no-space tokens by inserting \N every N chars
+            wrapped = break_long_tokens_for_ass(escaped, width=15)  # tweak width as needed
+        
             contents = "\n".join(
                 [
                     "[Script Info]",
@@ -1622,7 +1647,7 @@ class PlaybackController:
                         "Alignment, MarginL, MarginR, MarginV, Encoding"
                     ),
                     (
-                        "Style: WelcomeName,Arial,120,&H00FFFFFF,&H000000FF,&H96000000,&H64000000,"\
+                        "Style: WelcomeName,Arial,230,&H00FFFFFF,&H000000FF,&H96000000,&H64000000,"
                         "0,0,0,0,100,100,0,0,1,6,0,5,0,0,80,1"
                     ),
                     "",
@@ -1631,7 +1656,8 @@ class PlaybackController:
                         "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, "
                         "Effect, Text"
                     ),
-                    r"Dialogue: 0,0:00:00.00,0:00:07.00,WelcomeName,,0,0,0,,{\an5\bord6\shad0}" + escaped,
+                    # Note: wrapped includes literal \N breaks for ASS
+                    "Dialogue: 0,0:00:00.50,0:00:04.45,WelcomeName,,0,0,0,,{\\an5\\bord6\\shad0}" + wrapped,
                     "",
                 ]
             )
@@ -1639,6 +1665,7 @@ class PlaybackController:
                 fh.write(contents)
         except OSError:
             LOGGER.exception("Unable to update welcome subtitle file: %s", path)
+
 
     def _start_default_locked(self) -> None:
         if not self.default_video.exists():
