@@ -2947,8 +2947,28 @@ def main() -> None:
         app_config["HTTP_PORT"] = HTTP_PORT
         app_config["HTTPS_PORT"] = HTTPS_PORT
 
+    def _tls_path_exists(path: Path, label: str) -> bool:
+        try:
+            return path.is_file()
+        except PermissionError:
+            LOGGER.warning(
+                "Permission denied when accessing TLS %s at %s. Serving HTTP only.",
+                label,
+                path,
+            )
+        except OSError as exc:
+            LOGGER.warning(
+                "Unable to access TLS %s at %s: %s. Serving HTTP only.",
+                label,
+                path,
+                exc,
+            )
+        return False
+
     ssl_context: Optional[Tuple[str, str]] = None
-    if TLS_CERT_PATH.is_file() and TLS_KEY_PATH.is_file():
+    if _tls_path_exists(TLS_CERT_PATH, "certificate") and _tls_path_exists(
+        TLS_KEY_PATH, "key"
+    ):
         ssl_context = (str(TLS_CERT_PATH), str(TLS_KEY_PATH))
         LOGGER.info(
             "HTTPS enabled using certificate %s and key %s",
