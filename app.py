@@ -1360,6 +1360,7 @@ class PlaybackController:
             f"Default loop video not found: {self.default_video}. "
             "Update videos.json or copy the file into the media directory."
         )
+        self._stage_overlay_subtitle_path = MEDIA_DIR / "stage_code_overlay.ass"
 
         if player_command:
             self._base_command = list(player_command)
@@ -1471,15 +1472,53 @@ class PlaybackController:
         self._start_callback_fired = False
 
     @staticmethod
-    def _format_stage_overlay_filter(text: str) -> str:
-        escaped_text = text.replace("\\", "\\\\").replace("'", "\\'")
-        display_text = f"Stage code: {escaped_text}" if escaped_text else ""
-        drawtext = (
-            "lavfi=[drawtext=font='DejaVu Sans':fontsize=72:fontcolor=white"
-            ":box=1:boxcolor=0x64000000:boxborderw=24:shadowcolor=0xC0000000:shadowx=2:shadowy=2"
-            ":x=72:y=h-text_h-120:text='{}']"
-        ).format(display_text)
-        return f"@stagecode:{drawtext}"
+    def _escape_ass_text(text: str) -> str:
+        sanitized = text.replace("\\", "\\\\")
+        sanitized = sanitized.replace("{", "\\{").replace("}", "\\}")
+        sanitized = sanitized.replace("\r", "")
+        return sanitized.replace("\n", "\\N")
+
+    def _write_stage_overlay_subtitle(self, text: str) -> Optional[Path]:
+        try:
+            self._stage_overlay_subtitle_path.parent.mkdir(parents=True, exist_ok=True)
+            escaped_text = self._escape_ass_text(text)
+            display_text = f"Stage code: {escaped_text}" if escaped_text else ""
+            contents = """[Script Info]
+ScriptType: v4.00+
+PlayResX: 1920
+PlayResY: 1080
+WrapStyle: 2
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: StageCode,DejaVu Sans,72,&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,3,0,0,2,72,72,120,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{text}
+""".format(text=display_text)
+            with self._stage_overlay_subtitle_path.open("w", encoding="utf-8") as fh:
+                fh.write(contents)
+        except OSError:
+            LOGGER.exception("Unable to write stage overlay subtitle file")
+            return None
+        return self._stage_overlay_subtitle_path
+
+    def _cleanup_stage_overlay_subtitle(self) -> None:
+        try:
+            self._stage_overlay_subtitle_path.unlink()
+        except FileNotFoundError:
+            return
+        except OSError:
+            LOGGER.warning("Unable to remove stage overlay subtitle file: %s", self._stage_overlay_subtitle_path)
+
+    def _format_stage_overlay_filter(self, text: str) -> Optional[str]:
+        subtitle_path = self._write_stage_overlay_subtitle(text)
+        if not subtitle_path:
+            return None
+        escaped_path = str(subtitle_path).replace("\\", "\\\\").replace("'", "\\'")
+        return f"@stagecode:subtitles=filename='{escaped_path}'"
 
     def set_stage_code_overlay(self, code: Optional[str]) -> None:
         text = (code or "").strip()
@@ -1508,14 +1547,22 @@ class PlaybackController:
                 finally:
                     self._stage_overlay_active = False
                     self._stage_overlay_text = None
+                    if not text:
+                        self._cleanup_stage_overlay_subtitle()
 
             if not text:
                 self._stage_overlay_active = False
                 self._stage_overlay_text = None
+                self._cleanup_stage_overlay_subtitle()
                 return
 
             try:
                 filter_arg = self._format_stage_overlay_filter(text)
+                if not filter_arg:
+                    self._stage_overlay_active = False
+                    self._stage_overlay_text = None
+                    self._cleanup_stage_overlay_subtitle()
+                    return
                 response = self._send_ipc_command("vf", "add", filter_arg)
                 if response.get("error") == "success":
                     self._stage_overlay_active = True
@@ -1524,15 +1571,18 @@ class PlaybackController:
                     LOGGER.warning("Unable to enable stage code overlay: %s", response.get("error"))
                     self._stage_overlay_active = False
                     self._stage_overlay_text = None
+                    self._cleanup_stage_overlay_subtitle()
             except OSError:
                 LOGGER.exception("Unable to communicate with mpv while enabling stage code overlay")
                 self._reset_player_state()
                 self._stage_overlay_active = False
                 self._stage_overlay_text = None
+                self._cleanup_stage_overlay_subtitle()
             except Exception:
                 LOGGER.exception("Unexpected error enabling stage code overlay")
                 self._stage_overlay_active = False
                 self._stage_overlay_text = None
+                self._cleanup_stage_overlay_subtitle()
 
     def _maybe_fire_video_start(self, idle: bool) -> None:
         if idle:
