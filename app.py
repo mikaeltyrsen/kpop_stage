@@ -60,11 +60,18 @@ _cec_name = os.environ.get("CEC_OSD_NAME", "Demon Player").strip() or "Demon Pla
 CEC_OSD_NAME = _cec_name[:CEC_OSD_NAME_MAX_LENGTH]
 
 
+def _build_cec_power_on_payload(osd_name: str) -> bytes:
+    """Return the command payload for naming and powering on the display."""
+
+    escaped_name = osd_name.replace("\\", "\\\\").replace('"', '\\"')
+    return f'name 0 "{escaped_name}"\non 0\n'.encode()
+
+
 def ensure_display_powered_on() -> None:
     """Attempt to power on the connected display via HDMI-CEC."""
 
     try:
-        cec_commands = f"name 0 {CEC_OSD_NAME}\non 0\n".encode()
+        cec_commands = _build_cec_power_on_payload(CEC_OSD_NAME)
         subprocess.run(
             ["cec-client", "-s", "-d", "1"],
             input=cec_commands,
