@@ -1581,7 +1581,7 @@ class PlaybackController:
                             "Effect, Text"
                         ),
                         (
-                            r"Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\an6\pos(1790,850)\q2\bord4\shad2}" + escaped
+                            r"Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\an6\pos(1790,800)\q2\bord4\shad2}" + escaped
                         ),
                         "",
                     ]
