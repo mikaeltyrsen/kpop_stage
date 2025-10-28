@@ -1476,7 +1476,9 @@ class PlaybackController:
                 normalized = text.replace("\r\n", "\n").replace("\r", "\n").strip()
                 path.parent.mkdir(parents=True, exist_ok=True)
                 contents = (
-                    "1\n00:00:00,000 --> 09:59:59,999\n{\\an3}" + normalized + "\n\n"
+                    "1\n00:00:00,000 --> 09:59:59,999\n{\\an3\\pos(1820,980)}"
+                    + normalized
+                    + "\n\n"
                 )
                 with path.open("w", encoding="utf-8") as fh:
                     fh.write(contents)
