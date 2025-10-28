@@ -1060,7 +1060,7 @@ function updatePlayerUI(status) {
   if (playerOverlay) {
     playerOverlay.hidden = !shouldHideSelection;
   }
-  playerBar.hidden = !isVideoMode;
+  playerBar.hidden = false;
   playerBar.classList.toggle("is-default", !isVideoMode);
 
   if (playerStatusEl) {
