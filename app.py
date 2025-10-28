@@ -1354,16 +1354,12 @@ class PlaybackController:
         self._pending_video_start: Optional[Path] = None
         self._pending_requires_playlist_advance = False
         self._start_callback_fired = False
-        self._stage_overlay_active = False
-        self._stage_overlay_sid: Optional[int] = None
         self._stage_overlay_text: Optional[str] = None
-        self._stage_overlay_retry_timer: Optional[threading.Timer] = None
-        self._stage_overlay_previous_sid: Optional[str] = None
         self._default_missing_message = (
             f"Default loop video not found: {self.default_video}. "
             "Update videos.json or copy the file into the media directory."
         )
-        self._stage_overlay_subtitle_path = MEDIA_DIR / "stage_code_overlay.ass"
+        self._stage_overlay_subtitle_path = self.default_video.with_suffix(".srt")
 
         if player_command:
             self._base_command = list(player_command)
@@ -1473,11 +1469,29 @@ class PlaybackController:
         else:
             self._start_idle_monitor_locked()
 
+    def _update_default_loop_subtitle_locked(self, text: Optional[str]) -> None:
+        path = self._stage_overlay_subtitle_path
+        try:
+            if text:
+                normalized = text.replace("\r\n", "\n").replace("\r", "\n").strip()
+                path.parent.mkdir(parents=True, exist_ok=True)
+                contents = "1\n00:00:00,000 --> 09:59:59,999\n{}\n\n".format(normalized)
+                with path.open("w", encoding="utf-8") as fh:
+                    fh.write(contents)
+            else:
+                path.unlink()
+        except FileNotFoundError:
+            return
+        except OSError:
+            LOGGER.exception("Unable to update default loop subtitle file: %s", path)
+
     def _start_default_locked(self) -> None:
         if not self.default_video.exists():
             raise FileNotFoundError(self._default_missing_message)
 
         self._clear_pending_video_start()
+
+        self._update_default_loop_subtitle_locked(self._stage_overlay_text)
 
         if (
             self._process
@@ -1493,289 +1507,33 @@ class PlaybackController:
         self._pending_requires_playlist_advance = False
         self._start_callback_fired = False
 
-    @staticmethod
-    def _escape_ass_text(text: str) -> str:
-        sanitized = text.replace("\\", "\\\\")
-        sanitized = sanitized.replace("{", "\\{").replace("}", "\\}")
-        sanitized = sanitized.replace("\r", "")
-        return sanitized.replace("\n", "\\N")
-
-    @staticmethod
-    def _format_sid_property_value(value: Any) -> str:
-        if value is None:
-            return "auto"
-        if isinstance(value, bool):
-            return "yes" if value else "no"
-        if isinstance(value, (int, float)):
-            if isinstance(value, float) and not value.is_integer():
-                return str(value)
-            return str(int(value))
-        if isinstance(value, str):
-            stripped = value.strip()
-            return stripped or "auto"
-        return str(value)
-
-    def _set_secondary_sid_property(self, sid_value: Optional[int]) -> None:
-        target = "no" if sid_value is None else str(sid_value)
-        try:
-            response = self._send_ipc_command("set_property", "secondary-sid", target)
-        except OSError:
-            LOGGER.exception(
-                "Unable to communicate with mpv while adjusting secondary subtitle track"
-            )
-            self._reset_player_state()
-        except Exception:
-            LOGGER.exception("Unexpected error adjusting secondary subtitle track")
-        else:
-            if response.get("error") != "success":
-                LOGGER.debug(
-                    "Unable to update secondary subtitle selection: %s",
-                    response.get("error"),
-                )
-
-    def _write_stage_overlay_subtitle(self, text: str) -> Optional[Path]:
-        try:
-            self._stage_overlay_subtitle_path.parent.mkdir(parents=True, exist_ok=True)
-            escaped_text = self._escape_ass_text(text)
-            margin_right = 120
-            margin_bottom = 120
-            alignment_override = "{\\an3}"  # Anchor overlay in the lower-right corner
-            display_text = f"{alignment_override}{escaped_text}" if escaped_text else alignment_override
-            contents = """[Script Info]
-ScriptType: v4.00+
-PlayResX: 1920
-PlayResY: 1080
-WrapStyle: 2
-ScaledBorderAndShadow: yes
-
-[V4+ Styles]
-Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: StageCode,DejaVu Sans,172,&H00FFFFFF,&H00FFFFFF,&H00000000,&H64000000,0,0,0,0,100,100,0,0,3,3,4,3,0,{margin_right},{margin_bottom},1
-
-[Events]
-Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{text}
-""".format(margin_right=margin_right, margin_bottom=margin_bottom, text=display_text)
-            with self._stage_overlay_subtitle_path.open("w", encoding="utf-8") as fh:
-                fh.write(contents)
-        except OSError:
-            LOGGER.exception("Unable to write stage overlay subtitle file")
-            return None
-        return self._stage_overlay_subtitle_path
-
-    def _cleanup_stage_overlay_subtitle(self) -> None:
-        try:
-            self._stage_overlay_subtitle_path.unlink()
-        except FileNotFoundError:
-            return
-        except OSError:
-            LOGGER.warning("Unable to remove stage overlay subtitle file: %s", self._stage_overlay_subtitle_path)
-
     def set_stage_code_overlay(self, code: Optional[str]) -> None:
         text = (code or "").strip()
         desired_text = text or None
 
         with self._lock:
-            self._set_stage_code_overlay_locked(desired_text, text)
+            self._stage_overlay_text = desired_text
+            self._update_default_loop_subtitle_locked(desired_text)
+            self._reload_default_loop_subtitle_locked()
 
-    def _set_stage_code_overlay_locked(self, desired_text: Optional[str], text: str) -> None:
-        self._stage_overlay_text = desired_text
-
-        self._cancel_stage_overlay_retry_locked()
-
+    def _reload_default_loop_subtitle_locked(self) -> None:
         process_running = self._process and self._process.poll() is None
-        if not process_running:
-            self._stage_overlay_active = False
-            self._stage_overlay_sid = None
-            self._stage_overlay_previous_sid = None
-            if desired_text is None:
-                self._cleanup_stage_overlay_subtitle()
-            else:
-                self._schedule_stage_overlay_retry_locked()
-            return
-
-        if self._stage_overlay_active or self._stage_overlay_sid is not None or desired_text is None:
-            if self._stage_overlay_sid is not None:
-                try:
-                    response = self._send_ipc_command("sub-remove", str(self._stage_overlay_sid))
-                    if response.get("error") not in {"success", "not found"}:
-                        LOGGER.debug(
-                            "Stage code subtitle removal returned %s",
-                            response.get("error"),
-                        )
-                except OSError:
-                    LOGGER.exception(
-                        "Unable to communicate with mpv while removing stage code subtitle"
-                    )
-                    self._reset_player_state()
-                    if desired_text is None:
-                        self._stage_overlay_sid = None
-                        self._stage_overlay_active = False
-                        self._stage_overlay_previous_sid = None
-                        self._cleanup_stage_overlay_subtitle()
-                        return
-                except Exception:
-                    LOGGER.exception("Unexpected error removing stage code subtitle")
-                    if desired_text is None:
-                        self._stage_overlay_sid = None
-                        self._stage_overlay_active = False
-                        self._stage_overlay_previous_sid = None
-                        self._cleanup_stage_overlay_subtitle()
-                        return
-                self._set_secondary_sid_property(None)
-
-            self._stage_overlay_active = False
-            self._stage_overlay_sid = None
-            self._stage_overlay_previous_sid = None
-            if desired_text is None:
-                self._cleanup_stage_overlay_subtitle()
-                return
-
-        if desired_text is None:
-            self._cleanup_stage_overlay_subtitle()
-            return
-
-        previous_sid_setting = "auto"
-        try:
-            previous_sid_response = self._send_ipc_command("get_property", "sid")
-        except OSError:
-            previous_sid_setting = "auto"
-        else:
-            if previous_sid_response.get("error") == "success":
-                previous_sid_setting = self._format_sid_property_value(
-                    previous_sid_response.get("data")
-                )
-        self._stage_overlay_previous_sid = previous_sid_setting
-
-        subtitle_path = self._write_stage_overlay_subtitle(text)
-        if not subtitle_path:
-            self._stage_overlay_active = False
-            self._stage_overlay_sid = None
-            self._stage_overlay_previous_sid = None
-            if desired_text is not None:
-                self._schedule_stage_overlay_retry_locked()
+        if not process_running or self._current != self.default_video:
             return
 
         try:
-            response = self._send_ipc_command("sub-add", str(subtitle_path), "auto", "select")
-            if response.get("error") == "success":
-                visibility_response = self._send_ipc_command(
-                    "set_property", "sub-visibility", "yes"
-                )
-                if visibility_response.get("error") != "success":
-                    LOGGER.debug(
-                        "Unable to ensure stage code subtitle visibility: %s",
-                        visibility_response.get("error"),
-                    )
-                sid_value: Optional[int] = None
-                sid_response = self._send_ipc_command("get_property", "sid")
-                if sid_response.get("error") == "success":
-                    try:
-                        sid_value = int(str(sid_response.get("data")))
-                    except (TypeError, ValueError):
-                        sid_value = None
-                if sid_value is None:
-                    track_list_response = self._send_ipc_command("get_property", "track-list")
-                    if track_list_response.get("error") == "success":
-                        data = track_list_response.get("data")
-                        if isinstance(data, list):
-                            target_path = str(subtitle_path)
-                            for entry in data:
-                                if not isinstance(entry, dict):
-                                    continue
-                                if entry.get("type") != "sub":
-                                    continue
-                                external_path = entry.get("external_filename") or entry.get(
-                                    "external-filename"
-                                )
-                                if str(external_path) != target_path:
-                                    continue
-                                try:
-                                    sid_value = int(str(entry.get("id")))
-                                except (TypeError, ValueError):
-                                    sid_value = None
-                                if sid_value is not None:
-                                    break
-                if sid_value is None:
-                    LOGGER.warning(
-                        "Stage code subtitle enabled but unable to determine track id"
-                    )
-                self._stage_overlay_sid = sid_value
-                self._stage_overlay_active = True
-                if sid_value is not None:
-                    self._set_secondary_sid_property(sid_value)
-                restore_value = self._stage_overlay_previous_sid
-                if restore_value:
-                    restore_response = self._send_ipc_command(
-                        "set_property", "sid", restore_value
-                    )
-                    if restore_response.get("error") != "success":
-                        LOGGER.debug(
-                            "Unable to restore primary subtitle selection: %s",
-                            restore_response.get("error"),
-                        )
-                if sid_value is None:
-                    LOGGER.debug("Stage code subtitle will require manual removal if needed")
-            else:
-                error = response.get("error")
-                details = response.get("data")
-                if details:
-                    LOGGER.warning(
-                        "Unable to enable stage code subtitle: %s (%s)",
-                        error,
-                        details,
-                    )
-                else:
-                    LOGGER.warning(
-                        "Unable to enable stage code subtitle: %s",
-                        error,
-                    )
-                self._stage_overlay_active = False
-                self._stage_overlay_sid = None
-                self._stage_overlay_previous_sid = None
-                self._cleanup_stage_overlay_subtitle()
+            self._send_ipc_command("sub-reload")
         except OSError:
-            LOGGER.exception("Unable to communicate with mpv while enabling stage code subtitle")
+            LOGGER.exception(
+                "Unable to communicate with mpv while reloading default loop subtitle"
+            )
             self._reset_player_state()
-            self._stage_overlay_active = False
-            self._stage_overlay_sid = None
-            self._stage_overlay_previous_sid = None
-            self._cleanup_stage_overlay_subtitle()
         except Exception:
-            LOGGER.exception("Unexpected error enabling stage code subtitle")
-            self._stage_overlay_active = False
-            self._stage_overlay_sid = None
-            self._stage_overlay_previous_sid = None
-            self._cleanup_stage_overlay_subtitle()
-
-        if desired_text is not None and not self._stage_overlay_active:
-            self._schedule_stage_overlay_retry_locked()
-
-    def _cancel_stage_overlay_retry_locked(self) -> None:
-        if self._stage_overlay_retry_timer:
-            self._stage_overlay_retry_timer.cancel()
-            self._stage_overlay_retry_timer = None
-
-    def _schedule_stage_overlay_retry_locked(self, delay: float = 0.5) -> None:
-        self._cancel_stage_overlay_retry_locked()
-        timer = threading.Timer(delay, self._handle_stage_overlay_retry)
-        timer.daemon = True
-        self._stage_overlay_retry_timer = timer
-        timer.start()
-
-    def _handle_stage_overlay_retry(self) -> None:
-        with self._lock:
-            self._stage_overlay_retry_timer = None
-            needs_retry = bool(self._stage_overlay_text) and not self._stage_overlay_active
-
-        if needs_retry:
-            self._ensure_stage_overlay_if_needed()
+            LOGGER.exception("Unexpected error reloading default loop subtitle")
 
     def _maybe_fire_video_start(self, idle: bool) -> None:
         if idle:
             return
-
-        self._ensure_stage_overlay_if_needed()
 
         with self._lock:
             pending = self._pending_video_start
@@ -1815,17 +1573,6 @@ Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{text}
             callback(pending)
         except Exception:  # pragma: no cover - defensive logging
             LOGGER.exception("Video start callback failed")
-
-    def _ensure_stage_overlay_if_needed(self) -> None:
-        try:
-            with self._lock:
-                desired_text = self._stage_overlay_text
-                needs_activation = bool(desired_text) and not self._stage_overlay_active
-                if not needs_activation or desired_text is None:
-                    return
-                self._set_stage_code_overlay_locked(desired_text, desired_text)
-        except Exception:  # pragma: no cover - defensive logging
-            LOGGER.exception("Unable to reapply stage code overlay")
 
     def _ensure_player_running(self) -> None:
         if self._process and self._process.poll() is None:
