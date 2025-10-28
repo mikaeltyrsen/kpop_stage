@@ -188,6 +188,7 @@ def test_mpv_player_defaults_enable_subtitles(monkeypatch, tmp_path):
 
     assert "--sid=auto" in controller._base_command
     assert "--sub-visibility=yes" in controller._base_command
+    assert "--sub-ass-override=no" in controller._base_command
 
 
 def test_non_mpv_player_does_not_receive_subtitle_flags(monkeypatch, tmp_path):
@@ -200,3 +201,4 @@ def test_non_mpv_player_does_not_receive_subtitle_flags(monkeypatch, tmp_path):
 
     assert "--sid=auto" not in controller._base_command
     assert "--sub-visibility=yes" not in controller._base_command
+    assert "--sub-ass-override=no" not in controller._base_command
