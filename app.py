@@ -55,14 +55,19 @@ RELAY_PRESETS_FILE.parent.mkdir(parents=True, exist_ok=True)
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 LOGGER = logging.getLogger("kpop_stage")
 
+CEC_OSD_NAME_MAX_LENGTH = 14
+_cec_name = os.environ.get("CEC_OSD_NAME", "Demon Player").strip() or "Demon Player"
+CEC_OSD_NAME = _cec_name[:CEC_OSD_NAME_MAX_LENGTH]
+
 
 def ensure_display_powered_on() -> None:
     """Attempt to power on the connected display via HDMI-CEC."""
 
     try:
+        cec_commands = f"name 0 {CEC_OSD_NAME}\non 0\n".encode()
         subprocess.run(
             ["cec-client", "-s", "-d", "1"],
-            input=b"on 0\n",
+            input=cec_commands,
             check=False,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
