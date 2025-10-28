@@ -30,6 +30,10 @@ const queueCountdownEl = document.getElementById("queue-countdown");
 const queueLeaveButton = document.getElementById("queue-leave-button");
 const expiredNotice = document.getElementById("expired-notice");
 const expiredNoticeMessage = document.getElementById("expired-notice-message");
+const performerForm = document.getElementById("queue-performer-form");
+const performerInput = document.getElementById("queue-performer-input");
+const performerStatusEl = document.getElementById("queue-performer-status");
+const performerHelperEl = document.getElementById("queue-performer-helper");
 const playerSection = document.getElementById("player-section");
 const playerOverlay = document.getElementById("player-playing-overlay");
 const searchParams = new URLSearchParams(window.location.search);
@@ -37,6 +41,10 @@ const adminParam = (searchParams.get("admin") || "").toLowerCase();
 const isAdmin = ["1", "true", "yes", "on"].includes(adminParam);
 const rebootButtonDefaultLabel = rebootButton ? rebootButton.textContent.trim() : "Restart Pi";
 const CODE_DRAFT_STORAGE_KEY = "kpop_stage_code_draft";
+const PERFORMER_NAME_MAX_LENGTH = performerInput
+  ? Number.parseInt(performerInput.getAttribute("maxlength") || "40", 10)
+  : 40;
+const PERFORMER_UPDATE_DEBOUNCE_MS = 600;
 
 let userKey = null;
 let codeDraftValue = "";
@@ -60,6 +68,14 @@ let isJoiningQueue = false;
 let toastHideTimer = null;
 let toastHideTimerContext = null;
 let activeToastContext = null;
+let currentQueueEntryId = null;
+let performerUpdateTimer = null;
+let performerLastKnownValue = "";
+let performerLastSubmittedValue = "";
+let performerStatusTimer = null;
+let performerStatusKind = null;
+let performerIsSaving = false;
+let performerInputDirty = false;
 
 function hideToast(context = null) {
   if (!toastEl) {
@@ -343,6 +359,226 @@ function clearStoredCodeDraft() {
   }
 }
 
+function sanitizePerformerNameInput(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+  const cleaned = value.replace(/\r\n/g, " ").replace(/[\r\n]/g, " ");
+  const collapsed = cleaned.replace(/\s+/g, " ").trim();
+  if (!collapsed) {
+    return "";
+  }
+  const limit = Number.isFinite(PERFORMER_NAME_MAX_LENGTH)
+    ? Math.max(1, PERFORMER_NAME_MAX_LENGTH)
+    : 40;
+  if (collapsed.length <= limit) {
+    return collapsed;
+  }
+  return collapsed.slice(0, limit).trimEnd();
+}
+
+function setPerformerStatus(message, type = "info") {
+  if (!performerStatusEl) {
+    return;
+  }
+  if (performerStatusTimer) {
+    clearTimeout(performerStatusTimer);
+    performerStatusTimer = null;
+  }
+
+  if (!message) {
+    performerStatusEl.hidden = true;
+    performerStatusEl.textContent = "";
+    performerStatusEl.classList.remove("is-error", "is-pending", "is-success");
+    performerStatusKind = null;
+    return;
+  }
+
+  performerStatusKind = type;
+  performerStatusEl.hidden = false;
+  performerStatusEl.textContent = message;
+  performerStatusEl.classList.toggle("is-error", type === "error");
+  performerStatusEl.classList.toggle("is-pending", type === "pending");
+  performerStatusEl.classList.toggle("is-success", type === "success");
+
+  if (type === "pending") {
+    return;
+  }
+
+  performerStatusTimer = setTimeout(() => {
+    if (performerStatusKind !== "pending") {
+      setPerformerStatus("", "info");
+    }
+  }, 2500);
+}
+
+function clearPerformerUi() {
+  currentQueueEntryId = null;
+  performerLastKnownValue = "";
+  performerLastSubmittedValue = "";
+  performerInputDirty = false;
+  if (performerForm) {
+    performerForm.hidden = true;
+  }
+  if (performerHelperEl) {
+    performerHelperEl.hidden = true;
+  }
+  if (performerInput) {
+    performerInput.value = "";
+    performerInput.disabled = true;
+  }
+  setPerformerStatus("", "info");
+}
+
+function syncPerformerUi(entry, state) {
+  const entryId = entry && typeof entry.id === "string" ? entry.id : null;
+  const serverName = entry && typeof entry.performer_name === "string" ? entry.performer_name : "";
+  currentQueueEntryId = entryId;
+  performerLastKnownValue = serverName;
+  performerLastSubmittedValue = serverName;
+
+  const canEdit = Boolean(entryId && (state === "waiting" || state === "ready"));
+
+  if (performerForm) {
+    performerForm.hidden = !canEdit;
+  }
+  if (performerHelperEl) {
+    performerHelperEl.hidden = !canEdit;
+  }
+  if (performerInput) {
+    performerInput.disabled = !canEdit;
+    const normalizedCurrent = sanitizePerformerNameInput(performerInput.value);
+    if (!performerInputDirty || normalizedCurrent === serverName || !canEdit) {
+      performerInput.value = serverName;
+    }
+    if (!canEdit) {
+      performerInputDirty = false;
+    }
+  }
+
+  if (!canEdit) {
+    setPerformerStatus("", "info");
+  }
+}
+
+function schedulePerformerUpdate(force = false) {
+  if (!performerInput || !currentQueueEntryId) {
+    return;
+  }
+
+  const normalized = sanitizePerformerNameInput(performerInput.value);
+
+  if (!force) {
+    if (
+      normalized === performerLastKnownValue &&
+      normalized === performerLastSubmittedValue &&
+      !performerIsSaving
+    ) {
+      return;
+    }
+  }
+
+  if (performerUpdateTimer) {
+    clearTimeout(performerUpdateTimer);
+    performerUpdateTimer = null;
+  }
+
+  const submit = () => {
+    performerUpdateTimer = null;
+    submitPerformerName(normalized);
+  };
+
+  if (force) {
+    submit();
+  } else {
+    performerUpdateTimer = setTimeout(submit, PERFORMER_UPDATE_DEBOUNCE_MS);
+  }
+}
+
+async function submitPerformerName(normalizedValue) {
+  if (!performerInput || !currentQueueEntryId) {
+    return;
+  }
+
+  const payloadValue = normalizedValue || "";
+  if (
+    !performerIsSaving &&
+    payloadValue === performerLastKnownValue &&
+    payloadValue === performerLastSubmittedValue
+  ) {
+    return;
+  }
+
+  performerIsSaving = true;
+  performerLastSubmittedValue = payloadValue;
+  setPerformerStatus("Saving…", "pending");
+
+  try {
+    const response = await fetch("/api/queue/performer", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: payloadValue || null,
+        entry_id: currentQueueEntryId,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to save performer name (${response.status})`);
+    }
+
+    const payload = await response.json().catch(() => ({}));
+    performerIsSaving = false;
+
+    if (payload && typeof payload === "object" && payload.entry) {
+      updateQueueUI(payload);
+    }
+
+    if (payloadValue) {
+      setPerformerStatus("Performer saved!", "success");
+    } else {
+      setPerformerStatus("Performer cleared", "success");
+    }
+  } catch (err) {
+    performerIsSaving = false;
+    console.error(err);
+    setPerformerStatus("Couldn't save the name", "error");
+  }
+}
+
+if (performerForm) {
+  performerForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!performerInput) {
+      return;
+    }
+    const normalized = sanitizePerformerNameInput(performerInput.value);
+    if (performerInput.value !== normalized) {
+      performerInput.value = normalized;
+    }
+    schedulePerformerUpdate(true);
+  });
+}
+
+if (performerInput) {
+  performerInput.addEventListener("input", () => {
+    performerInputDirty = true;
+    schedulePerformerUpdate(false);
+  });
+  performerInput.addEventListener("focus", () => {
+    performerInputDirty = true;
+  });
+  performerInput.addEventListener("blur", () => {
+    performerInputDirty = false;
+    const normalized = sanitizePerformerNameInput(performerInput.value);
+    if (performerInput.value !== normalized) {
+      performerInput.value = normalized;
+    }
+    schedulePerformerUpdate(true);
+  });
+}
+
 if (codeInput && !isAdmin) {
   const storedDraft = loadStoredCodeDraft();
   if (storedDraft) {
@@ -388,6 +624,7 @@ function resetQueueUiForIdle(options = {}) {
     queueLeaveButton.hidden = true;
     queueLeaveButton.disabled = false;
   }
+  clearPerformerUi();
   if (!isAdmin) {
     if (accessSection) {
       accessSection.hidden = false;
@@ -427,6 +664,7 @@ function updateQueueUI(payload) {
 
   const entry = payload.entry && typeof payload.entry === "object" ? payload.entry : null;
   if (!entry) {
+    clearPerformerUi();
     if (!isAdmin) {
       const shouldPreserveCode = Boolean(codeDraftValue);
       resetQueueUiForIdle({ preserveCodeInput: shouldPreserveCode });
@@ -437,6 +675,8 @@ function updateQueueUI(payload) {
   const state = entry.state;
   const previousState = lastQueueState;
   lastQueueState = state;
+
+  syncPerformerUi(entry, state);
 
   if (state !== "expired") {
     hideExpiredNotice();
@@ -676,11 +916,16 @@ async function joinQueue(code) {
   isJoiningQueue = true;
   updateCodeSubmitState();
   try {
+    const requestBody = { code };
+    if (performerInput) {
+      const performerNameDraft = sanitizePerformerNameInput(performerInput.value);
+      requestBody.performer_name = performerNameDraft ? performerNameDraft : null;
+    }
     const response = await fetch("/api/queue/join", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code }),
+      body: JSON.stringify(requestBody),
     });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {

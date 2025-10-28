@@ -1,6 +1,6 @@
 import pathlib
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import pytest
 
@@ -19,9 +19,11 @@ class StubController:
         self.stop_calls = 0
         self.is_default = True
         self.default_missing_message = "missing default"
+        self.welcome_texts = []
 
-    def play(self, path: pathlib.Path) -> None:
+    def play(self, path: pathlib.Path, *, welcome_text: Optional[str] = None) -> None:
         self.play_calls.append(path)
+        self.welcome_texts.append(welcome_text)
         self.is_default = False
 
     def stop(self) -> None:
