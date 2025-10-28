@@ -1522,83 +1522,85 @@ Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{text}
 
     def set_stage_code_overlay(self, code: Optional[str]) -> None:
         text = (code or "").strip()
+        desired_text = text or None
+
         with self._lock:
-            self._stage_overlay_text = text or None
+            self._set_stage_code_overlay_locked(desired_text, text)
 
-            process_running = self._process and self._process.poll() is None
-            if not process_running:
-                self._stage_overlay_active = False
-                return
+    def _set_stage_code_overlay_locked(self, desired_text: Optional[str], text: str) -> None:
+        self._stage_overlay_text = desired_text
 
-            if self._stage_overlay_active or not text:
-                try:
-                    response = self._send_ipc_command("vf", "del", "@stagecode")
-                    if response.get("error") not in {"success", "property unavailable", "no such filter"}:
-                        LOGGER.debug("Stage code overlay removal returned %s", response.get("error"))
-                except OSError:
-                    LOGGER.exception("Unable to communicate with mpv while removing stage code overlay")
-                    self._reset_player_state()
-                    if not text:
-                        return
-                except Exception:
-                    LOGGER.exception("Unexpected error removing stage code overlay")
-                    if not text:
-                        return
-                finally:
-                    self._stage_overlay_active = False
-                    self._stage_overlay_text = None
-                    if not text:
-                        self._cleanup_stage_overlay_subtitle()
-
-            if not text:
-                self._stage_overlay_active = False
-                self._stage_overlay_text = None
+        process_running = self._process and self._process.poll() is None
+        if not process_running:
+            self._stage_overlay_active = False
+            if desired_text is None:
                 self._cleanup_stage_overlay_subtitle()
-                return
+            return
 
+        if self._stage_overlay_active or desired_text is None:
             try:
-                filter_arg = self._format_stage_overlay_filter(text)
-                if not filter_arg:
-                    self._stage_overlay_active = False
-                    self._stage_overlay_text = None
-                    self._cleanup_stage_overlay_subtitle()
-                    return
-                response = self._send_ipc_command("vf", "add", filter_arg)
-                if response.get("error") == "success":
-                    self._stage_overlay_active = True
-                    self._stage_overlay_text = text
-                else:
-                    error = response.get("error")
-                    details = response.get("data")
-                    if details:
-                        LOGGER.warning(
-                            "Unable to enable stage code overlay: %s (%s)",
-                            error,
-                            details,
-                        )
-                    else:
-                        LOGGER.warning(
-                            "Unable to enable stage code overlay: %s",
-                            error,
-                        )
-                    self._stage_overlay_active = False
-                    self._stage_overlay_text = None
-                    self._cleanup_stage_overlay_subtitle()
+                response = self._send_ipc_command("vf", "del", "@stagecode")
+                if response.get("error") not in {"success", "property unavailable", "no such filter"}:
+                    LOGGER.debug("Stage code overlay removal returned %s", response.get("error"))
             except OSError:
-                LOGGER.exception("Unable to communicate with mpv while enabling stage code overlay")
+                LOGGER.exception("Unable to communicate with mpv while removing stage code overlay")
                 self._reset_player_state()
-                self._stage_overlay_active = False
-                self._stage_overlay_text = None
-                self._cleanup_stage_overlay_subtitle()
+                if desired_text is None:
+                    return
             except Exception:
-                LOGGER.exception("Unexpected error enabling stage code overlay")
+                LOGGER.exception("Unexpected error removing stage code overlay")
+                if desired_text is None:
+                    return
+            finally:
                 self._stage_overlay_active = False
-                self._stage_overlay_text = None
+                if desired_text is None:
+                    self._cleanup_stage_overlay_subtitle()
+
+        if desired_text is None:
+            self._stage_overlay_active = False
+            self._cleanup_stage_overlay_subtitle()
+            return
+
+        filter_arg = self._format_stage_overlay_filter(text)
+        if not filter_arg:
+            self._stage_overlay_active = False
+            return
+
+        try:
+            response = self._send_ipc_command("vf", "add", filter_arg)
+            if response.get("error") == "success":
+                self._stage_overlay_active = True
+            else:
+                error = response.get("error")
+                details = response.get("data")
+                if details:
+                    LOGGER.warning(
+                        "Unable to enable stage code overlay: %s (%s)",
+                        error,
+                        details,
+                    )
+                else:
+                    LOGGER.warning(
+                        "Unable to enable stage code overlay: %s",
+                        error,
+                    )
+                self._stage_overlay_active = False
                 self._cleanup_stage_overlay_subtitle()
+        except OSError:
+            LOGGER.exception("Unable to communicate with mpv while enabling stage code overlay")
+            self._reset_player_state()
+            self._stage_overlay_active = False
+            self._cleanup_stage_overlay_subtitle()
+        except Exception:
+            LOGGER.exception("Unexpected error enabling stage code overlay")
+            self._stage_overlay_active = False
+            self._cleanup_stage_overlay_subtitle()
 
     def _maybe_fire_video_start(self, idle: bool) -> None:
         if idle:
             return
+
+        self._ensure_stage_overlay_if_needed()
 
         with self._lock:
             pending = self._pending_video_start
@@ -1638,6 +1640,17 @@ Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{text}
             callback(pending)
         except Exception:  # pragma: no cover - defensive logging
             LOGGER.exception("Video start callback failed")
+
+    def _ensure_stage_overlay_if_needed(self) -> None:
+        try:
+            with self._lock:
+                desired_text = self._stage_overlay_text
+                needs_activation = bool(desired_text) and not self._stage_overlay_active
+                if not needs_activation or desired_text is None:
+                    return
+                self._set_stage_code_overlay_locked(desired_text, desired_text)
+        except Exception:  # pragma: no cover - defensive logging
+            LOGGER.exception("Unable to reapply stage code overlay")
 
     def _ensure_player_running(self) -> None:
         if self._process and self._process.poll() is None:
