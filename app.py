@@ -1467,23 +1467,12 @@ class PlaybackController:
     def set_stage_code_overlay(self, code: Optional[str]) -> None:
         text = (code or "").strip()
         with self._lock:
-            if not (self._process and self._process.poll() is None):
-                if not text:
-                    self._stage_overlay_active = False
-                    self._stage_overlay_text = None
-                    return
-                try:
-                    self._ensure_player_running()
-                except FileNotFoundError:
-                    LOGGER.warning("Unable to enable stage code overlay because the video player is unavailable.")
-                    self._stage_overlay_active = False
-                    self._stage_overlay_text = None
-                    return
-                except Exception:
-                    LOGGER.exception("Unable to ensure video player is running for stage code overlay")
-                    self._stage_overlay_active = False
-                    self._stage_overlay_text = None
-                    return
+            self._stage_overlay_text = text or None
+
+            process_running = self._process and self._process.poll() is None
+            if not process_running:
+                self._stage_overlay_active = False
+                return
 
             if self._stage_overlay_active or not text:
                 try:
