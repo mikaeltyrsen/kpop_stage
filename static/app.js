@@ -45,8 +45,6 @@ const PERFORMER_NAME_MAX_LENGTH = performerInput
   ? Number.parseInt(performerInput.getAttribute("maxlength") || "40", 10)
   : 40;
 const PERFORMER_UPDATE_DEBOUNCE_MS = 600;
-const PERFORMER_NAME_COOKIE_KEY = "kpop_stage_performer_name";
-const PERFORMER_NAME_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 let userKey = null;
 let codeDraftValue = "";
@@ -361,45 +359,6 @@ function clearStoredCodeDraft() {
   }
 }
 
-function loadStoredPerformerName() {
-  if (typeof document === "undefined" || !document.cookie) {
-    return "";
-  }
-  try {
-    const cookies = document.cookie.split(";");
-    for (const cookie of cookies) {
-      const [rawName, ...rawValueParts] = cookie.split("=");
-      if (!rawName || rawValueParts.length === 0) {
-        continue;
-      }
-      if (rawName.trim() === PERFORMER_NAME_COOKIE_KEY) {
-        const rawValue = rawValueParts.join("=");
-        return sanitizePerformerNameInput(decodeURIComponent(rawValue));
-      }
-    }
-  } catch (err) {
-    console.warn("Unable to load stored performer name", err);
-  }
-  return "";
-}
-
-function storePerformerNameCookie(value) {
-  if (typeof document === "undefined") {
-    return;
-  }
-  try {
-    const sanitized = sanitizePerformerNameInput(value);
-    if (!sanitized) {
-      document.cookie = `${PERFORMER_NAME_COOKIE_KEY}=; Max-Age=0; Path=/; SameSite=Lax`;
-      return;
-    }
-    const encoded = encodeURIComponent(sanitized);
-    document.cookie = `${PERFORMER_NAME_COOKIE_KEY}=${encoded}; Max-Age=${PERFORMER_NAME_COOKIE_MAX_AGE}; Path=/; SameSite=Lax`;
-  } catch (err) {
-    console.warn("Unable to store performer name", err);
-  }
-}
-
 function sanitizePerformerNameInput(value) {
   if (typeof value !== "string") {
     return "";
@@ -495,14 +454,6 @@ function syncPerformerUi(entry, state) {
     if (!canEdit) {
       performerInputDirty = false;
     }
-    if (canEdit && !serverName) {
-      const storedName = loadStoredPerformerName();
-      if (storedName) {
-        performerInput.value = storedName;
-        performerInputDirty = true;
-        schedulePerformerUpdate(true);
-      }
-    }
   }
 
   if (!canEdit) {
@@ -586,10 +537,8 @@ async function submitPerformerName(normalizedValue) {
 
     if (payloadValue) {
       setPerformerStatus("Performer saved!", "success");
-      storePerformerNameCookie(payloadValue);
     } else {
       setPerformerStatus("Performer cleared", "success");
-      storePerformerNameCookie("");
     }
   } catch (err) {
     performerIsSaving = false;
@@ -613,10 +562,6 @@ if (performerForm) {
 }
 
 if (performerInput) {
-  const storedPerformerName = loadStoredPerformerName();
-  if (storedPerformerName) {
-    performerInput.value = storedPerformerName;
-  }
   performerInput.addEventListener("input", () => {
     performerInputDirty = true;
     schedulePerformerUpdate(false);
