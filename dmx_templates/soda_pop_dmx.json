@@ -6188,6 +6188,15 @@
       "stepTitle": "Start Song"
     },
     {
+      "time": "00:00:15.400",
+      "channel": 128,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_b3rmnfe4",
+      "stepTitle": "Start Song"
+    },
+    {
       "time": "00:00:15.900",
       "channel": 47,
       "value": 255,
@@ -6961,6 +6970,14 @@
           52
         ]
       }
+    },
+    {
+      "time": "00:00:19.362",
+      "channel": 128,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_0j6xtqj0"
     },
     {
       "time": "00:00:29.500",
@@ -13502,6 +13519,14 @@
       "stepTitle": "OVERHEAD STROBE"
     },
     {
+      "time": "00:01:16.497",
+      "channel": 128,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_b3rmnfe4"
+    },
+    {
       "time": "00:01:16.935",
       "channel": 56,
       "value": 0,
@@ -14666,6 +14691,14 @@
       "channelMasterId": "master:back_light"
     },
     {
+      "time": "00:01:22.309",
+      "channel": 128,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_0j6xtqj0"
+    },
+    {
       "time": "00:01:23.100",
       "channel": 30,
       "value": 36,
@@ -14707,6 +14740,14 @@
     },
     {
       "time": "00:01:24.108",
+      "channel": 54,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-red",
+      "valuePresetId": "mover-light-laser-red-full"
+    },
+    {
+      "time": "00:01:24.108",
       "channel": 6,
       "value": 0,
       "fade": 0.0,
@@ -14728,6 +14769,22 @@
       "fade": 0.0,
       "channelPresetId": "back-light-strobe",
       "valuePresetId": "back-light-strobe-none"
+    },
+    {
+      "time": "00:01:24.108",
+      "channel": 40,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-0"
+    },
+    {
+      "time": "00:01:24.108",
+      "channel": 41,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed",
+      "valuePresetId": "mover-light-rotation-speed-super-fast"
     },
     {
       "time": "00:01:24.108",
@@ -15297,7 +15354,7 @@
     {
       "time": "00:01:24.108",
       "channel": 47,
-      "value": 0,
+      "value": 255,
       "fade": 0.0,
       "channelPresetId": "mover-light-beam-brightness",
       "channelMasterId": "master:movers"
@@ -17435,21 +17492,37 @@
       }
     },
     {
-      "time": "00:01:33.580",
+      "time": "00:01:31.641",
+      "channel": 55,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-green",
+      "valuePresetId": "mover-light-laser-green-full"
+    },
+    {
+      "time": "00:01:35.421",
+      "channel": 41,
+      "value": 50,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed",
+      "valuePresetId": "mover-light-rotation-speed-super-slow"
+    },
+    {
+      "time": "00:01:35.421",
       "channel": 48,
-      "value": 225,
+      "value": 230,
       "fade": 0.0,
       "channelPresetId": "mover-light-strobe"
     },
     {
-      "time": "00:01:33.580",
+      "time": "00:01:35.421",
       "channel": 43,
       "value": 63,
       "fade": 0.0,
       "channelPresetId": "mover-light-beam1-rotation",
       "valuePresetId": "mover-light-beam-rotation-45",
       "templateId": "template_09k0nyzo",
-      "templateInstanceId": "template-instance-26",
+      "templateInstanceId": "template-instance-27",
       "templateRowId": "templateRow_a21he9pe",
       "templateLoop": {
         "enabled": true,
@@ -17467,14 +17540,14 @@
       }
     },
     {
-      "time": "00:01:33.580",
+      "time": "00:01:35.421",
       "channel": 44,
       "value": 63,
       "fade": 0.0,
       "channelPresetId": "mover-light-beam2-rotation",
       "valuePresetId": "mover-light-beam2-rotation-45",
       "templateId": "template_09k0nyzo",
-      "templateInstanceId": "template-instance-26",
+      "templateInstanceId": "template-instance-27",
       "templateRowId": "templateRow_27rckyhb",
       "templateLoop": {
         "enabled": true,
@@ -17492,14 +17565,14 @@
       }
     },
     {
-      "time": "00:01:33.580",
+      "time": "00:01:35.421",
       "channel": 45,
       "value": 63,
       "fade": 0.0,
       "channelPresetId": "mover-light-beam3-rotation",
       "valuePresetId": "mover-light-beam3-rotation-45",
       "templateId": "template_09k0nyzo",
-      "templateInstanceId": "template-instance-26",
+      "templateInstanceId": "template-instance-27",
       "templateRowId": "templateRow_x7jvnkhv",
       "templateLoop": {
         "enabled": true,
@@ -17517,14 +17590,14 @@
       }
     },
     {
-      "time": "00:01:33.580",
+      "time": "00:01:35.421",
       "channel": 46,
       "value": 63,
       "fade": 0.0,
       "channelPresetId": "mover-light-beam4-rotation",
       "valuePresetId": "mover-light-beam4-rotation-45",
       "templateId": "template_09k0nyzo",
-      "templateInstanceId": "template-instance-26",
+      "templateInstanceId": "template-instance-27",
       "templateRowId": "templateRow_3fkf6d9u",
       "templateLoop": {
         "enabled": true,
@@ -17542,14 +17615,14 @@
       }
     },
     {
-      "time": "00:01:33.580",
+      "time": "00:01:35.421",
       "channel": 40,
       "value": 0,
       "fade": 0.0,
       "channelPresetId": "mover-light-rotation",
       "valuePresetId": "mover-light-rotation-0",
       "templateId": "template_09k0nyzo",
-      "templateInstanceId": "template-instance-26",
+      "templateInstanceId": "template-instance-27",
       "templateRowId": "templateRow_7jc0kfrk",
       "templateLoop": {
         "enabled": true,
@@ -17567,7 +17640,7 @@
       }
     },
     {
-      "time": "00:01:33.580",
+      "time": "00:01:35.421",
       "channel": 47,
       "value": 255,
       "fade": 0.0,
@@ -17575,7 +17648,7 @@
       "channelMasterId": "master:movers"
     },
     {
-      "time": "00:01:33.580",
+      "time": "00:01:35.421",
       "channel": 49,
       "value": 200,
       "fade": 0.0,
@@ -17583,7 +17656,7 @@
       "channelMasterId": "master:movers"
     },
     {
-      "time": "00:01:33.580",
+      "time": "00:01:35.421",
       "channel": 50,
       "value": 0,
       "fade": 0.0,
@@ -17591,7 +17664,7 @@
       "channelMasterId": "master:movers"
     },
     {
-      "time": "00:01:33.580",
+      "time": "00:01:35.421",
       "channel": 51,
       "value": 200,
       "fade": 0.0,
@@ -17599,7 +17672,7 @@
       "channelMasterId": "master:movers"
     },
     {
-      "time": "00:01:33.580",
+      "time": "00:01:35.421",
       "channel": 52,
       "value": 0,
       "fade": 0.0,
@@ -17607,14 +17680,14 @@
       "channelMasterId": "master:movers"
     },
     {
-      "time": "00:01:34.580",
+      "time": "00:01:36.421",
       "channel": 43,
       "value": 192,
       "fade": 0.0,
       "channelPresetId": "mover-light-beam1-rotation",
       "valuePresetId": "mover-light-beam-rotation-135",
       "templateId": "template_09k0nyzo",
-      "templateInstanceId": "template-instance-26",
+      "templateInstanceId": "template-instance-27",
       "templateRowId": "templateRow_p0m9nkkc",
       "templateLoop": {
         "enabled": true,
@@ -17632,14 +17705,14 @@
       }
     },
     {
-      "time": "00:01:34.580",
+      "time": "00:01:36.421",
       "channel": 44,
       "value": 192,
       "fade": 0.0,
       "channelPresetId": "mover-light-beam2-rotation",
       "valuePresetId": "mover-light-beam2-rotation-135",
       "templateId": "template_09k0nyzo",
-      "templateInstanceId": "template-instance-26",
+      "templateInstanceId": "template-instance-27",
       "templateRowId": "templateRow_t960j39p",
       "templateLoop": {
         "enabled": true,
@@ -17657,14 +17730,14 @@
       }
     },
     {
-      "time": "00:01:34.580",
+      "time": "00:01:36.421",
       "channel": 45,
       "value": 192,
       "fade": 0.0,
       "channelPresetId": "mover-light-beam3-rotation",
       "valuePresetId": "mover-light-beam3-rotation-135",
       "templateId": "template_09k0nyzo",
-      "templateInstanceId": "template-instance-26",
+      "templateInstanceId": "template-instance-27",
       "templateRowId": "templateRow_5vs7mk3s",
       "templateLoop": {
         "enabled": true,
@@ -17682,14 +17755,14 @@
       }
     },
     {
-      "time": "00:01:34.580",
+      "time": "00:01:36.421",
       "channel": 46,
       "value": 192,
       "fade": 0.0,
       "channelPresetId": "mover-light-beam4-rotation",
       "valuePresetId": "mover-light-beam4-rotation-135",
       "templateId": "template_09k0nyzo",
-      "templateInstanceId": "template-instance-26",
+      "templateInstanceId": "template-instance-27",
       "templateRowId": "templateRow_pr8bmdws",
       "templateLoop": {
         "enabled": true,
@@ -17707,14 +17780,14 @@
       }
     },
     {
-      "time": "00:01:34.580",
+      "time": "00:01:36.421",
       "channel": 40,
       "value": 138,
       "fade": 0.0,
       "channelPresetId": "mover-light-rotation",
       "valuePresetId": "mover-light-rotation-270",
       "templateId": "template_09k0nyzo",
-      "templateInstanceId": "template-instance-26",
+      "templateInstanceId": "template-instance-27",
       "templateRowId": "templateRow_luhp3w8a",
       "templateLoop": {
         "enabled": true,
@@ -17732,14 +17805,14 @@
       }
     },
     {
-      "time": "00:01:35.580",
+      "time": "00:01:37.421",
       "channel": 43,
       "value": 63,
       "fade": 0.0,
       "channelPresetId": "mover-light-beam1-rotation",
       "valuePresetId": "mover-light-beam-rotation-45",
       "templateId": "template_09k0nyzo",
-      "templateInstanceId": "template-instance-26",
+      "templateInstanceId": "template-instance-27",
       "templateRowId": "templateRow_hso9q7d0",
       "templateLoop": {
         "enabled": true,
@@ -17757,14 +17830,14 @@
       }
     },
     {
-      "time": "00:01:35.580",
+      "time": "00:01:37.421",
       "channel": 44,
       "value": 63,
       "fade": 0.0,
       "channelPresetId": "mover-light-beam2-rotation",
       "valuePresetId": "mover-light-beam2-rotation-45",
       "templateId": "template_09k0nyzo",
-      "templateInstanceId": "template-instance-26",
+      "templateInstanceId": "template-instance-27",
       "templateRowId": "templateRow_oibw9p81",
       "templateLoop": {
         "enabled": true,
@@ -17782,14 +17855,14 @@
       }
     },
     {
-      "time": "00:01:35.580",
+      "time": "00:01:37.421",
       "channel": 45,
       "value": 63,
       "fade": 0.0,
       "channelPresetId": "mover-light-beam3-rotation",
       "valuePresetId": "mover-light-beam3-rotation-45",
       "templateId": "template_09k0nyzo",
-      "templateInstanceId": "template-instance-26",
+      "templateInstanceId": "template-instance-27",
       "templateRowId": "templateRow_9ltze0p6",
       "templateLoop": {
         "enabled": true,
@@ -17807,14 +17880,14 @@
       }
     },
     {
-      "time": "00:01:35.580",
+      "time": "00:01:37.421",
       "channel": 46,
       "value": 63,
       "fade": 0.0,
       "channelPresetId": "mover-light-beam4-rotation",
       "valuePresetId": "mover-light-beam4-rotation-45",
       "templateId": "template_09k0nyzo",
-      "templateInstanceId": "template-instance-26",
+      "templateInstanceId": "template-instance-27",
       "templateRowId": "templateRow_jjdnmbjn",
       "templateLoop": {
         "enabled": true,
@@ -17832,14 +17905,14 @@
       }
     },
     {
-      "time": "00:01:35.580",
+      "time": "00:01:37.421",
       "channel": 40,
       "value": 255,
       "fade": 0.0,
       "channelPresetId": "mover-light-rotation",
       "valuePresetId": "mover-light-rotation-540",
       "templateId": "template_09k0nyzo",
-      "templateInstanceId": "template-instance-26",
+      "templateInstanceId": "template-instance-27",
       "templateRowId": "templateRow_7vvuyebl",
       "templateLoop": {
         "enabled": true,
@@ -18823,6 +18896,24 @@
       "fade": 0.0,
       "channelPresetId": "mover-light-effects",
       "valuePresetId": "mover-light-effects-stochastic",
+      "stepTitle": "LAST DISCO"
+    },
+    {
+      "time": "00:01:46.830",
+      "channel": 55,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-green",
+      "valuePresetId": "mover-light-laser-green-off",
+      "stepTitle": "LAST DISCO"
+    },
+    {
+      "time": "00:01:46.830",
+      "channel": 128,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_b3rmnfe4",
       "stepTitle": "LAST DISCO"
     },
     {
@@ -21745,6 +21836,14 @@
           24
         ]
       }
+    },
+    {
+      "time": "00:01:54.542",
+      "channel": 128,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_0j6xtqj0"
     },
     {
       "time": "00:01:54.994",
@@ -24882,6 +24981,14 @@
       "valuePresetId": "mover-light-strobe-none"
     },
     {
+      "time": "00:02:05.969",
+      "channel": 128,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_b3rmnfe4"
+    },
+    {
       "time": "00:02:06.013",
       "channel": 6,
       "value": 0,
@@ -25846,6 +25953,32 @@
       "channelPresetId": "right-light-white",
       "channelMasterId": "master:right_light",
       "stepTitle": "SPOT LIGHT ON SINGER"
+    },
+    {
+      "time": "00:02:08.750",
+      "channel": 128,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_0j6xtqj0",
+      "stepTitle": "SPOT LIGHT ON SINGER"
+    }
+  ],
+  "relay_actions": [
+    {
+      "time": "00:01:46.830",
+      "url": "http://192.168.8.100/relay/0?turn=on",
+      "relayPresetId": "relay_snow_machine",
+      "relayCommandId": "on",
+      "label": "On",
+      "stepTitle": "LAST DISCO"
+    },
+    {
+      "time": "00:01:59.986",
+      "url": "http://192.168.8.100/relay/0?turn=off",
+      "relayPresetId": "relay_snow_machine",
+      "relayCommandId": "off",
+      "label": "Off"
     }
   ]
 }

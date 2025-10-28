@@ -1,0 +1,3583 @@
+{
+  "actions": [
+    {
+      "time": "00:00:00",
+      "channel": 43,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-90",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-2",
+      "templateRowId": "templateRow_kkljp6p1",
+      "stepTitle": "RESET"
+    },
+    {
+      "time": "00:00:00",
+      "channel": 44,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-2",
+      "templateRowId": "templateRow_g40qs6kc",
+      "stepTitle": "RESET"
+    },
+    {
+      "time": "00:00:00",
+      "channel": 45,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-2",
+      "templateRowId": "templateRow_kxulog7w",
+      "stepTitle": "RESET"
+    },
+    {
+      "time": "00:00:00",
+      "channel": 46,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-2",
+      "templateRowId": "templateRow_brgwxu91",
+      "stepTitle": "RESET"
+    },
+    {
+      "time": "00:00:00",
+      "channel": 40,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-0",
+      "stepTitle": "RESET"
+    },
+    {
+      "time": "00:00:00",
+      "channel": 41,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed",
+      "valuePresetId": "mover-light-rotation-speed-none",
+      "stepTitle": "RESET"
+    },
+    {
+      "time": "00:00:00.500",
+      "channel": 128,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_b3rmnfe4",
+      "stepTitle": "START SMOKE"
+    },
+    {
+      "time": "00:00:02.250",
+      "channel": 57,
+      "value": 58,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strip",
+      "valuePresetId": "mover-light-strip-cyan",
+      "stepTitle": "OVERHEAD AND UNDERLIGHT"
+    },
+    {
+      "time": "00:00:02.250",
+      "channel": 20,
+      "value": 255,
+      "fade": 4.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "OVERHEAD AND UNDERLIGHT"
+    },
+    {
+      "time": "00:00:02.250",
+      "channel": 21,
+      "value": 200,
+      "fade": 4.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "OVERHEAD AND UNDERLIGHT"
+    },
+    {
+      "time": "00:00:02.250",
+      "channel": 22,
+      "value": 0,
+      "fade": 4.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "OVERHEAD AND UNDERLIGHT"
+    },
+    {
+      "time": "00:00:02.250",
+      "channel": 23,
+      "value": 200,
+      "fade": 4.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "OVERHEAD AND UNDERLIGHT"
+    },
+    {
+      "time": "00:00:02.250",
+      "channel": 24,
+      "value": 0,
+      "fade": 4.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "OVERHEAD AND UNDERLIGHT"
+    },
+    {
+      "time": "00:00:02.250",
+      "channel": 47,
+      "value": 255,
+      "fade": 4.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers",
+      "stepTitle": "OVERHEAD AND UNDERLIGHT"
+    },
+    {
+      "time": "00:00:02.250",
+      "channel": 49,
+      "value": 0,
+      "fade": 4.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers",
+      "stepTitle": "OVERHEAD AND UNDERLIGHT"
+    },
+    {
+      "time": "00:00:02.250",
+      "channel": 50,
+      "value": 0,
+      "fade": 4.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers",
+      "stepTitle": "OVERHEAD AND UNDERLIGHT"
+    },
+    {
+      "time": "00:00:02.250",
+      "channel": 51,
+      "value": 0,
+      "fade": 4.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers",
+      "stepTitle": "OVERHEAD AND UNDERLIGHT"
+    },
+    {
+      "time": "00:00:02.250",
+      "channel": 52,
+      "value": 0,
+      "fade": 4.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers",
+      "stepTitle": "OVERHEAD AND UNDERLIGHT"
+    },
+    {
+      "time": "00:00:06.152",
+      "channel": 128,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_0j6xtqj0",
+      "stepTitle": "STOP SMOKE"
+    },
+    {
+      "time": "00:00:15",
+      "channel": 128,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_b3rmnfe4",
+      "stepTitle": "FADE IN SIDE LIGHTS + START SMOKE"
+    },
+    {
+      "time": "00:00:15",
+      "channel": 1,
+      "value": 60,
+      "fade": 3.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE IN SIDE LIGHTS + START SMOKE"
+    },
+    {
+      "time": "00:00:15",
+      "channel": 2,
+      "value": 0,
+      "fade": 3.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE IN SIDE LIGHTS + START SMOKE"
+    },
+    {
+      "time": "00:00:15",
+      "channel": 3,
+      "value": 173,
+      "fade": 3.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE IN SIDE LIGHTS + START SMOKE"
+    },
+    {
+      "time": "00:00:15",
+      "channel": 4,
+      "value": 230,
+      "fade": 3.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE IN SIDE LIGHTS + START SMOKE"
+    },
+    {
+      "time": "00:00:15",
+      "channel": 5,
+      "value": 0,
+      "fade": 3.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE IN SIDE LIGHTS + START SMOKE"
+    },
+    {
+      "time": "00:00:15",
+      "channel": 10,
+      "value": 60,
+      "fade": 3.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE IN SIDE LIGHTS + START SMOKE"
+    },
+    {
+      "time": "00:00:15",
+      "channel": 11,
+      "value": 0,
+      "fade": 3.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE IN SIDE LIGHTS + START SMOKE"
+    },
+    {
+      "time": "00:00:15",
+      "channel": 12,
+      "value": 173,
+      "fade": 3.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE IN SIDE LIGHTS + START SMOKE"
+    },
+    {
+      "time": "00:00:15",
+      "channel": 13,
+      "value": 230,
+      "fade": 3.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE IN SIDE LIGHTS + START SMOKE"
+    },
+    {
+      "time": "00:00:15",
+      "channel": 14,
+      "value": 0,
+      "fade": 3.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE IN SIDE LIGHTS + START SMOKE"
+    },
+    {
+      "time": "00:00:20.112",
+      "channel": 128,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_0j6xtqj0",
+      "stepTitle": "TIGER EYES + STOP SMOKE"
+    },
+    {
+      "time": "00:00:20.112",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers",
+      "stepTitle": "TIGER EYES + STOP SMOKE"
+    },
+    {
+      "time": "00:00:20.112",
+      "channel": 49,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers",
+      "stepTitle": "TIGER EYES + STOP SMOKE"
+    },
+    {
+      "time": "00:00:20.112",
+      "channel": 50,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers",
+      "stepTitle": "TIGER EYES + STOP SMOKE"
+    },
+    {
+      "time": "00:00:20.112",
+      "channel": 51,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers",
+      "stepTitle": "TIGER EYES + STOP SMOKE"
+    },
+    {
+      "time": "00:00:20.112",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers",
+      "stepTitle": "TIGER EYES + STOP SMOKE"
+    },
+    {
+      "time": "00:00:22.456",
+      "channel": 47,
+      "value": 255,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT EYES"
+    },
+    {
+      "time": "00:00:22.456",
+      "channel": 49,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT EYES"
+    },
+    {
+      "time": "00:00:22.456",
+      "channel": 50,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT EYES"
+    },
+    {
+      "time": "00:00:22.456",
+      "channel": 51,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT EYES"
+    },
+    {
+      "time": "00:00:22.456",
+      "channel": 52,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT EYES"
+    },
+    {
+      "time": "00:00:24.022",
+      "channel": 30,
+      "value": 50,
+      "fade": 2.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FADE IN FACE"
+    },
+    {
+      "time": "00:00:24.022",
+      "channel": 31,
+      "value": 200,
+      "fade": 2.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FADE IN FACE"
+    },
+    {
+      "time": "00:00:24.022",
+      "channel": 32,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FADE IN FACE"
+    },
+    {
+      "time": "00:00:24.022",
+      "channel": 33,
+      "value": 200,
+      "fade": 2.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FADE IN FACE"
+    },
+    {
+      "time": "00:00:24.022",
+      "channel": 34,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FADE IN FACE"
+    },
+    {
+      "time": "00:00:27.290",
+      "channel": 10,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "GO DARK"
+    },
+    {
+      "time": "00:00:27.290",
+      "channel": 11,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "GO DARK"
+    },
+    {
+      "time": "00:00:27.290",
+      "channel": 12,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "GO DARK"
+    },
+    {
+      "time": "00:00:27.290",
+      "channel": 13,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "GO DARK"
+    },
+    {
+      "time": "00:00:27.290",
+      "channel": 14,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "GO DARK"
+    },
+    {
+      "time": "00:00:27.290",
+      "channel": 1,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "GO DARK"
+    },
+    {
+      "time": "00:00:27.290",
+      "channel": 2,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "GO DARK"
+    },
+    {
+      "time": "00:00:27.290",
+      "channel": 3,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "GO DARK"
+    },
+    {
+      "time": "00:00:27.290",
+      "channel": 4,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "GO DARK"
+    },
+    {
+      "time": "00:00:27.290",
+      "channel": 5,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "GO DARK"
+    },
+    {
+      "time": "00:00:27.290",
+      "channel": 30,
+      "value": 255,
+      "fade": 1.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "GO DARK"
+    },
+    {
+      "time": "00:00:27.290",
+      "channel": 31,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "GO DARK"
+    },
+    {
+      "time": "00:00:27.290",
+      "channel": 32,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "GO DARK"
+    },
+    {
+      "time": "00:00:27.290",
+      "channel": 33,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "GO DARK"
+    },
+    {
+      "time": "00:00:27.290",
+      "channel": 34,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "GO DARK"
+    },
+    {
+      "time": "00:00:28.106",
+      "channel": 54,
+      "value": 255,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-laser-red",
+      "valuePresetId": "mover-light-laser-red-full",
+      "stepTitle": "LASERS"
+    },
+    {
+      "time": "00:00:28.106",
+      "channel": 40,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-540",
+      "stepTitle": "LASERS"
+    },
+    {
+      "time": "00:00:28.106",
+      "channel": 41,
+      "value": 240,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed",
+      "stepTitle": "LASERS"
+    },
+    {
+      "time": "00:00:41.270",
+      "channel": 128,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_b3rmnfe4",
+      "stepTitle": "OUT"
+    },
+    {
+      "time": "00:00:41.270",
+      "channel": 47,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers",
+      "stepTitle": "OUT"
+    },
+    {
+      "time": "00:00:41.270",
+      "channel": 49,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers",
+      "stepTitle": "OUT"
+    },
+    {
+      "time": "00:00:41.270",
+      "channel": 50,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers",
+      "stepTitle": "OUT"
+    },
+    {
+      "time": "00:00:41.270",
+      "channel": 51,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers",
+      "stepTitle": "OUT"
+    },
+    {
+      "time": "00:00:41.270",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers",
+      "stepTitle": "OUT"
+    },
+    {
+      "time": "00:00:41.270",
+      "channel": 30,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "OUT"
+    },
+    {
+      "time": "00:00:41.270",
+      "channel": 31,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "OUT"
+    },
+    {
+      "time": "00:00:41.270",
+      "channel": 32,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "OUT"
+    },
+    {
+      "time": "00:00:41.270",
+      "channel": 33,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "OUT"
+    },
+    {
+      "time": "00:00:41.270",
+      "channel": 34,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "OUT"
+    },
+    {
+      "time": "00:00:41.270",
+      "channel": 20,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "OUT"
+    },
+    {
+      "time": "00:00:41.270",
+      "channel": 21,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "OUT"
+    },
+    {
+      "time": "00:00:41.270",
+      "channel": 22,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "OUT"
+    },
+    {
+      "time": "00:00:41.270",
+      "channel": 23,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "OUT"
+    },
+    {
+      "time": "00:00:41.270",
+      "channel": 24,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "OUT"
+    },
+    {
+      "time": "00:00:42.985",
+      "channel": 30,
+      "value": 70,
+      "fade": 2.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FRONT LIGHT"
+    },
+    {
+      "time": "00:00:42.985",
+      "channel": 31,
+      "value": 200,
+      "fade": 2.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FRONT LIGHT"
+    },
+    {
+      "time": "00:00:42.985",
+      "channel": 32,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FRONT LIGHT"
+    },
+    {
+      "time": "00:00:42.985",
+      "channel": 33,
+      "value": 200,
+      "fade": 2.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FRONT LIGHT"
+    },
+    {
+      "time": "00:00:42.985",
+      "channel": 34,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FRONT LIGHT"
+    },
+    {
+      "time": "00:00:48",
+      "channel": 128,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_0j6xtqj0",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:00:48",
+      "channel": 30,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:00:48",
+      "channel": 31,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:00:48",
+      "channel": 32,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:00:48",
+      "channel": 33,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:00:48",
+      "channel": 34,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:00:48",
+      "channel": 1,
+      "value": 150,
+      "fade": 1.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:00:48",
+      "channel": 2,
+      "value": 200,
+      "fade": 1.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:00:48",
+      "channel": 3,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:00:48",
+      "channel": 4,
+      "value": 200,
+      "fade": 1.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:00:48",
+      "channel": 5,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:00:48",
+      "channel": 10,
+      "value": 150,
+      "fade": 1.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:00:48",
+      "channel": 11,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:00:48",
+      "channel": 12,
+      "value": 173,
+      "fade": 1.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:00:48",
+      "channel": 13,
+      "value": 230,
+      "fade": 1.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:00:48",
+      "channel": 14,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:00:54.393",
+      "channel": 20,
+      "value": 255,
+      "fade": 2.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "ADD UNDER LIGHT"
+    },
+    {
+      "time": "00:00:54.393",
+      "channel": 21,
+      "value": 200,
+      "fade": 2.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "ADD UNDER LIGHT"
+    },
+    {
+      "time": "00:00:54.393",
+      "channel": 22,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "ADD UNDER LIGHT"
+    },
+    {
+      "time": "00:00:54.393",
+      "channel": 23,
+      "value": 200,
+      "fade": 2.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "ADD UNDER LIGHT"
+    },
+    {
+      "time": "00:00:54.393",
+      "channel": 24,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "ADD UNDER LIGHT"
+    },
+    {
+      "time": "00:01:02.196",
+      "channel": 57,
+      "value": 40,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strip",
+      "valuePresetId": "mover-light-strip-yellow",
+      "stepTitle": "ADD EYES + SMOKE ON"
+    },
+    {
+      "time": "00:01:02.196",
+      "channel": 54,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-red",
+      "valuePresetId": "mover-light-laser-red-off",
+      "stepTitle": "ADD EYES + SMOKE ON"
+    },
+    {
+      "time": "00:01:02.196",
+      "channel": 128,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_b3rmnfe4",
+      "stepTitle": "ADD EYES + SMOKE ON"
+    },
+    {
+      "time": "00:01:02.196",
+      "channel": 47,
+      "value": 255,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers",
+      "stepTitle": "ADD EYES + SMOKE ON"
+    },
+    {
+      "time": "00:01:02.196",
+      "channel": 49,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers",
+      "stepTitle": "ADD EYES + SMOKE ON"
+    },
+    {
+      "time": "00:01:02.196",
+      "channel": 50,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers",
+      "stepTitle": "ADD EYES + SMOKE ON"
+    },
+    {
+      "time": "00:01:02.196",
+      "channel": 51,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers",
+      "stepTitle": "ADD EYES + SMOKE ON"
+    },
+    {
+      "time": "00:01:02.196",
+      "channel": 52,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers",
+      "stepTitle": "ADD EYES + SMOKE ON"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 57,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strip",
+      "valuePresetId": "mover-light-strip-off",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 2,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 3,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 4,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 5,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 11,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 12,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 13,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 14,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 20,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 21,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 22,
+      "value": 173,
+      "fade": 0.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 23,
+      "value": 230,
+      "fade": 0.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 24,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 30,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 31,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 32,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 33,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 34,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 49,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 50,
+      "value": 45,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 51,
+      "value": 85,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:04.300",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers",
+      "stepTitle": "ADD BRIGHTNESS"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 20,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 21,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 22,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 23,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 24,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 30,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 31,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 32,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 33,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 34,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 1,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 2,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 3,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 4,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 5,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 10,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 11,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 12,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 13,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 14,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 47,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 49,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 50,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 51,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:05.542",
+      "channel": 52,
+      "value": 0,
+      "fade": 1.5,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT TO BLACK"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 6,
+      "value": 211,
+      "fade": 0.0,
+      "channelPresetId": "left-light-strobe",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 15,
+      "value": 229,
+      "fade": 0.0,
+      "channelPresetId": "right-light-strobe",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 25,
+      "value": 196,
+      "fade": 0.0,
+      "channelPresetId": "back-light-strobe",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 30,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 31,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 32,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 33,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 34,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 20,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 21,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 22,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 23,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 24,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 2,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 3,
+      "value": 45,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 4,
+      "value": 85,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 5,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 11,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 12,
+      "value": 45,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 13,
+      "value": 85,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:08.800",
+      "channel": 14,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "DEMON FLASH"
+    },
+    {
+      "time": "00:01:10",
+      "channel": 1,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "CALM DOWN"
+    },
+    {
+      "time": "00:01:10",
+      "channel": 2,
+      "value": 255,
+      "fade": 2.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "CALM DOWN"
+    },
+    {
+      "time": "00:01:10",
+      "channel": 3,
+      "value": 45,
+      "fade": 2.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "CALM DOWN"
+    },
+    {
+      "time": "00:01:10",
+      "channel": 4,
+      "value": 85,
+      "fade": 2.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "CALM DOWN"
+    },
+    {
+      "time": "00:01:10",
+      "channel": 5,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "CALM DOWN"
+    },
+    {
+      "time": "00:01:10",
+      "channel": 20,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "CALM DOWN"
+    },
+    {
+      "time": "00:01:10",
+      "channel": 21,
+      "value": 200,
+      "fade": 2.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "CALM DOWN"
+    },
+    {
+      "time": "00:01:10",
+      "channel": 22,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "CALM DOWN"
+    },
+    {
+      "time": "00:01:10",
+      "channel": 23,
+      "value": 200,
+      "fade": 2.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "CALM DOWN"
+    },
+    {
+      "time": "00:01:10",
+      "channel": 24,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "CALM DOWN"
+    },
+    {
+      "time": "00:01:10",
+      "channel": 10,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "CALM DOWN"
+    },
+    {
+      "time": "00:01:10",
+      "channel": 11,
+      "value": 255,
+      "fade": 2.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "CALM DOWN"
+    },
+    {
+      "time": "00:01:10",
+      "channel": 12,
+      "value": 45,
+      "fade": 2.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "CALM DOWN"
+    },
+    {
+      "time": "00:01:10",
+      "channel": 13,
+      "value": 85,
+      "fade": 2.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "CALM DOWN"
+    },
+    {
+      "time": "00:01:10",
+      "channel": 14,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "CALM DOWN"
+    },
+    {
+      "time": "00:01:12.739",
+      "channel": 128,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_0j6xtqj0",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 56,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-super-fast",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 43,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-45",
+      "templateId": "template_xggx28i6",
+      "templateInstanceId": "template-instance-3",
+      "templateRowId": "templateRow_ylkah1xc",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 44,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "valuePresetId": "mover-light-beam2-rotation-45",
+      "templateId": "template_xggx28i6",
+      "templateInstanceId": "template-instance-3",
+      "templateRowId": "templateRow_46vhnino",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 45,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "valuePresetId": "mover-light-beam3-rotation-45",
+      "templateId": "template_xggx28i6",
+      "templateInstanceId": "template-instance-3",
+      "templateRowId": "templateRow_nwnr8ytf",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 46,
+      "value": 63,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "valuePresetId": "mover-light-beam4-rotation-45",
+      "templateId": "template_xggx28i6",
+      "templateInstanceId": "template-instance-3",
+      "templateRowId": "templateRow_cg0f9bei",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 41,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed",
+      "valuePresetId": "mover-light-rotation-speed-none",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 40,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-0",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 49,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 50,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 51,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 30,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 31,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 32,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 33,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:14.754",
+      "channel": 34,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:15.217",
+      "channel": 56,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-none",
+      "stepTitle": "STOP STROBE"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 40,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-540",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 41,
+      "value": 230,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 11,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 12,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 13,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 14,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 2,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 3,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 4,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 5,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 30,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 31,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 32,
+      "value": 173,
+      "fade": 0.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 33,
+      "value": 230,
+      "fade": 0.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 34,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 20,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 21,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 22,
+      "value": 173,
+      "fade": 0.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 23,
+      "value": 230,
+      "fade": 0.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 24,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 49,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 50,
+      "value": 45,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 51,
+      "value": 85,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:15.500",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers",
+      "stepTitle": "START FLASHES AND MOVERS"
+    },
+    {
+      "time": "00:01:17.500",
+      "channel": 57,
+      "value": 40,
+      "fade": 0.3,
+      "channelPresetId": "mover-light-strip",
+      "valuePresetId": "mover-light-strip-yellow",
+      "stepTitle": "EYES ON"
+    },
+    {
+      "time": "00:01:18.743",
+      "channel": 57,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strip",
+      "valuePresetId": "mover-light-strip-off",
+      "stepTitle": "EYES OFF"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 43,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam1-rotation",
+      "valuePresetId": "mover-light-beam-rotation-90",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-4",
+      "templateRowId": "templateRow_kkljp6p1",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 44,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam2-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-4",
+      "templateRowId": "templateRow_g40qs6kc",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 45,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam3-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-4",
+      "templateRowId": "templateRow_kxulog7w",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 46,
+      "value": 127,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam4-rotation",
+      "templateId": "template_4mpkn9hh",
+      "templateInstanceId": "template-instance-4",
+      "templateRowId": "templateRow_brgwxu91",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 40,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation",
+      "valuePresetId": "mover-light-rotation-0",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 41,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed",
+      "valuePresetId": "mover-light-rotation-speed-none",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 6,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-strobe",
+      "valuePresetId": "left-light-strobe-none",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 15,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-strobe",
+      "valuePresetId": "right-light-strobe-none",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 25,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-strobe",
+      "valuePresetId": "back-light-strobe-none",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 128,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_b3rmnfe4",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 2,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 3,
+      "value": 173,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 4,
+      "value": 230,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 5,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 11,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 12,
+      "value": 173,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 13,
+      "value": 230,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 14,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 30,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 31,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 32,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 33,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 34,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 20,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 21,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 22,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 23,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:20.400",
+      "channel": 24,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "STOP DANCE + SMOKE ON"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 20,
+      "value": 255,
+      "fade": 1.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 21,
+      "value": 255,
+      "fade": 1.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 22,
+      "value": 45,
+      "fade": 1.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 23,
+      "value": 85,
+      "fade": 1.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 24,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 1,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 2,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 3,
+      "value": 173,
+      "fade": 1.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 4,
+      "value": 230,
+      "fade": 1.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 5,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 10,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 11,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 12,
+      "value": 173,
+      "fade": 1.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 13,
+      "value": 230,
+      "fade": 1.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 14,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 47,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 49,
+      "value": 255,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 50,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 51,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:22.349",
+      "channel": 52,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT"
+    },
+    {
+      "time": "00:01:27.837",
+      "channel": 128,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_0j6xtqj0",
+      "stepTitle": "SMOKE OFF"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 56,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-super-fast",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 1,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 2,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 3,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 4,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 5,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 10,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 11,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 12,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 13,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 14,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 30,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 31,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 32,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 33,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 34,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 47,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 49,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 50,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 51,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.200",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FLASH BACK"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 56,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-white-flash",
+      "valuePresetId": "mover-light-white-flash-none"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 2,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 3,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 4,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 5,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 10,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 11,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 12,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 13,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 14,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 30,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 31,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 32,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 33,
+      "value": 200,
+      "fade": 0.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 34,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 47,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 49,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 50,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 51,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:31.700",
+      "channel": 52,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 57,
+      "value": 40,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strip",
+      "valuePresetId": "mover-light-strip-yellow",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 10,
+      "value": 255,
+      "fade": 2.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 11,
+      "value": 200,
+      "fade": 2.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 12,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 13,
+      "value": 200,
+      "fade": 2.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 14,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 1,
+      "value": 255,
+      "fade": 2.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 2,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 3,
+      "value": 173,
+      "fade": 2.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 4,
+      "value": 230,
+      "fade": 2.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 5,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 30,
+      "value": 255,
+      "fade": 2.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 31,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 32,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 33,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 34,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 47,
+      "value": 255,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 49,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 50,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 51,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:35.713",
+      "channel": 52,
+      "value": 0,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers",
+      "stepTitle": "FADE OUT DEMON"
+    },
+    {
+      "time": "00:01:39",
+      "channel": 48,
+      "value": 233,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strobe",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:39",
+      "channel": 6,
+      "value": 250,
+      "fade": 0.0,
+      "channelPresetId": "left-light-strobe",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:39",
+      "channel": 15,
+      "value": 237,
+      "fade": 0.0,
+      "channelPresetId": "right-light-strobe",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:39",
+      "channel": 25,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-strobe",
+      "valuePresetId": "back-light-strobe-super-fast",
+      "stepTitle": "STROBE"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 57,
+      "value": 58,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strip",
+      "valuePresetId": "mover-light-strip-cyan"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 48,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strobe",
+      "valuePresetId": "mover-light-strobe-none"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 20,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-dimmer",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 21,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-red",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 22,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-green",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 23,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "back-light-blue",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 24,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "back-light-white",
+      "channelMasterId": "master:back_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 30,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 31,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 32,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 33,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 34,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 1,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-dimmer",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 2,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-red",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 3,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-green",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 4,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "left-light-blue",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 5,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-white",
+      "channelMasterId": "master:left_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 10,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-dimmer",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 11,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-red",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 12,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-green",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 13,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "right-light-blue",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:39.900",
+      "channel": 14,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-white",
+      "channelMasterId": "master:right_light"
+    },
+    {
+      "time": "00:01:41.600",
+      "channel": 30,
+      "value": 255,
+      "fade": 1.0,
+      "channelPresetId": "front-light-dimmer",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:41.600",
+      "channel": 31,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "front-light-red",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:41.600",
+      "channel": 32,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "front-light-green",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:41.600",
+      "channel": 33,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "front-light-blue",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:41.600",
+      "channel": 34,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "front-light-white",
+      "channelMasterId": "master:front_light"
+    },
+    {
+      "time": "00:01:41.600",
+      "channel": 47,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-beam-brightness",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:41.600",
+      "channel": 49,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-beam-red",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:41.600",
+      "channel": 50,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-beam-green",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:41.600",
+      "channel": 51,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-beam-blue",
+      "channelMasterId": "master:movers"
+    },
+    {
+      "time": "00:01:41.600",
+      "channel": 52,
+      "value": 0,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-beam-white",
+      "channelMasterId": "master:movers"
+    }
+  ],
+  "relay_actions": []
+}

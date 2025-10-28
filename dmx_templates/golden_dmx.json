@@ -4882,6 +4882,15 @@
     },
     {
       "time": "00:01:44.302",
+      "channel": 54,
+      "value": 255,
+      "fade": 2.0,
+      "channelPresetId": "mover-light-laser-red",
+      "valuePresetId": "mover-light-laser-red-full",
+      "stepTitle": "Fade In Movers + Lasers"
+    },
+    {
+      "time": "00:01:44.302",
       "channel": 47,
       "value": 255,
       "fade": 2.0,
@@ -4923,15 +4932,6 @@
       "fade": 2.0,
       "channelPresetId": "mover-light-beam-white",
       "channelMasterId": "master:movers",
-      "stepTitle": "Fade In Movers + Lasers"
-    },
-    {
-      "time": "00:01:44.302",
-      "channel": 54,
-      "value": 255,
-      "fade": 2.0,
-      "channelPresetId": "mover-light-laser-red",
-      "valuePresetId": "mover-light-laser-red-full",
       "stepTitle": "Fade In Movers + Lasers"
     },
     {
@@ -5619,6 +5619,15 @@
       "stepTitle": "BLAST OFF"
     },
     {
+      "time": "00:01:52.200",
+      "channel": 128,
+      "value": 255,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_b3rmnfe4",
+      "stepTitle": "BLAST OFF"
+    },
+    {
       "time": "00:01:53.200",
       "channel": 43,
       "value": 192,
@@ -6104,6 +6113,15 @@
       "stepTitle": "Calm Down Just A Little"
     },
     {
+      "time": "00:02:00.312",
+      "channel": 128,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_0j6xtqj0",
+      "stepTitle": "Calm Down Just A Little"
+    },
+    {
       "time": "00:02:06.639",
       "channel": 10,
       "value": 95,
@@ -6277,6 +6295,40 @@
       "value": 255,
       "fade": 0.0,
       "channelPresetId": "mover-light-laser-pattern",
+      "stepTitle": "Last Of Fun ALL GOLD"
+    },
+    {
+      "time": "00:02:08.199",
+      "channel": 53,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-laser-pattern",
+      "stepTitle": "Last Of Fun ALL GOLD"
+    },
+    {
+      "time": "00:02:08.199",
+      "channel": 57,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strip",
+      "valuePresetId": "mover-light-strip-off",
+      "stepTitle": "Last Of Fun ALL GOLD"
+    },
+    {
+      "time": "00:02:08.199",
+      "channel": 41,
+      "value": 50,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-rotation-speed",
+      "valuePresetId": "mover-light-rotation-speed-super-slow",
+      "stepTitle": "Last Of Fun ALL GOLD"
+    },
+    {
+      "time": "00:02:08.199",
+      "channel": 48,
+      "value": 233,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strobe",
       "stepTitle": "Last Of Fun ALL GOLD"
     },
     {
@@ -6505,40 +6557,6 @@
       "stepTitle": "Last Of Fun ALL GOLD"
     },
     {
-      "time": "00:02:08.199",
-      "channel": 53,
-      "value": 0,
-      "fade": 0.0,
-      "channelPresetId": "mover-light-laser-pattern",
-      "stepTitle": "Last Of Fun ALL GOLD"
-    },
-    {
-      "time": "00:02:08.199",
-      "channel": 57,
-      "value": 0,
-      "fade": 0.0,
-      "channelPresetId": "mover-light-strip",
-      "valuePresetId": "mover-light-strip-off",
-      "stepTitle": "Last Of Fun ALL GOLD"
-    },
-    {
-      "time": "00:02:08.199",
-      "channel": 41,
-      "value": 50,
-      "fade": 0.0,
-      "channelPresetId": "mover-light-rotation-speed",
-      "valuePresetId": "mover-light-rotation-speed-super-slow",
-      "stepTitle": "Last Of Fun ALL GOLD"
-    },
-    {
-      "time": "00:02:08.199",
-      "channel": 48,
-      "value": 233,
-      "fade": 0.0,
-      "channelPresetId": "mover-light-strobe",
-      "stepTitle": "Last Of Fun ALL GOLD"
-    },
-    {
       "time": "00:02:15.917",
       "channel": 1,
       "value": 255,
@@ -6562,6 +6580,33 @@
       "fade": 0.0,
       "channelPresetId": "front-light-strobe",
       "valuePresetId": "front-light-strobe-none",
+      "stepTitle": "Beginning Of The End"
+    },
+    {
+      "time": "00:02:15.917",
+      "channel": 15,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "right-light-strobe",
+      "valuePresetId": "right-light-strobe-none",
+      "stepTitle": "Beginning Of The End"
+    },
+    {
+      "time": "00:02:15.917",
+      "channel": 6,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "left-light-strobe",
+      "valuePresetId": "left-light-strobe-none",
+      "stepTitle": "Beginning Of The End"
+    },
+    {
+      "time": "00:02:15.917",
+      "channel": 48,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "mover-light-strobe",
+      "valuePresetId": "mover-light-strobe-none",
       "stepTitle": "Beginning Of The End"
     },
     {
@@ -6655,33 +6700,6 @@
       "stepTitle": "Beginning Of The End"
     },
     {
-      "time": "00:02:15.917",
-      "channel": 15,
-      "value": 0,
-      "fade": 0.0,
-      "channelPresetId": "right-light-strobe",
-      "valuePresetId": "right-light-strobe-none",
-      "stepTitle": "Beginning Of The End"
-    },
-    {
-      "time": "00:02:15.917",
-      "channel": 6,
-      "value": 0,
-      "fade": 0.0,
-      "channelPresetId": "left-light-strobe",
-      "valuePresetId": "left-light-strobe-none",
-      "stepTitle": "Beginning Of The End"
-    },
-    {
-      "time": "00:02:15.917",
-      "channel": 48,
-      "value": 0,
-      "fade": 0.0,
-      "channelPresetId": "mover-light-strobe",
-      "valuePresetId": "mover-light-strobe-none",
-      "stepTitle": "Beginning Of The End"
-    },
-    {
       "time": "00:02:21.679",
       "channel": 6,
       "value": 223,
@@ -6703,6 +6721,15 @@
       "value": 202,
       "fade": 2.0,
       "channelPresetId": "back-light-strobe",
+      "stepTitle": "Mover Flower Move + Last Strobe"
+    },
+    {
+      "time": "00:02:21.679",
+      "channel": 48,
+      "value": 255,
+      "fade": 1.0,
+      "channelPresetId": "mover-light-strobe",
+      "valuePresetId": "mover-light-strobe-super-fast",
       "stepTitle": "Mover Flower Move + Last Strobe"
     },
     {
@@ -6887,11 +6914,11 @@
     },
     {
       "time": "00:02:21.679",
-      "channel": 48,
+      "channel": 128,
       "value": 255,
-      "fade": 1.0,
-      "channelPresetId": "mover-light-strobe",
-      "valuePresetId": "mover-light-strobe-super-fast",
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_b3rmnfe4",
       "stepTitle": "Mover Flower Move + Last Strobe"
     },
     {
@@ -7311,6 +7338,15 @@
       "stepTitle": "Fade In Front And Overhead"
     },
     {
+      "time": "00:02:25.679",
+      "channel": 128,
+      "value": 0,
+      "fade": 0.0,
+      "channelPresetId": "preset_114yz9gq",
+      "valuePresetId": "value_0j6xtqj0",
+      "stepTitle": "Mover Flower Move + Last Strobe"
+    },
+    {
       "time": "00:02:29.250",
       "channel": 30,
       "value": 0,
@@ -7399,6 +7435,24 @@
       "channelPresetId": "mover-light-beam-white",
       "channelMasterId": "master:movers",
       "stepTitle": "PITCH BLACK"
+    }
+  ],
+  "relay_actions": [
+    {
+      "time": "00:01:52.200",
+      "url": "http://192.168.8.100/relay/0?turn=on",
+      "relayPresetId": "relay_snow_machine",
+      "relayCommandId": "on",
+      "label": "On",
+      "stepTitle": "BLAST OFF"
+    },
+    {
+      "time": "00:02:00.312",
+      "url": "http://192.168.8.100/relay/0?turn=off",
+      "relayPresetId": "relay_snow_machine",
+      "relayCommandId": "off",
+      "label": "Off",
+      "stepTitle": "Calm Down Just A Little"
     }
   ]
 }

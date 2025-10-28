@@ -3,31 +3,38 @@
   "videos": [
     {
       "id": "01",
+      "name": "Golden",
+      "file": "videos/golden.mp4",
+      "poster": "/static/posters/golden.jpg",
+      "dmx_template": "golden_dmx.json"
+    },
+    {
+      "id": "02",
       "name": "Soda Pop",
       "file": "videos/soda_pop.mp4",
       "poster": "/static/posters/soda_pop.jpg",
       "dmx_template": "soda_pop_dmx.json"
     },
     {
-      "id": "02",
+      "id": "03",
       "name": "Idol",
       "file": "videos/idol.mp4",
       "poster": "/static/posters/idol.jpg",
       "dmx_template": "idol_dmx.json"
     },
     {
-      "id": "03",
+      "id": "04",
       "name": "This Is What It Sounds Like",
       "file": "videos/sounds_like.mp4",
       "poster": "/static/posters/sounds_like.jpg",
       "dmx_template": "sounds_like_dmx.json"
     },
     {
-      "id": "04",
-      "name": "Golden",
-      "file": "videos/golden.mp4",
-      "poster": "/static/posters/golden.jpg",
-      "dmx_template": "golden_dmx.json"
+      "id": "05",
+      "name": "Intro",
+      "file": "videos/intro.mp4",
+      "poster": "/static/posters/intro.jpg",
+      "dmx_template": "intro_dmx.json"
     }
   ]
 }
