@@ -1,5 +1,4 @@
 import sys
-from collections import deque
 from pathlib import Path
 from types import MethodType, ModuleType, SimpleNamespace
 
@@ -42,147 +41,142 @@ class _DummyProcess:
         return None
 
 
-def test_stage_overlay_retries_when_command_initially_fails(monkeypatch, tmp_path):
+def _enable_mpv(monkeypatch) -> None:
     monkeypatch.setattr(app.shutil, "which", lambda name: name)
 
-    controller = app.PlaybackController(default_video=tmp_path / "default.mp4")
+
+def test_stage_overlay_updates_default_loop_subtitle_when_running(monkeypatch, tmp_path):
+    _enable_mpv(monkeypatch)
+
+    default_video = tmp_path / "default.mp4"
+    controller = app.PlaybackController(default_video=default_video)
     controller._process = _DummyProcess()
-    controller._stage_overlay_subtitle_path = tmp_path / "stage_code.ass"
-
-    sub_add_responses = deque(
-        [
-            {"error": "error running command"},
-            {"error": "success"},
-        ]
-    )
-
-    sid_responses = deque(
-        [
-            {"error": "success", "data": "4"},
-            {"error": "success", "data": "4"},
-            {"error": "success", "data": "7"},
-        ]
-    )
+    controller._current = controller.default_video
 
     commands = []
 
     def fake_send_ipc_command(*command):
         commands.append(command)
-        if command[:1] == ("sub-add",):
-            return sub_add_responses.popleft()
-        if command[:2] == ("get_property", "sid"):
-            return sid_responses.popleft()
-        if command[:2] == ("get_property", "track-list"):
-            return {"error": "success", "data": []}
-        if command[:1] == ("sub-remove",):
-            return {"error": "success"}
-        if command[:3] == ("set_property", "secondary-sid"):
-            return {"error": "success"}
-        if command[:3] == ("set_property", "sid"):
-            return {"error": "success"}
         return {"error": "success"}
 
     monkeypatch.setattr(controller, "_send_ipc_command", fake_send_ipc_command)
 
     controller.set_stage_code_overlay("ABC")
 
-    assert controller._stage_overlay_text == "ABC"
-    assert controller._stage_overlay_active is False
-    # First attempt should fail to add the subtitle overlay.
-    assert len(sub_add_responses) == 1
+    subtitle_path = controller._stage_overlay_subtitle_path
+    assert subtitle_path == controller.default_video.with_suffix(".ass")
+    assert subtitle_path.read_text(encoding="utf-8") == "\n".join(
+        [
+            "[Script Info]",
+            "ScriptType: v4.00+",
+            "PlayResX: 1920",
+            "PlayResY: 1080",
+            "",
+            "[V4+ Styles]",
+            (
+                "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
+                "OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, "
+                "ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, "
+                "Alignment, MarginL, MarginR, MarginV, Encoding"
+            ),
+            (
+                "Style: StageCode,Arial,72,&H00FFFFFF,&H000000FF,&H64000000,&H64000000,"
+                "0,0,0,0,100,100,0,0,1,3,0,3,0,100,100,1"
+            ),
+            "",
+            "[Events]",
+            (
+                "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, "
+                "Effect, Text"
+            ),
+            "Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\\an3}ABC",
+            "",
+        ]
+    )
+    assert ("sub-reload",) in commands
 
-    controller._maybe_fire_video_start(idle=False)
 
-    assert controller._stage_overlay_active is True
-    assert controller._stage_overlay_text == "ABC"
-    assert controller._stage_overlay_sid == 7
-    assert ("set_property", "sub-visibility", "yes") in commands
-    assert ("set_property", "secondary-sid", "7") in commands
-    assert ("set_property", "sid", "4") in commands
-    assert len(sid_responses) == 0
+def test_stage_overlay_clear_removes_subtitle(monkeypatch, tmp_path):
+    _enable_mpv(monkeypatch)
 
-
-def test_stage_overlay_retry_scheduled_for_default_loop(monkeypatch, tmp_path):
-    monkeypatch.setattr(app.shutil, "which", lambda name: name)
-
-    controller = app.PlaybackController(default_video=tmp_path / "default.mp4")
+    default_video = tmp_path / "default.mp4"
+    controller = app.PlaybackController(default_video=default_video)
     controller._process = _DummyProcess()
-    controller._stage_overlay_subtitle_path = tmp_path / "stage_code.ass"
-
-    sub_add_responses = deque(
-        [
-            {"error": "error running command"},
-            {"error": "success"},
-        ]
-    )
-
-    sid_responses = deque(
-        [
-            {"error": "success", "data": "5"},
-            {"error": "success", "data": "5"},
-            {"error": "success", "data": "9"},
-        ]
-    )
+    controller._current = controller.default_video
 
     commands = []
 
     def fake_send_ipc_command(*command):
         commands.append(command)
-        if command[:1] == ("sub-add",):
-            return sub_add_responses.popleft()
-        if command[:2] == ("get_property", "sid"):
-            return sid_responses.popleft()
-        if command[:2] == ("get_property", "track-list"):
-            return {"error": "success", "data": []}
-        if command[:1] == ("sub-remove",):
-            return {"error": "success"}
-        if command[:3] == ("set_property", "secondary-sid"):
-            return {"error": "success"}
-        if command[:3] == ("set_property", "sid"):
-            return {"error": "success"}
         return {"error": "success"}
 
     monkeypatch.setattr(controller, "_send_ipc_command", fake_send_ipc_command)
 
-    scheduled_delays = []
+    controller.set_stage_code_overlay("ABC")
+    subtitle_path = controller._stage_overlay_subtitle_path
+    assert subtitle_path.exists()
 
-    def fake_schedule(self, delay=0.5):
-        scheduled_delays.append(delay)
+    controller.set_stage_code_overlay(None)
 
-    def fake_cancel(self):
-        scheduled_delays.append("cancel")
+    assert not subtitle_path.exists()
+    assert commands[-1] == ("sub-reload",)
 
-    monkeypatch.setattr(
-        controller,
-        "_schedule_stage_overlay_retry_locked",
-        MethodType(fake_schedule, controller),
-    )
-    monkeypatch.setattr(
-        controller,
-        "_cancel_stage_overlay_retry_locked",
-        MethodType(fake_cancel, controller),
-    )
 
+def test_start_default_loop_writes_subtitle_before_playback(monkeypatch, tmp_path):
+    _enable_mpv(monkeypatch)
+
+    default_video = tmp_path / "media" / "default.mp4"
+    default_video.parent.mkdir(parents=True, exist_ok=True)
+    default_video.write_bytes(b"data")
+
+    controller = app.PlaybackController(default_video=default_video)
     controller.set_stage_code_overlay("ABC")
 
-    assert controller._stage_overlay_text == "ABC"
-    assert controller._stage_overlay_active is False
-    assert controller._stage_overlay_sid is None
-    assert len(sub_add_responses) == 1
-    assert 0.5 in scheduled_delays
+    captured = {}
 
-    controller._handle_stage_overlay_retry()
+    def fake_play(self, video_path, loop, *, pre_roll_path=None):
+        captured["path"] = video_path
+        captured["loop"] = loop
+        captured["subtitle"] = self._stage_overlay_subtitle_path.read_text(encoding="utf-8")
 
-    assert controller._stage_overlay_active is True
-    assert controller._stage_overlay_sid == 9
-    assert ("set_property", "sub-visibility", "yes") in commands
-    assert ("set_property", "secondary-sid", "9") in commands
-    assert ("set_property", "sid", "5") in commands
-    assert len(sid_responses) == 0
+    monkeypatch.setattr(controller, "_play_video_locked", MethodType(fake_play, controller))
+
+    controller._start_default_locked()
+
+    assert captured["path"] == controller.default_video
+    assert captured["loop"] is True
+    assert captured["subtitle"] == "\n".join(
+        [
+            "[Script Info]",
+            "ScriptType: v4.00+",
+            "PlayResX: 1920",
+            "PlayResY: 1080",
+            "",
+            "[V4+ Styles]",
+            (
+                "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, "
+                "OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, "
+                "ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, "
+                "Alignment, MarginL, MarginR, MarginV, Encoding"
+            ),
+            (
+                "Style: StageCode,Arial,72,&H00FFFFFF,&H000000FF,&H64000000,&H64000000,"
+                "0,0,0,0,100,100,0,0,1,3,0,3,0,100,100,1"
+            ),
+            "",
+            "[Events]",
+            (
+                "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, "
+                "Effect, Text"
+            ),
+            "Dialogue: 0,0:00:00.00,9:59:59.99,StageCode,,0,0,0,,{\\an3}ABC",
+            "",
+        ]
+    )
 
 
 def test_mpv_player_defaults_enable_subtitles(monkeypatch, tmp_path):
-    monkeypatch.setattr(app.shutil, "which", lambda name: name)
+    _enable_mpv(monkeypatch)
 
     controller = app.PlaybackController(default_video=tmp_path / "default.mp4")
 
@@ -192,7 +186,7 @@ def test_mpv_player_defaults_enable_subtitles(monkeypatch, tmp_path):
 
 
 def test_non_mpv_player_does_not_receive_subtitle_flags(monkeypatch, tmp_path):
-    monkeypatch.setattr(app.shutil, "which", lambda name: name)
+    _enable_mpv(monkeypatch)
 
     controller = app.PlaybackController(
         default_video=tmp_path / "default.mp4",
