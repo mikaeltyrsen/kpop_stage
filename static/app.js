@@ -13,6 +13,9 @@ const volumeSlider = document.getElementById("volume-slider");
 const playerStopButton = document.getElementById("player-stop-button");
 const smokeButton = document.getElementById("smoke-button");
 const snowMachineButton = document.getElementById("snow-machine-button");
+const adminUtilityBar = document.getElementById("admin-utility-bar");
+const adminStageCodeValue = document.getElementById("admin-stage-code-value");
+const reloadCodeButton = document.getElementById("player-reload-code-button");
 const rebootButton = document.getElementById("player-reboot-button");
 const accessSection = document.getElementById("access-section");
 const codeForm = document.getElementById("code-form");
@@ -49,6 +52,9 @@ const stageNameModalSkipDefaultLabel = stageNameModalSkipButton
 const searchParams = new URLSearchParams(window.location.search);
 const adminParam = (searchParams.get("admin") || "").toLowerCase();
 const isAdmin = ["1", "true", "yes", "on"].includes(adminParam);
+const reloadCodeButtonDefaultLabel = reloadCodeButton
+  ? reloadCodeButton.textContent.trim()
+  : "Reload code";
 const rebootButtonDefaultLabel = rebootButton ? rebootButton.textContent.trim() : "Restart Pi";
 const CODE_DRAFT_STORAGE_KEY = "kpop_stage_code_draft";
 const PERFORMER_NAME_MAX_LENGTH = performerInput
@@ -69,6 +75,7 @@ let latestStatus = null;
 let isTriggeringSmoke = false;
 let isTogglingSnowMachine = false;
 let isSendingReboot = false;
+let isReloadingStageCode = false;
 let queuePollTimer = null;
 let queueCountdownTimer = null;
 let queueReadyExpiresAt = null;
@@ -105,18 +112,25 @@ function getQueueRemainingSeconds() {
   return Math.max(0, remainingSeconds);
 }
 
+function getStageNameModalSkipDisplaySeconds(remainingSeconds = null) {
+  if (!Number.isFinite(remainingSeconds)) {
+    return null;
+  }
+  return Math.max(0, Math.floor(remainingSeconds) - 1);
+}
+
 function updateStageNameModalSkipLabel(remainingSeconds = null) {
   if (!stageNameModalSkipButton) {
     return;
   }
 
-  if (!isStageNameModalOpen || !Number.isFinite(remainingSeconds)) {
+  const displaySeconds = getStageNameModalSkipDisplaySeconds(remainingSeconds);
+  if (!isStageNameModalOpen || displaySeconds === null) {
     stageNameModalSkipButton.textContent = stageNameModalSkipDefaultLabel;
     return;
   }
 
-  const safeSeconds = Math.max(0, Math.floor(remainingSeconds));
-  stageNameModalSkipButton.textContent = `${stageNameModalSkipDefaultLabel} (${safeSeconds}s)`;
+  stageNameModalSkipButton.textContent = `${stageNameModalSkipDefaultLabel} (${displaySeconds}s)`;
 }
 
 function hideToast(context = null) {
@@ -379,7 +393,8 @@ function updateQueueCountdown() {
   queueCountdownEl.textContent = formatTime(remainingSeconds);
   if (isStageNameModalOpen) {
     updateStageNameModalSkipLabel(remainingSeconds);
-    if (remainingMs <= 0 && pendingPlayRequest) {
+    const skipDisplaySeconds = getStageNameModalSkipDisplaySeconds(remainingSeconds);
+    if (pendingPlayRequest && skipDisplaySeconds !== null && skipDisplaySeconds <= 0) {
       handleStageNameModalSkip();
       return;
     }
@@ -434,6 +449,17 @@ async function registerUser() {
 }
 
 function applyAdminVisibility() {
+  if (adminUtilityBar) {
+    adminUtilityBar.hidden = !isAdmin;
+  }
+  if (reloadCodeButton) {
+    reloadCodeButton.hidden = !isAdmin;
+    reloadCodeButton.disabled = false;
+    if (!isAdmin) {
+      reloadCodeButton.textContent = reloadCodeButtonDefaultLabel;
+      isReloadingStageCode = false;
+    }
+  }
   if (volumeSlider) {
     volumeSlider.hidden = !isAdmin;
   }
@@ -455,6 +481,87 @@ function applyAdminVisibility() {
     }
     if (playerSection) {
       playerSection.hidden = false;
+    }
+  }
+}
+
+function setAdminStageCodeValue(code) {
+  if (!adminStageCodeValue) {
+    return;
+  }
+  const nextValue = typeof code === "string" && code.trim() ? code.trim() : "—";
+  adminStageCodeValue.textContent = nextValue;
+}
+
+async function refreshStageCode(options = {}) {
+  if (!isAdmin) {
+    return;
+  }
+
+  const { rotate = false, silent = false } = options;
+
+  if (rotate && (!reloadCodeButton || isReloadingStageCode)) {
+    return;
+  }
+
+  if (!userKey) {
+    if (rotate && !silent) {
+      showToast("Unable to reload stage code right now", "error");
+    }
+    return;
+  }
+
+  const fetchOptions = { method: rotate ? "POST" : "GET" };
+  let url = "/api/queue/code";
+
+  if (rotate) {
+    fetchOptions.headers = { "Content-Type": "application/json" };
+    fetchOptions.body = JSON.stringify({ key: userKey });
+  } else {
+    const params = new URLSearchParams({ key: userKey });
+    url = `${url}?${params.toString()}`;
+  }
+
+  if (rotate && reloadCodeButton) {
+    isReloadingStageCode = true;
+    reloadCodeButton.disabled = true;
+    reloadCodeButton.textContent = "Reloading…";
+  }
+
+  try {
+    const response = await fetch(url, fetchOptions);
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message =
+        payload.error ||
+        `Unable to ${rotate ? "reload" : "load"} stage code (${response.status})`;
+      throw new Error(message);
+    }
+
+    const newCode = typeof payload.code === "string" ? payload.code.trim() : "";
+    if (!newCode) {
+      throw new Error(payload.error || "Stage code unavailable");
+    }
+
+    setAdminStageCodeValue(newCode);
+    if (adminUtilityBar) {
+      adminUtilityBar.hidden = false;
+    }
+
+    if (rotate) {
+      const message = payload.message || `Stage code reloaded: ${newCode}`;
+      showToast(message);
+    }
+  } catch (err) {
+    console.error(err);
+    if (!silent) {
+      showToast(err.message || "Unable to load stage code", "error");
+    }
+  } finally {
+    if (rotate && reloadCodeButton) {
+      reloadCodeButton.disabled = false;
+      reloadCodeButton.textContent = reloadCodeButtonDefaultLabel;
+      isReloadingStageCode = false;
     }
   }
 }
@@ -487,7 +594,7 @@ function describeEstimatedWait(seconds) {
 }
 
 function normalizeCodeInput(value) {
-  return String(value || "").replace(/\D/g, "").slice(0, 5);
+  return String(value || "").replace(/\D/g, "").slice(0, 4);
 }
 
 function loadStoredCodeDraft() {
@@ -813,7 +920,7 @@ function updateCodeSubmitState() {
     return;
   }
   const code = normalizeCodeInput(codeInput ? codeInput.value : "");
-  const canSubmit = code.length === 5 && !isJoiningQueue;
+  const canSubmit = code.length === 4 && !isJoiningQueue;
   codeSubmitButton.disabled = !canSubmit;
 }
 
@@ -1844,6 +1951,14 @@ if (snowMachineButton && isAdmin) {
   snowMachineButton.hidden = true;
 }
 
+if (reloadCodeButton && isAdmin) {
+  reloadCodeButton.addEventListener("click", () => {
+    refreshStageCode({ rotate: true });
+  });
+} else if (reloadCodeButton) {
+  reloadCodeButton.hidden = true;
+}
+
 if (rebootButton && isAdmin) {
   rebootButton.addEventListener("click", requestSystemReboot);
 } else if (rebootButton) {
@@ -1863,7 +1978,7 @@ if (codeInput && !isAdmin) {
       codeErrorEl.textContent = "";
     }
     updateCodeSubmitState();
-    if (normalized.length === 5 && !isJoiningQueue && codeForm) {
+    if (normalized.length === 4 && !isJoiningQueue && codeForm) {
       codeForm.requestSubmit();
     }
   });
@@ -1873,10 +1988,10 @@ if (codeForm && !isAdmin) {
   codeForm.addEventListener("submit", (event) => {
     event.preventDefault();
     const code = normalizeCodeInput(codeInput ? codeInput.value : "");
-    if (!code || code.length < 5) {
+    if (!code || code.length < 4) {
       if (codeErrorEl) {
         codeErrorEl.hidden = false;
-        codeErrorEl.textContent = "Enter the 5-digit code shown on the stage.";
+        codeErrorEl.textContent = "Enter the 4-digit code shown on the stage.";
       }
       return;
     }
@@ -1893,6 +2008,7 @@ async function initializeApp() {
   applyAdminVisibility();
   if (isAdmin) {
     await registerUser();
+    await refreshStageCode({ silent: true });
   }
   await fetchVideos();
   await fetchStatus();

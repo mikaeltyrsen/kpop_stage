@@ -7,14 +7,28 @@
     <link rel="stylesheet" href="/static/style.css" />
   </head>
   <body>
-    <button
-      type="button"
-      id="player-reboot-button"
-      class="reboot-button"
-      hidden
-    >
-      Restart Pi
-    </button>
+    <div id="admin-utility-bar" class="admin-utility-bar" hidden>
+      <div class="admin-utility-bar__code" aria-live="polite">
+        Stage code:
+        <span id="admin-stage-code-value" class="admin-stage-code-value">—</span>
+      </div>
+      <div class="admin-utility-bar__actions">
+        <button
+          type="button"
+          id="player-reload-code-button"
+          class="admin-utility-button reload-code-button"
+        >
+          Reload code
+        </button>
+        <button
+          type="button"
+          id="player-reboot-button"
+          class="admin-utility-button reboot-button"
+        >
+          Restart Pi
+        </button>
+      </div>
+    </div>
     <main id="controller-app">
       <div class="logo">
         <img src="/static/demon_logo.png" />
@@ -32,7 +46,7 @@
       </section>
       <section id="access-section" class="card gate-card" aria-live="polite">
         <h1>Join the stage queue</h1>
-        <p>Enter the 5-digit code shown on the stage screen to reserve your spot.</p>
+        <p>Enter the 4-digit code shown on the stage screen to reserve your spot.</p>
         <form id="code-form" class="code-form" autocomplete="off">
           <label class="code-label" for="code-input">Stage code</label>
           <input
@@ -40,9 +54,9 @@
             class="code-input"
             type="tel"
             inputmode="numeric"
-            pattern="[0-9]{5}"
-            maxlength="5"
-            placeholder="00000"
+            pattern="[0-9]{4}"
+            maxlength="4"
+            placeholder="0000"
             aria-describedby="code-error"
             required
           />
