@@ -43,6 +43,9 @@ const stageNameModalSkipButton = document.getElementById("stage-name-modal-skip"
 const stageNameModalBackdrop = stageNameModal
   ? stageNameModal.querySelector(".stage-name-modal__backdrop")
   : null;
+const stageNameModalSkipDefaultLabel = stageNameModalSkipButton
+  ? stageNameModalSkipButton.textContent.trim()
+  : "Skip";
 const searchParams = new URLSearchParams(window.location.search);
 const adminParam = (searchParams.get("admin") || "").toLowerCase();
 const isAdmin = ["1", "true", "yes", "on"].includes(adminParam);
@@ -86,6 +89,35 @@ let performerInputDirty = false;
 let pendingPlayRequest = null;
 let isStageNameModalOpen = false;
 let stageNameModalLastFocused = null;
+
+function getQueueRemainingSeconds() {
+  if (queueReadyExpiresAt === null) {
+    return null;
+  }
+  const remainingMs = queueReadyExpiresAt - Date.now();
+  if (!Number.isFinite(remainingMs)) {
+    return null;
+  }
+  const remainingSeconds = Math.ceil(remainingMs / 1000);
+  if (!Number.isFinite(remainingSeconds)) {
+    return null;
+  }
+  return Math.max(0, remainingSeconds);
+}
+
+function updateStageNameModalSkipLabel(remainingSeconds = null) {
+  if (!stageNameModalSkipButton) {
+    return;
+  }
+
+  if (!isStageNameModalOpen || !Number.isFinite(remainingSeconds)) {
+    stageNameModalSkipButton.textContent = stageNameModalSkipDefaultLabel;
+    return;
+  }
+
+  const safeSeconds = Math.max(0, Math.floor(remainingSeconds));
+  stageNameModalSkipButton.textContent = `${stageNameModalSkipDefaultLabel} (${safeSeconds}s)`;
+}
 
 function hideToast(context = null) {
   if (!toastEl) {
@@ -206,6 +238,8 @@ function openStageNameModal(initialValue = "") {
     stageNameModalInput.select();
   }
 
+  updateStageNameModalSkipLabel(getQueueRemainingSeconds());
+
   return true;
 }
 
@@ -224,6 +258,8 @@ function closeStageNameModal() {
   if (stageNameModalInput) {
     stageNameModalInput.value = "";
   }
+
+  updateStageNameModalSkipLabel(null);
 
   const lastFocused = stageNameModalLastFocused;
   stageNameModalLastFocused = null;
@@ -330,6 +366,7 @@ function clearQueueCountdown() {
     queueCountdownEl.hidden = true;
     queueCountdownEl.textContent = "";
   }
+  updateStageNameModalSkipLabel(null);
   hideToast("queue-ready");
 }
 
@@ -340,6 +377,13 @@ function updateQueueCountdown() {
   const remainingMs = queueReadyExpiresAt - Date.now();
   const remainingSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
   queueCountdownEl.textContent = formatTime(remainingSeconds);
+  if (isStageNameModalOpen) {
+    updateStageNameModalSkipLabel(remainingSeconds);
+    if (remainingMs <= 0 && pendingPlayRequest) {
+      handleStageNameModalSkip();
+      return;
+    }
+  }
   if (currentQueueState === "queue-ready") {
     showReadyToast(remainingSeconds);
   }
@@ -361,6 +405,9 @@ function startQueueCountdown(seconds) {
     clearInterval(queueCountdownTimer);
   }
   queueCountdownTimer = setInterval(updateQueueCountdown, 500);
+  if (isStageNameModalOpen) {
+    updateStageNameModalSkipLabel(getQueueRemainingSeconds());
+  }
 }
 
 async function registerUser() {
