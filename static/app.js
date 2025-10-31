@@ -36,6 +36,13 @@ const performerStatusEl = document.getElementById("queue-performer-status");
 const performerHelperEl = document.getElementById("queue-performer-helper");
 const playerSection = document.getElementById("player-section");
 const playerOverlay = document.getElementById("player-playing-overlay");
+const stageNameModal = document.getElementById("stage-name-modal");
+const stageNameModalInput = document.getElementById("stage-name-modal-input");
+const stageNameModalForm = document.getElementById("stage-name-modal-form");
+const stageNameModalSkipButton = document.getElementById("stage-name-modal-skip");
+const stageNameModalBackdrop = stageNameModal
+  ? stageNameModal.querySelector(".stage-name-modal__backdrop")
+  : null;
 const searchParams = new URLSearchParams(window.location.search);
 const adminParam = (searchParams.get("admin") || "").toLowerCase();
 const isAdmin = ["1", "true", "yes", "on"].includes(adminParam);
@@ -76,6 +83,9 @@ let performerStatusTimer = null;
 let performerStatusKind = null;
 let performerIsSaving = false;
 let performerInputDirty = false;
+let pendingPlayRequest = null;
+let isStageNameModalOpen = false;
+let stageNameModalLastFocused = null;
 
 function hideToast(context = null) {
   if (!toastEl) {
@@ -171,6 +181,120 @@ function setBodyQueueState(state) {
   } else {
     currentQueueState = null;
   }
+}
+
+function openStageNameModal(initialValue = "") {
+  if (!stageNameModal) {
+    return false;
+  }
+
+  const activeElement = document.activeElement;
+  stageNameModalLastFocused =
+    activeElement && typeof activeElement.focus === "function" ? activeElement : null;
+
+  isStageNameModalOpen = true;
+  stageNameModal.hidden = false;
+
+  if (document.body) {
+    document.body.classList.add("has-modal");
+  }
+
+  if (stageNameModalInput) {
+    const sanitized = sanitizePerformerNameInput(initialValue || "");
+    stageNameModalInput.value = sanitized;
+    stageNameModalInput.focus();
+    stageNameModalInput.select();
+  }
+
+  return true;
+}
+
+function closeStageNameModal() {
+  if (!stageNameModal) {
+    return;
+  }
+
+  stageNameModal.hidden = true;
+  isStageNameModalOpen = false;
+
+  if (document.body) {
+    document.body.classList.remove("has-modal");
+  }
+
+  if (stageNameModalInput) {
+    stageNameModalInput.value = "";
+  }
+
+  const lastFocused = stageNameModalLastFocused;
+  stageNameModalLastFocused = null;
+
+  if (lastFocused && typeof lastFocused.focus === "function") {
+    try {
+      if (document.contains(lastFocused)) {
+        lastFocused.focus();
+      }
+    } catch (err) {
+      console.warn("Unable to restore focus after closing modal", err);
+    }
+  }
+}
+
+function cancelStageNameModal() {
+  pendingPlayRequest = null;
+  closeStageNameModal();
+}
+
+async function handleStageNameModalSubmit(event) {
+  if (event) {
+    event.preventDefault();
+  }
+
+  if (!pendingPlayRequest) {
+    closeStageNameModal();
+    return;
+  }
+
+  const { id, name } = pendingPlayRequest;
+  pendingPlayRequest = null;
+
+  const normalized = stageNameModalInput
+    ? sanitizePerformerNameInput(stageNameModalInput.value)
+    : "";
+
+  closeStageNameModal();
+
+  if (stageNameModalInput) {
+    stageNameModalInput.value = "";
+  }
+
+  if (performerInput) {
+    performerInput.value = normalized;
+    performerInputDirty = false;
+  }
+
+  try {
+    await submitPerformerName(normalized);
+  } catch (err) {
+    console.error("Unable to save stage name before playback", err);
+  }
+
+  playVideo(id, name);
+}
+
+function handleStageNameModalSkip(event) {
+  if (event) {
+    event.preventDefault();
+  }
+
+  if (!pendingPlayRequest) {
+    cancelStageNameModal();
+    return;
+  }
+
+  const { id, name } = pendingPlayRequest;
+  pendingPlayRequest = null;
+  closeStageNameModal();
+  playVideo(id, name);
 }
 
 function showReadyToast(remainingSeconds = null) {
@@ -377,6 +501,27 @@ function sanitizePerformerNameInput(value) {
   return collapsed.slice(0, limit).trimEnd();
 }
 
+function getCurrentPerformerNameDraft() {
+  if (performerInput) {
+    const fromInput = sanitizePerformerNameInput(performerInput.value);
+    if (fromInput) {
+      return fromInput;
+    }
+  }
+
+  const fromSubmitted = sanitizePerformerNameInput(performerLastSubmittedValue || "");
+  if (fromSubmitted) {
+    return fromSubmitted;
+  }
+
+  const fromKnown = sanitizePerformerNameInput(performerLastKnownValue || "");
+  if (fromKnown) {
+    return fromKnown;
+  }
+
+  return "";
+}
+
 function setPerformerStatus(message, type = "info") {
   if (!performerStatusEl) {
     return;
@@ -578,6 +723,35 @@ if (performerInput) {
     schedulePerformerUpdate(true);
   });
 }
+
+if (stageNameModalForm) {
+  stageNameModalForm.addEventListener("submit", handleStageNameModalSubmit);
+}
+
+if (stageNameModalSkipButton) {
+  stageNameModalSkipButton.addEventListener("click", handleStageNameModalSkip);
+}
+
+if (stageNameModalBackdrop) {
+  stageNameModalBackdrop.addEventListener("click", () => {
+    cancelStageNameModal();
+  });
+}
+
+if (stageNameModal) {
+  stageNameModal.addEventListener("click", (event) => {
+    if (event.target === stageNameModal) {
+      cancelStageNameModal();
+    }
+  });
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && isStageNameModalOpen) {
+    event.preventDefault();
+    cancelStageNameModal();
+  }
+});
 
 if (codeInput && !isAdmin) {
   const storedDraft = loadStoredCodeDraft();
@@ -1081,7 +1255,7 @@ function renderVideos(videos) {
         if (card.classList.contains("is-disabled")) {
           return;
         }
-        playVideo(video.id, video.name);
+        requestPlayVideo(video.id, video.name);
       };
       card.addEventListener("click", handleSelect);
       card.addEventListener("keydown", (event) => {
@@ -1098,6 +1272,36 @@ function renderVideos(videos) {
 
   listEl.appendChild(fragment);
   updateVideoCards(latestStatus);
+}
+
+function requestPlayVideo(id, name) {
+  if (!userKey) {
+    showToast("Unable to select a video right now", "error");
+    return;
+  }
+
+  const performerDraft = getCurrentPerformerNameDraft();
+
+  if (!stageNameModal || performerDraft || !currentQueueEntryId) {
+    playVideo(id, name);
+    return;
+  }
+
+  pendingPlayRequest = { id, name };
+
+  if (isStageNameModalOpen) {
+    if (stageNameModalInput) {
+      stageNameModalInput.value = performerDraft;
+      stageNameModalInput.focus();
+      stageNameModalInput.select();
+    }
+    return;
+  }
+
+  const opened = openStageNameModal(performerDraft);
+  if (!opened) {
+    playVideo(id, name);
+  }
 }
 
 async function playVideo(id, name) {

@@ -1465,6 +1465,7 @@ class PlaybackController:
         self._welcome_video = welcome_video
         self._pending_video_start: Optional[Path] = None
         self._pending_requires_playlist_advance = False
+        self._pending_playlist_offset = 0
         self._start_callback_fired = False
         self._stage_overlay_text: Optional[str] = None
         self._default_missing_message = (
@@ -1576,6 +1577,7 @@ class PlaybackController:
         else:
             self._pending_video_start = video_path
             self._pending_requires_playlist_advance = bool(sequence)
+            self._pending_playlist_offset = len(sequence) if sequence else 0
             self._start_callback_fired = False
         try:
             if sequence:
@@ -1756,6 +1758,7 @@ class PlaybackController:
     def _clear_pending_video_start(self) -> None:
         self._pending_video_start = None
         self._pending_requires_playlist_advance = False
+        self._pending_playlist_offset = 0
         self._start_callback_fired = False
 
     def set_stage_code_overlay(self, code: Optional[str]) -> None:
@@ -1789,6 +1792,7 @@ class PlaybackController:
         with self._lock:
             pending = self._pending_video_start
             requires_advance = self._pending_requires_playlist_advance
+            playlist_offset = self._pending_playlist_offset
             callback = self._on_video_start
             already_fired = self._start_callback_fired
 
@@ -1806,7 +1810,7 @@ class PlaybackController:
                 position = int(response.get("data"))
             except (TypeError, ValueError):
                 return
-            if position <= 0:
+            if position < playlist_offset:
                 return
 
         with self._lock:
@@ -1818,6 +1822,7 @@ class PlaybackController:
                 return
             self._pending_video_start = None
             self._pending_requires_playlist_advance = False
+            self._pending_playlist_offset = 0
             self._start_callback_fired = True
 
         try:
