@@ -248,7 +248,7 @@ class QueueManager:
         LOGGER.info("Access code set to %s", self._access_code)
 
     def _generate_code(self) -> str:
-        return f"{random.randint(0, 99999):05d}"
+        return f"{random.randint(0, 9999):04d}"
 
     def current_code(self) -> str:
         with self._lock:
@@ -2280,6 +2280,31 @@ def api_register() -> Any:
     data = request.get_json(force=True, silent=True) or {}
     record = user_registry.register(is_admin=_parse_admin_flag(data.get("admin")))
     return jsonify({"status": "ok", "key": record["key"], "admin": record["admin"]})
+
+
+@app.route("/api/queue/code", methods=["GET", "POST"])
+def api_queue_code() -> Any:
+    payload = request.get_json(force=True, silent=True) or {}
+    key_value = payload.get("key") or request.args.get("key")
+    user = user_registry.get(key_value) if key_value else None
+    if not user or not user.get("admin"):
+        return jsonify({"error": "Only admins may manage the stage code."}), 403
+
+    if request.method == "POST":
+        new_code = queue_manager.rotate_code()
+        try:
+            controller.set_stage_code_overlay(new_code)
+        except Exception:
+            LOGGER.exception("Unable to update stage code overlay after manual reload")
+        return jsonify(
+            {
+                "status": "rotated",
+                "code": new_code,
+                "message": f"Stage code reloaded: {new_code}",
+            }
+        )
+
+    return jsonify({"status": "ok", "code": queue_manager.current_code()})
 
 
 @app.route("/api/queue/join", methods=["POST"])
