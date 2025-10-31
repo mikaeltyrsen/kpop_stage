@@ -40,7 +40,7 @@ import app
 def test_main_starts_default_dmx_template_when_default_loop_missing(monkeypatch):
     started = {"dmx": False}
 
-    def fake_start_default_loop() -> None:
+    def fake_start_default_loop(*, force_restart: bool = False) -> None:
         raise FileNotFoundError("default loop missing")
 
     def fake_start_default_show(path: Path) -> None:
@@ -51,7 +51,8 @@ def test_main_starts_default_dmx_template_when_default_loop_missing(monkeypatch)
 
     monkeypatch.setattr(app.controller, "start_default_loop", fake_start_default_loop)
     monkeypatch.setattr(app.dmx_manager, "start_default_show", fake_start_default_show)
-    monkeypatch.setattr(app.app, "run", fake_run)
+    monkeypatch.setattr(app.app, "run", fake_run, raising=False)
+    monkeypatch.setattr(app, "_serve_app", lambda *args, **kwargs: None)
 
     app.main()
 

@@ -1527,9 +1527,9 @@ class PlaybackController:
     def default_missing_message(self) -> str:
         return self._default_missing_message
 
-    def start_default_loop(self) -> None:
+    def start_default_loop(self, *, force_restart: bool = False) -> None:
         with self._lock:
-            self._start_default_locked()
+            self._start_default_locked(force_restart=force_restart)
 
     def play(self, video_path: Path, *, welcome_text: Optional[str] = None) -> None:
         LOGGER.info("Starting playback: %s", video_path)
@@ -1744,7 +1744,7 @@ class PlaybackController:
             LOGGER.exception("Unable to update welcome subtitle file: %s", path)
 
 
-    def _start_default_locked(self) -> None:
+    def _start_default_locked(self, *, force_restart: bool = False) -> None:
         if not self.default_video.exists():
             raise FileNotFoundError(self._default_missing_message)
 
@@ -1756,6 +1756,7 @@ class PlaybackController:
             self._process
             and self._process.poll() is None
             and self._current == self.default_video
+            and not force_restart
         ):
             return
 
@@ -2296,7 +2297,7 @@ def _restart_default_loop_for_stage_code() -> Optional[str]:
         return None
 
     try:
-        controller.start_default_loop()
+        controller.start_default_loop(force_restart=True)
     except FileNotFoundError:
         LOGGER.error(controller.default_missing_message)
         return controller.default_missing_message
