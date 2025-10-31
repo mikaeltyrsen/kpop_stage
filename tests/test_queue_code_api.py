@@ -37,6 +37,7 @@ def test_queue_code_get_and_rotate(monkeypatch):
         def __init__(self) -> None:
             self.calls = []
             self.started = 0
+            self.force_flags = []
             self.default_missing_message = "missing"
 
         def set_stage_code_overlay(self, code: str) -> None:
@@ -45,8 +46,9 @@ def test_queue_code_get_and_rotate(monkeypatch):
         def query_state(self):
             return {"is_default": True}
 
-        def start_default_loop(self) -> None:
+        def start_default_loop(self, *, force_restart: bool = False) -> None:
             self.started += 1
+            self.force_flags.append(force_restart)
 
     registry = app.UserRegistry()
     manager = app.QueueManager(registry)
@@ -82,6 +84,7 @@ def test_queue_code_get_and_rotate(monkeypatch):
     assert manager.current_code() == "6789"
     assert controller.calls[-1] == "6789"
     assert controller.started == 1
+    assert controller.force_flags == [True]
 
 
 def test_regenerate_code_requires_idle_queue(monkeypatch):
@@ -96,7 +99,7 @@ def test_regenerate_code_requires_idle_queue(monkeypatch):
             "default_missing_message": "missing",
             "set_stage_code_overlay": lambda self, code: None,
             "query_state": lambda self: {"is_default": True},
-            "start_default_loop": lambda self: None,
+            "start_default_loop": lambda self, *, force_restart=False: None,
         },
     )()
 
@@ -127,6 +130,7 @@ def test_regenerate_code_success(monkeypatch):
         def __init__(self) -> None:
             self.set_calls = []
             self.start_count = 0
+            self.force_flags = []
 
         def set_stage_code_overlay(self, code: str) -> None:
             self.set_calls.append(code)
@@ -134,8 +138,9 @@ def test_regenerate_code_success(monkeypatch):
         def query_state(self):
             return {"is_default": True}
 
-        def start_default_loop(self) -> None:
+        def start_default_loop(self, *, force_restart: bool = False) -> None:
             self.start_count += 1
+            self.force_flags.append(force_restart)
 
     controller = ControllerStub()
 
@@ -153,6 +158,7 @@ def test_regenerate_code_success(monkeypatch):
     assert controller.set_calls == ["2222"]
     assert controller.start_count == 1
     assert manager.current_code() == "2222"
+    assert controller.force_flags == [True]
 
 
 def test_regenerate_code_reports_default_restart_failure(monkeypatch):
@@ -170,7 +176,7 @@ def test_regenerate_code_reports_default_restart_failure(monkeypatch):
         def query_state(self):
             return {"is_default": True}
 
-        def start_default_loop(self) -> None:
+        def start_default_loop(self, *, force_restart: bool = False) -> None:
             raise FileNotFoundError("missing")
 
     controller = ControllerStub()
