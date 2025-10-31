@@ -112,6 +112,53 @@
         </div>
       </article>
     </template>
+    <div id="stage-name-modal" class="stage-name-modal" hidden>
+      <div class="stage-name-modal__backdrop" aria-hidden="true"></div>
+      <div
+        class="stage-name-modal__dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="stage-name-modal-title"
+      >
+        <h2 id="stage-name-modal-title" class="stage-name-modal__title">
+          Got a stage name?
+        </h2>
+        <p class="stage-name-modal__subtitle">
+          We'll show it on the welcome screen before your video starts.
+        </p>
+        <form
+          id="stage-name-modal-form"
+          class="stage-name-modal__form"
+          autocomplete="off"
+        >
+          <label class="sr-only" for="stage-name-modal-input">Stage name</label>
+          <input
+            id="stage-name-modal-input"
+            type="text"
+            maxlength="30"
+            placeholder="Enter a stage name"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <div class="stage-name-modal__actions">
+            <button
+              type="submit"
+              id="stage-name-modal-play"
+              class="primary-button"
+            >
+              Play
+            </button>
+            <button
+              type="button"
+              id="stage-name-modal-skip"
+              class="secondary-button"
+            >
+              Skip
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
     <div id="toast" role="status" aria-live="assertive"></div>
     <div id="player-bar" class="player-bar is-default" aria-live="polite" hidden>
       <div class="player-info">
