@@ -258,6 +258,12 @@ class QueueManager:
         with self._lock:
             return self._rotate_code_locked()
 
+    def is_idle(self) -> bool:
+        with self._lock:
+            if self._admin_playing:
+                return False
+            return not any(entry.status in self.ACTIVE_STATES for entry in self._entries)
+
     def _rotate_code_locked(self) -> str:
         self._access_code = self._generate_code()
         LOGGER.info("Access code set to %s", self._access_code)
@@ -2275,6 +2281,32 @@ def _request_queue_id(data: Optional[Dict[str, Any]] = None) -> Optional[str]:
     return None
 
 
+def _restart_default_loop_for_stage_code() -> Optional[str]:
+    try:
+        state = controller.query_state()
+    except Exception:
+        LOGGER.exception("Unable to query playback state while refreshing stage code")
+        return "Unable to check the player state."
+
+    is_default = False
+    if isinstance(state, dict):
+        is_default = bool(state.get("is_default"))
+
+    if not is_default:
+        return None
+
+    try:
+        controller.start_default_loop()
+    except FileNotFoundError:
+        LOGGER.error(controller.default_missing_message)
+        return controller.default_missing_message
+    except Exception:
+        LOGGER.exception("Unable to restart default loop after refreshing stage code")
+        return "Unable to restart the default loop."
+
+    return None
+
+
 @app.route("/api/register", methods=["POST"])
 def api_register() -> Any:
     data = request.get_json(force=True, silent=True) or {}
@@ -2296,6 +2328,11 @@ def api_queue_code() -> Any:
             controller.set_stage_code_overlay(new_code)
         except Exception:
             LOGGER.exception("Unable to update stage code overlay after manual reload")
+        restart_error = _restart_default_loop_for_stage_code()
+        if restart_error:
+            LOGGER.warning(
+                "Default loop restart skipped after manual code reload: %s", restart_error
+            )
         return jsonify(
             {
                 "status": "rotated",
@@ -2305,6 +2342,45 @@ def api_queue_code() -> Any:
         )
 
     return jsonify({"status": "ok", "code": queue_manager.current_code()})
+
+
+@app.route("/api/queue/regenerate-code", methods=["POST"])
+def api_queue_regenerate_code() -> Any:
+    if not queue_manager.is_idle():
+        return (
+            jsonify(
+                {
+                    "error": (
+                        "Stage queue is active. Please wait until the current songs finish "
+                        "before refreshing the code."
+                    )
+                }
+            ),
+            409,
+        )
+
+    new_code = queue_manager.rotate_code()
+
+    try:
+        controller.set_stage_code_overlay(new_code)
+    except FileNotFoundError:
+        LOGGER.error(controller.default_missing_message)
+        return jsonify({"error": controller.default_missing_message}), 500
+    except Exception:
+        LOGGER.exception("Unable to update stage code overlay while regenerating code")
+        return jsonify({"error": "Unable to refresh the stage code."}), 500
+
+    restart_error = _restart_default_loop_for_stage_code()
+    if restart_error:
+        return jsonify({"error": restart_error}), 500
+
+    return jsonify(
+        {
+            "status": "rotated",
+            "code": new_code,
+            "message": f"Stage code refreshed: {new_code}",
+        }
+    )
 
 
 @app.route("/api/queue/join", methods=["POST"])

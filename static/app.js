@@ -31,6 +31,9 @@ const queueEtaEl = document.getElementById("queue-eta");
 const queueMessageEl = document.getElementById("queue-message");
 const queueCountdownEl = document.getElementById("queue-countdown");
 const queueLeaveButton = document.getElementById("queue-leave-button");
+const regenerateCodeContainer = document.getElementById("regenerate-code-container");
+const regenerateCodeButton = document.getElementById("regenerate-code-button");
+const regenerateCodeStatusEl = document.getElementById("regenerate-code-status");
 const expiredNotice = document.getElementById("expired-notice");
 const expiredNoticeMessage = document.getElementById("expired-notice-message");
 const performerForm = document.getElementById("queue-performer-form");
@@ -82,6 +85,7 @@ let queueReadyExpiresAt = null;
 let lastQueueState = null;
 let currentQueueState = null;
 let isJoiningQueue = false;
+let isRegeneratingStageCode = false;
 let toastHideTimer = null;
 let toastHideTimerContext = null;
 let activeToastContext = null;
@@ -96,6 +100,8 @@ let performerInputDirty = false;
 let pendingPlayRequest = null;
 let isStageNameModalOpen = false;
 let stageNameModalLastFocused = null;
+let latestQueueSize = 0;
+let latestQueueEntry = null;
 
 function getQueueRemainingSeconds() {
   if (queueReadyExpiresAt === null) {
@@ -131,6 +137,55 @@ function updateStageNameModalSkipLabel(remainingSeconds = null) {
   }
 
   stageNameModalSkipButton.textContent = `${stageNameModalSkipDefaultLabel} (${displaySeconds}s)`;
+}
+
+function setRegenerateCodeStatus(message = "", options = {}) {
+  if (!regenerateCodeStatusEl) {
+    return;
+  }
+
+  const { isError = false } = options;
+
+  const text = typeof message === "string" ? message.trim() : "";
+  regenerateCodeStatusEl.textContent = text;
+  regenerateCodeStatusEl.classList.toggle("is-error", Boolean(isError && text));
+  regenerateCodeStatusEl.hidden = !text;
+}
+
+function isDefaultLoopActive(status = null) {
+  const snapshot = status && typeof status === "object" ? status : latestStatus;
+  if (!snapshot || typeof snapshot !== "object") {
+    return false;
+  }
+
+  if (snapshot.mode === "video") {
+    const controls =
+      snapshot.controls && typeof snapshot.controls === "object" ? snapshot.controls : null;
+    if (controls && Object.prototype.hasOwnProperty.call(controls, "has_active_owner")) {
+      return !controls.has_active_owner;
+    }
+    return false;
+  }
+
+  return true;
+}
+
+function updateRegenerateCodeVisibility(queueSize = 0, entry = latestQueueEntry) {
+  if (!regenerateCodeContainer || !regenerateCodeButton || isAdmin) {
+    return;
+  }
+
+  const activeEntry = Boolean(entry && typeof entry === "object");
+  const count = Number.isFinite(queueSize) ? Math.max(0, queueSize) : 0;
+  const defaultLoopActive = isDefaultLoopActive();
+  const shouldShow = defaultLoopActive && !activeEntry && count === 0;
+
+  regenerateCodeContainer.hidden = !shouldShow;
+  regenerateCodeButton.disabled = !shouldShow || isRegeneratingStageCode;
+
+  if (!shouldShow) {
+    setRegenerateCodeStatus("");
+  }
 }
 
 function hideToast(context = null) {
@@ -900,6 +955,13 @@ if (stageNameModal) {
   });
 }
 
+if (regenerateCodeButton && !isAdmin) {
+  regenerateCodeButton.addEventListener("click", (event) => {
+    event.preventDefault();
+    regenerateStageCode();
+  });
+}
+
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && isStageNameModalOpen) {
     event.preventDefault();
@@ -983,6 +1045,8 @@ function resetQueueUiForIdle(options = {}) {
     userKey = null;
   }
   lastQueueState = null;
+  latestQueueEntry = null;
+  updateRegenerateCodeVisibility(latestQueueSize, null);
 }
 
 function updateQueueUI(payload) {
@@ -990,7 +1054,14 @@ function updateQueueUI(payload) {
     return;
   }
 
+  const queueSizeValue = Number.isFinite(payload.queue_size)
+    ? Math.max(0, Math.floor(payload.queue_size))
+    : 0;
+  latestQueueSize = queueSizeValue;
+
   const entry = payload.entry && typeof payload.entry === "object" ? payload.entry : null;
+  latestQueueEntry = entry;
+  updateRegenerateCodeVisibility(queueSizeValue, entry);
   if (!entry) {
     clearPerformerUi();
     if (!isAdmin) {
@@ -1229,6 +1300,42 @@ async function fetchQueueStatus(showErrors = false) {
     console.error(err);
     if (showErrors) {
       showToast("Unable to sync the queue", "error");
+    }
+  }
+}
+
+async function regenerateStageCode() {
+  if (!regenerateCodeButton || isRegeneratingStageCode || isAdmin) {
+    return;
+  }
+
+  isRegeneratingStageCode = true;
+  regenerateCodeButton.disabled = true;
+  setRegenerateCodeStatus("Refreshing the stage screen…");
+
+  try {
+    const response = await fetch("/api/queue/regenerate-code", { method: "POST" });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const message = payload.error || `Unable to refresh the code (${response.status})`;
+      setRegenerateCodeStatus(message, { isError: true });
+      throw new Error(message);
+    }
+
+    const message = payload.message || "Stage code refreshed.";
+    setRegenerateCodeStatus(message);
+    showToast(message);
+    await fetchQueueStatus();
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || "Unable to refresh the code", "error");
+  } finally {
+    isRegeneratingStageCode = false;
+    if (regenerateCodeButton) {
+      regenerateCodeButton.disabled = regenerateCodeContainer
+        ? regenerateCodeContainer.hidden
+        : false;
     }
   }
 }
@@ -1640,6 +1747,7 @@ function updatePlayerUI(status) {
   updateSmokeButton(status);
   updateSnowMachineButton(status);
   updateVideoCards(status);
+  updateRegenerateCodeVisibility(latestQueueSize);
 
   const controls =
     status && typeof status === "object" && status.controls && typeof status.controls === "object"
