@@ -1718,7 +1718,7 @@ class PlaybackController:
                         "Alignment, MarginL, MarginR, MarginV, Encoding"
                     ),
                     (
-                        "Style: WelcomeName,Arial,230,&H00FFFFFF,&H000000FF,&H96000000,&H64000000,"
+                        "Style: WelcomeName,Zen Dots,230,&H00FFFFFF,&H000000FF,&H96000000,&H64000000,"
                         "0,0,0,0,100,100,0,0,1,6,0,5,0,0,80,1"
                     ),
                     "",
